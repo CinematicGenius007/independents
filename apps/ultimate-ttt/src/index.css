@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #08080f;
+  --surface: #0f0f1a;
+  --surface-2: #16162a;
+  --surface-3: #1e1e35;
+  --border: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.12);
+
+  --x-accent: #60a5fa;
+  --x-glow: rgba(96, 165, 250, 0.3);
+  --x-dim: rgba(96, 165, 250, 0.12);
+
+  --o-accent: #f87171;
+  --o-glow: rgba(248, 113, 113, 0.3);
+  --o-dim: rgba(248, 113, 113, 0.12);
+
+  --active-accent: #34d399;
+  --active-glow: rgba(52, 211, 153, 0.2);
+  --active-dim: rgba(52, 211, 153, 0.08);
+
+  --text-primary: #eeeef8;
+  --text-secondary: #7878a0;
+  --text-muted: #44445a;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
