@@ -20,5 +20,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["apps/ultimate-ttt/src"]
+  "include": ["./src"]
 }
