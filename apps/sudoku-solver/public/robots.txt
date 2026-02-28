@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sudoku-solver.cinematicgenius007.com/sitemap.xml

@@ -1,0 +1,276 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Share+Tech+Mono&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --paper: #f5f0e8;
+    --paper-dark: #ede5d0;
+    --ink: #1a1209;
+    --ink-light: #4a3d2a;
+    --red: #c0392b;
+    --blue: #2c5f8a;
+    --green: #2a6b3c;
+    --purple: #6b3a8a;
+    --gold: #b8860b;
+    --border: #8b7355;
+    --border-light: #c4a882;
+}
+
+body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif JP', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(139,115,85,0.06) 24px, rgba(139,115,85,0.06) 25px),
+    repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(139,115,85,0.06) 24px, rgba(139,115,85,0.06) 25px);
+    pointer-events: none; z-index: 0;
+}
+
+/* ── Layout ─────────────────────────────────────── */
+.app-wrapper {
+    position: relative; z-index: 1;
+    max-width: 1200px; margin: 0 auto; padding: 12px;
+    display: grid;
+    grid-template-columns: 260px 1fr 220px;
+    grid-template-rows: auto 1fr;
+    gap: 12px;
+    min-height: 100vh;
+    align-items: start;
+}
+
+/* ── Header ─────────────────────────────────────── */
+.header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 8px;
+    flex-wrap: wrap; gap: 8px;
+}
+.header-title { display: flex; flex-direction: column; }
+.title-main { font-size: 28px; font-weight: 700; letter-spacing: 0.1em; line-height: 1; }
+.title-sub { font-size: 11px; color: var(--ink-light); letter-spacing: 0.3em; font-family: 'Share Tech Mono', monospace; margin-top: 0.5rem; }
+.header-stats { display: flex; gap: 16px; align-items: center; }
+.stat-item { text-align: center; }
+.stat-value { display: block; font-size: 22px; font-family: 'Share Tech Mono', monospace; font-weight: bold; line-height: 1; }
+.stat-label { display: block; font-size: 9px; color: var(--ink-light); letter-spacing: 0.15em; text-transform: uppercase; }
+
+/* ── Side panels ─────────────────────────────────── */
+.left-panel, .right-panel { display: flex; flex-direction: column; gap: 10px; }
+
+.panel-box {
+    border: 1px solid var(--border-light);
+    background: rgba(255,255,255,0.4);
+    padding: 10px;
+    position: relative;
+}
+.panel-box::before {
+    content: '';
+    position: absolute; top: 3px; left: 3px; right: 3px; bottom: 3px;
+    border: 1px solid rgba(139,115,85,0.2);
+    pointer-events: none;
+}
+.panel-title {
+    font-size: 10px; letter-spacing: 0.3em; color: var(--border);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 5px; margin-bottom: 8px;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 4px; padding: 6px 12px;
+    font-family: 'Noto Serif JP', serif; font-size: 12px;
+    border: 1px solid var(--border);
+    background: var(--paper-dark); color: var(--ink);
+    cursor: pointer; transition: all 0.15s;
+    letter-spacing: 0.05em; white-space: nowrap; width: 100%;
+}
+.btn:hover  { background: var(--border); color: var(--paper); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--paper-dark); color: var(--ink); transform: none; }
+.btn-primary  { background: var(--ink); color: var(--paper); border-color: var(--ink); font-size: 13px; padding: 8px 16px; }
+.btn-primary:hover  { background: var(--ink-light); }
+.btn-danger   { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger:hover   { background: #a93226; }
+.btn-success  { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-success:hover  { background: #1e5a30; }
+.btn-sm { font-size: 11px; padding: 4px 10px; }
+.btn-group { display: flex; flex-direction: column; gap: 6px; }
+
+/* ── Mode toggle ─────────────────────────────────── */
+.mode-selector { display: flex; }
+.mode-btn {
+    flex: 1; padding: 8px; font-size: 11px;
+    font-family: 'Noto Serif JP', serif;
+    border: 1px solid var(--border);
+    background: var(--paper-dark); color: var(--ink-light);
+    cursor: pointer; transition: all 0.15s;
+    text-align: center; letter-spacing: 0.05em; line-height: 1.4;
+}
+.mode-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.mode-btn:first-child { border-right: none; }
+.mode-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mode-description { font-size: 10px; color: var(--ink-light); line-height: 1.5; font-family: 'Share Tech Mono', monospace; letter-spacing: 0.03em; padding-top: 6px; }
+
+/* ── Status bar ──────────────────────────────────── */
+.status-bar {
+    font-size: 11px; color: var(--ink-light);
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.03);
+    border: 1px solid var(--border-light);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.05em;
+    min-height: 32px; width: 100%; max-width: 520px;
+    display: flex; align-items: center; gap: 6px;
+}
+.status-bar.solved  { color: var(--green); font-weight: bold; background: rgba(42,107,60,0.08); border-color: var(--green); }
+.status-bar.stopped { color: var(--red); background: rgba(192,57,43,0.06); border-color: var(--red); }
+
+/* ── Speed slider ────────────────────────────────── */
+.slider-wrap { display: flex; align-items: center; gap: 8px; }
+.slider-label { font-size: 10px; color: var(--ink-light); font-family: 'Share Tech Mono', monospace; white-space: nowrap; min-width: 14px; }
+input[type='range'] { appearance: none; -webkit-appearance: none; height: 3px; background: var(--border-light); outline: none; flex: 1; }
+input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--ink); cursor: pointer; border-radius: 0; }
+
+/* ── Board area ──────────────────────────────────── */
+.board-area { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+/* ── Sudoku grid ─────────────────────────────────── */
+.sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    border: 3px solid var(--ink);
+    background: var(--ink);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+    width: 100%; max-width: 520px;
+    aspect-ratio: 1;
+}
+
+/* ── Individual cell ─────────────────────────────── */
+.sudoku-cell {
+    background: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(14px, 2.4vw, 22px);
+    font-weight: 700; font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    transition: background 0.08s;
+    position: relative; outline: none; overflow: hidden;
+    border: 1px solid rgba(139,115,85,0.2);
+}
+.sudoku-cell.dark-box   { background: #f0e8d5; }
+.sudoku-cell.selected   { background: #e8e0cc !important; outline: 2px solid var(--gold) !important; outline-offset: -2px; z-index: 2; }
+
+/* State colours */
+.sudoku-cell.s-locked        { background: #2a2015 !important; color: var(--paper) !important; }
+.sudoku-cell.s-algo          { color: var(--blue)   !important; background: #eef3f8 !important; }
+.sudoku-cell.s-algo.dark-box { background: #e0eaf3 !important; }
+.sudoku-cell.s-current       { background: #c8e6c9 !important; color: var(--green)  !important; animation: cellPulse .25s ease; }
+.sudoku-cell.s-backtrack     { background: #ffcdd2 !important; color: var(--red)    !important; animation: cellShake .25s ease; }
+.sudoku-cell.s-solved        { color: var(--green)  !important; background: #e8f5e9 !important; }
+.sudoku-cell.s-solved.dark-box { background: #d5eeda !important; }
+.sudoku-cell.s-smart-locked          { color: var(--blue)   !important; background: #e3f0f8 !important; }
+.sudoku-cell.s-smart-locked.dark-box { background: #d5e8f5 !important; }
+.sudoku-cell.s-smart-guess           { color: var(--purple) !important; background: #f3eef8 !important; font-style: italic; }
+.sudoku-cell.s-smart-guess.dark-box  { background: #ece0f0 !important; }
+.sudoku-cell.s-smart-solved          { color: var(--blue)   !important; background: #e3f0f8 !important; }
+
+@keyframes cellPulse { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+@keyframes cellShake { 0%,100%{transform:translateX(0)} 30%{transform:translateX(-3px)} 70%{transform:translateX(3px)} }
+
+/* ── Cell input ──────────────────────────────────── */
+.cell-input {
+    width: 100%; height: 100%;
+    background: transparent; border: none;
+    text-align: center;
+    font-size: inherit; font-family: inherit; font-weight: inherit; color: inherit;
+    outline: none; cursor: pointer; padding: 0;
+    caret-color: var(--gold);
+}
+
+/* ── Candidate mini-grid ─────────────────────────── */
+.cand-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 100%; height: 100%; padding: 1px;
+}
+.cand-num {
+    font-size: clamp(5px, 0.85vw, 8px);
+    font-family: 'Share Tech Mono', monospace;
+    display: flex; align-items: center; justify-content: center;
+    color: transparent; line-height: 1;
+}
+.cand-num.vis { color: var(--purple); font-weight: bold; }
+
+/* ── Activity log ────────────────────────────────── */
+.log-area { overflow-y: auto; max-height: 420px; display: flex; flex-direction: column; gap: 2px; }
+.log-area::-webkit-scrollbar { width: 4px; }
+.log-area::-webkit-scrollbar-thumb { background: var(--border-light); }
+.log-entry {
+    font-size: 10px; font-family: 'Share Tech Mono', monospace;
+    padding: 2px 4px; border-left: 2px solid;
+    letter-spacing: 0.03em; line-height: 1.4; word-break: break-all;
+}
+
+/* ── Legend ──────────────────────────────────────── */
+.legend { display: flex; flex-direction: column; gap: 4px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--ink-light); }
+.legend-swatch { width: 14px; height: 14px; border: 1px solid var(--border-light); flex-shrink: 0; }
+
+/* ── Misc ────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border-light); margin: 3px 0; }
+.deco-kanji { font-size: 9px; color: var(--border-light); letter-spacing: 0.2em; font-family: 'Noto Serif JP', serif; }
+
+.spin-ring {
+    display: inline-block; width: 8px; height: 8px;
+    border: 2px solid var(--green); border-top-color: transparent;
+    border-radius: 50%; animation: spin .5s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.badge { display: inline-block; font-size: 9px; font-family: 'Share Tech Mono', monospace; padding: 1px 5px; border: 1px solid; letter-spacing: 0.05em; }
+.badge-blue   { color: var(--blue);   border-color: var(--blue);   background: rgba(44,95,138,0.08); }
+.badge-purple { color: var(--purple); border-color: var(--purple); background: rgba(107,58,138,0.08); }
+.badge-red    { color: var(--red);    border-color: var(--red);    background: rgba(192,57,43,0.08); }
+
+.input-hint {
+    font-size: 10px; color: var(--ink-light); font-family: 'Share Tech Mono', monospace;
+    text-align: center; padding: 4px 8px;
+    background: rgba(184,134,11,0.08);
+    border: 1px dashed var(--gold);
+    letter-spacing: 0.05em;
+    width: 100%; max-width: 520px;
+}
+
+.info-row { display: flex; justify-content: space-between; font-size: 11px; font-family: 'Share Tech Mono', monospace; }
+.info-label { color: var(--ink-light); }
+
+.watermark {
+    position: fixed; bottom: 20px; right: 20px;
+    font-size: 9px; color: var(--border-light); letter-spacing: 0.3em;
+    font-family: 'Share Tech Mono', monospace;
+    writing-mode: vertical-rl; z-index: 0; pointer-events: none;
+}
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 900px) {
+    .app-wrapper { grid-template-columns: 1fr; }
+    .right-panel { order: 3; }
+    .sudoku-grid { max-width: 400px; }
+}
+@media (max-width: 480px) {
+    .sudoku-grid { max-width: 92vw; }
+    .title-main { font-size: 22px; }
+    .header-stats { gap: 10px; }
+    .stat-value { font-size: 18px; }
+}
