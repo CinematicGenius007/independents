@@ -37,6 +37,9 @@ P5 has started with:
   with malformed/truncated payload rejection.
 - `src/canvas/renderer.ts` — deterministic software replay with scanline flood fill, erasing, and
   clear behavior. Identical op logs produce byte-identical RGBA rasters.
+- `src/canvas/CanvasSurface.tsx` and `CanvasTools.tsx` — responsive DPR-aware presentation,
+  logical coordinate mapping, coalesced pointer samples, animation-frame network batches,
+  incremental live-stroke previews, and sketch-style drawing controls.
 - 18 new canvas tests. Current total: 225 passing across 19 files.
 
 Colors are encoded as three RGB bytes and decoded to canonical uppercase `#RRGGBB`, matching

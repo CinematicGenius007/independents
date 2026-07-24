@@ -33,7 +33,7 @@ intentions. Plan of record is [PLAN.md](./PLAN.md); original brief is [INIT_PLAN
 | P3 · Networking | **Done** | 35 tests. Now reads `LIMITS.peerDisconnectMs`; `PresenceOptions` exposes `graceMs`/`disconnectMs` overrides for tests |
 | P4 · Game engine | **Done** | 147 tests. Both contract amendments below are implemented |
 | R1 · Tier-1 review gate | **Done** | Static contract audit, full tests/type-check/build, and `#kit` visual review at 1280 px completed during temporary takeover |
-| P5 · Canvas | **In progress** | Op model, binary codec, deterministic software replay, flood fill, eraser, and clear landed with 18 tests; component, tools, pointer hook, history folding, and performance verification remain |
+| P5 · Canvas | **In progress** | Op model, codec, deterministic replay/fill, responsive DPR-aware surface, RAF-batched live strokes, and tool controls landed; history folding, snapshot fallback, visual verification, and performance checks remain |
 | P6 · Screens | Not started | |
 | P7 · Controller wiring | Not started | Orchestrator-owned |
 | R2 · Integration gate | Not started | |
