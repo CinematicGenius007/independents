@@ -32,18 +32,19 @@ intentions. Plan of record is [PLAN.md](./PLAN.md); original brief is [INIT_PLAN
 | P2 · Persistence | **Done** | 24 tests |
 | P3 · Networking | **Done** | 35 tests. Now reads `LIMITS.peerDisconnectMs`; `PresenceOptions` exposes `graceMs`/`disconnectMs` overrides for tests |
 | P4 · Game engine | **Done** | 147 tests. Both contract amendments below are implemented |
-| R1 · Tier-1 review gate | Not started | |
-| P5 · Canvas | Not started | |
+| R1 · Tier-1 review gate | **Done** | Static contract audit, full tests/type-check/build, and `#kit` visual review at 1280 px completed during temporary takeover |
+| P5 · Canvas | **In progress** | Pure op-log model and binary frame/log codec landed with 15 tests; renderer, tools, pointer hook, and performance verification remain |
 | P6 · Screens | Not started | |
 | P7 · Controller wiring | Not started | Orchestrator-owned |
 | R2 · Integration gate | Not started | |
 | P8 · Practice + stats | Not started | |
 | P9 · Polish + docs | Not started | |
 
-**Test suite at checkpoint: 207 passing, 16 files, zero failures. `pnpm type-check` clean.**
-Verified directly after the last agent landed, not taken on report.
+**Test suite at latest checkpoint: 222 passing, 18 files, zero failures. `pnpm type-check`
+and `pnpm build` clean.**
 
-Breakdown: engine 147, net 35, db 24, plus seed assertions.
+Breakdown before P5: engine 147, net 35, db 24, plus seed assertions. P5 currently adds 15
+canvas model/codec tests.
 
 ## Contract amendments made after Tier 1 reported
 
@@ -64,16 +65,16 @@ type files; the implementations were sent back to match and had not finished at 
 Also codified: `LIMITS.peerDisconnectMs` (16 s) now sits alongside `peerGraceMs` (8 s), replacing a
 convention the net agent had invented locally.
 
-## Open cosmetic issues (for R1, not blockers)
+## R1 visual findings
 
-Both observed by me in the `#kit` showcase at 1280px:
+The two earlier cosmetic nits were re-checked after all inherited files landed. Panel titles now
+knock out the border cleanly, and the paper grain reads as restrained rather than flat. No design
+change was needed.
 
-1. **`Panel` titles collide with the top border.** The title straddles the panel's top edge like a
-   fieldset legend, but with no background gap knocked out, so the ink border runs through the
-   text. Worse where a section caption sits directly above (the "TONES" / "Lobby" pair).
-2. **Paper grain is close to invisible.** The agent turned the turbulence down after finding it
-   overpowering and overshot — the background currently reads as flat off-white. Wants a middle
-   setting.
+One documentation inconsistency was noted but behavior was deliberately left untouched: an early
+PLAN paragraph says host migration chooses the lowest peer ID, while the frozen shared/net
+contracts and implementation choose earliest `joinedAt`, breaking ties by peer ID. The latter is
+the plan of record because it preserves the longest-connected host.
 
 ## Judgment calls adopted from agents
 
@@ -96,10 +97,10 @@ places 60, hard 60, idioms 50, popculture 50.
 
 ## To resume
 
-1. Let the two in-flight agents land, then re-run `pnpm test` and `pnpm type-check`.
-2. Run the **R1 gate**: audit P1–P4 against the contracts, and visually verify the design kit at
-   `#kit` (it has never been looked at).
-3. Then Tier 2 — P5 (canvas) and P6 (screens) in parallel.
+1. Continue P5 with the replay renderer and deterministic fill implementation.
+2. Add the responsive/DPR-aware drawing surface, pointer batching hook, and tool UI.
+3. Complete P5 pixel-replay and 5,000-point performance acceptance checks.
+4. Then P6 screens, followed by P7 controller integration.
 
 Commands, from `apps/pictionary`:
 
