@@ -1,0 +1,62 @@
+export interface WordBlanksProps {
+  /** Token lengths, e.g. "ICE CREAM" -> `[3, 5]`. */
+  shape: number[]
+  /**
+   * Revealed letters keyed by index into the joined word (spaces included),
+   * matching `TurnState.revealed` semantics.
+   */
+  revealed: Record<number, string>
+  /** When provided, reveals every letter (turn-end state) regardless of `revealed`. */
+  full?: string
+  className?: string
+}
+
+interface Slot {
+  charIndex: number
+  isSpace: boolean
+}
+
+function buildSlots(shape: number[]): Slot[][] {
+  let charIndex = 0
+  return shape.map((len) => {
+    const word: Slot[] = []
+    for (let i = 0; i < len; i++) {
+      word.push({ charIndex, isSpace: false })
+      charIndex++
+    }
+    // account for the joining space between this token and the next
+    charIndex++
+    return word
+  })
+}
+
+/**
+ * The `_ _ _ _` word display. Each letter is its own hand-drawn blank; known
+ * letters (from `revealed` or a turn-end `full` reveal) sit on top of the
+ * blank instead of replacing it, so the shape never jumps.
+ */
+export function WordBlanks({ shape, revealed, full, className = '' }: WordBlanksProps) {
+  const words = buildSlots(shape)
+  const label = full ?? shape.map((len) => '_'.repeat(len)).join(' ')
+
+  return (
+    <div className={`flex flex-wrap items-end justify-center gap-x-4 gap-y-2 ${className}`} aria-label={`Word: ${label}`}>
+      {words.map((word, wordIndex) => (
+        <div key={wordIndex} className="flex gap-1">
+          {word.map((slot) => {
+            const letter = full ? full[slot.charIndex] : revealed[slot.charIndex]
+            return (
+              <span
+                key={slot.charIndex}
+                aria-hidden
+                className="flex h-9 w-6 items-end justify-center border-b-[3px] border-ink pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase leading-none text-ink sm:h-10 sm:w-7"
+              >
+                {letter ?? ''}
+              </span>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
