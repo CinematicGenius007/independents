@@ -8,6 +8,7 @@
  */
 
 import type { SqlJsStatic } from 'sql.js'
+import initSqlJs from 'sql.js/dist/sql-wasm.js'
 
 let sqlJsPromise: Promise<SqlJsStatic> | null = null
 
@@ -20,7 +21,10 @@ function locateFile(file: string): string {
   if (typeof window !== 'undefined') {
     return `/${file}`
   }
-  return new URL(`../../node_modules/sql.js/dist/${file}`, import.meta.url).pathname
+  // Tests only initialize the WASM build. Keep this URL fully static so Vite
+  // does not turn the dist-directory template into a glob of every sql.js
+  // debug/asm/worker artifact.
+  return new URL('../../node_modules/sql.js/dist/sql-wasm.wasm', import.meta.url).pathname
 }
 
 /**
@@ -29,11 +33,10 @@ function locateFile(file: string): string {
  */
 export function loadSqlJs(): Promise<SqlJsStatic> {
   if (!sqlJsPromise) {
-    sqlJsPromise = import('sql.js')
-      .then((mod) => {
-        const initSqlJs = mod.default
-        return initSqlJs({ locateFile })
-      })
+    // This module is itself reached through App's lazy db import. A direct
+    // specific entry keeps Vite's CJS interop reliable without pulling in the
+    // package's asm/debug/worker variants.
+    sqlJsPromise = initSqlJs({ locateFile })
       .catch((err: unknown) => {
         // Allow a subsequent call to retry rather than being stuck on a
         // permanently rejected promise (e.g. a transient network failure).
