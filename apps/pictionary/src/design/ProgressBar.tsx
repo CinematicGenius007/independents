@@ -5,6 +5,8 @@ export interface ProgressBarProps {
   /** 0-100. */
   value: number
   label?: string
+  /** Accessible name when the visible label is intentionally omitted. */
+  accessibleLabel?: string
   tone?: 'accent' | 'alert' | 'ok'
   className?: string
 }
@@ -16,7 +18,7 @@ const TONE_BG: Record<NonNullable<ProgressBarProps['tone']>, string> = {
 }
 
 /** A sketchy fill bar — the ink track is straight, the fill's leading edge is torn/jagged. */
-export function ProgressBar({ value, label, tone = 'accent', className = '' }: ProgressBarProps) {
+export function ProgressBar({ value, label, accessibleLabel, tone = 'accent', className = '' }: ProgressBarProps) {
   const reactId = useId()
   const clamped = Math.min(100, Math.max(0, value))
   const clip = tornBottomClipPath(`progress:${reactId}`, 5)
@@ -35,7 +37,7 @@ export function ProgressBar({ value, label, tone = 'accent', className = '' }: P
         aria-valuenow={Math.round(clamped)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={label}
+        aria-label={accessibleLabel ?? label}
       >
         <div
           className={`h-full origin-left transition-[width] duration-300 ease-out ${TONE_BG[tone]}`}

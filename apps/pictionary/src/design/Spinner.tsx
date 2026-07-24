@@ -13,7 +13,11 @@ export interface SpinnerProps {
  */
 export function Spinner({ size = 28, className = '', label = 'Loading' }: SpinnerProps) {
   return (
-    <span className={`inline-flex ${className}`} role="status">
+    <span
+      className={`inline-flex ${className}`}
+      role={label ? 'status' : undefined}
+      aria-hidden={label ? undefined : true}
+    >
       <svg
         width={size}
         height={size}
@@ -29,7 +33,7 @@ export function Spinner({ size = 28, className = '', label = 'Loading' }: Spinne
           strokeLinecap="round"
         />
       </svg>
-      <span className="sr-only">{label}</span>
+      {label && <span className="sr-only">{label}</span>}
     </span>
   )
 }

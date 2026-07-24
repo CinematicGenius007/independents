@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { IconButton } from './IconButton'
 
@@ -19,6 +19,7 @@ const FOCUSABLE_SELECTOR =
  * or backdrop click.
  */
 export function Modal({ open, onClose, title, children, className = '' }: ModalProps) {
+  const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
 
@@ -77,12 +78,13 @@ export function Modal({ open, onClose, title, children, className = '' }: ModalP
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : 'Dialog'}
         tabIndex={-1}
         className={`relative max-h-[90vh] w-full max-w-lg overflow-auto rounded-doodle border-[3px] border-ink bg-paper-white p-6 shadow-ink-lg outline-none ${className}`}
       >
         <div className="mb-3 flex items-start justify-between gap-4">
-          {title && <h2 className="font-[family-name:var(--font-display)] text-xl text-ink">{title}</h2>}
+          {title && <h2 id={titleId} className="font-[family-name:var(--font-display)] text-xl text-ink">{title}</h2>}
           <IconButton
             label="Close"
             className="ml-auto"

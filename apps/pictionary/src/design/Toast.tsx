@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { PanelTone } from './Panel'
-import { doodleRadius } from './utils'
+import { doodleRadius, FOCUS_RING } from './utils'
 
 export interface ToastData {
   id: string
@@ -33,7 +33,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
         type="button"
         aria-label="Dismiss"
         onClick={() => onDismiss(toast.id)}
-        className="shrink-0 rounded-full text-ink-faint hover:text-ink"
+        className={`shrink-0 rounded-full p-1 text-ink-faint hover:text-ink ${FOCUS_RING}`}
       >
         <svg viewBox="0 0 24 24" width={14} height={14} aria-hidden>
           <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" />

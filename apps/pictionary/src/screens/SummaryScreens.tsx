@@ -47,7 +47,9 @@ export function RoundSummaryScreen(props: RoundSummaryScreenProps) {
           <p className="mb-4 text-sm text-ink-soft">
             {props.secondsUntilNext != null ? `Continuing in ${props.secondsUntilNext} seconds…` : 'Waiting for the host…'}
           </p>
-          {props.secondsUntilNext != null && <ProgressBar value={(props.secondsUntilNext / 5) * 100} />}
+          {props.secondsUntilNext != null && (
+            <ProgressBar accessibleLabel="Time until next turn" value={(props.secondsUntilNext / 5) * 100} />
+          )}
           {props.isHost && props.onContinue && <SketchButton className="mt-5 w-full" onClick={props.onContinue}>{lastRound ? 'See results' : 'Next turn'}</SketchButton>}
         </TornCard>
       </div>
@@ -97,4 +99,3 @@ export function ResultsScreen(props: ResultsScreenProps) {
     </ScreenFrame>
   )
 }
-

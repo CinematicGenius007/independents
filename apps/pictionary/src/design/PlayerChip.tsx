@@ -46,11 +46,10 @@ export function PlayerChip({ player, score, status = 'idle', isSelf = false, cla
       <div className="relative shrink-0">
         <Avatar avatar={player.avatar} color={player.color} size={36} label={player.nickname} />
         {player.connection === 'unstable' && (
-          <span
-            aria-hidden
-            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-paper-white bg-alert"
-            title="Unstable connection"
-          />
+          <>
+            <span aria-hidden className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-paper-white bg-alert" />
+            <span className="sr-only">Unstable connection.</span>
+          </>
         )}
       </div>
 

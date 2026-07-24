@@ -57,8 +57,9 @@ export function StatsScreen(props: StatsScreenProps) {
             {props.history.length ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-left text-sm">
+                  <caption className="sr-only">Recent game history</caption>
                   <thead className="border-b-2 border-ink text-xs uppercase tracking-wide text-ink-faint">
-                    <tr><th className="pb-2">Word</th><th className="pb-2">Role</th><th className="pb-2">Score</th><th className="pb-2">Played</th></tr>
+                    <tr><th scope="col" className="pb-2">Word</th><th scope="col" className="pb-2">Role</th><th scope="col" className="pb-2">Score</th><th scope="col" className="pb-2">Played</th></tr>
                   </thead>
                   <tbody>
                     {props.history.map((entry) => (
@@ -87,4 +88,3 @@ export function StatsScreen(props: StatsScreenProps) {
     </ScreenFrame>
   )
 }
-

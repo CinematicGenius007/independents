@@ -1,6 +1,7 @@
 import type { FormEvent, ReactNode } from 'react'
 import type { Player } from '../shared/types'
 import { Panel, PlayerChip, SketchButton, SpeechBubble, Ticker, WordBlanks } from '../design'
+import { FOCUS_RING } from '../design/utils'
 import { ScreenFrame, inputClassName } from './ScreenFrame'
 
 export type ChatMessageTone = 'chat' | 'system' | 'success' | 'whisper' | 'masked'
@@ -71,7 +72,7 @@ export function GameScreen(props: GameScreenProps) {
         )}
         <button
           type="button"
-          className="rounded-doodle border-2 border-ink bg-paper-white px-3 py-2 text-sm font-semibold shadow-ink-sm lg:hidden"
+          className={`rounded-doodle border-2 border-ink bg-paper-white px-3 py-2 text-sm font-semibold shadow-ink-sm lg:hidden ${FOCUS_RING}`}
           aria-expanded={props.chatExpanded}
           onClick={() => props.onChatExpandedChange(!props.chatExpanded)}
         >
@@ -119,4 +120,3 @@ export function GameScreen(props: GameScreenProps) {
     </ScreenFrame>
   )
 }
-

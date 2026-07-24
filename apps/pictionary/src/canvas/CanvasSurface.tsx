@@ -78,8 +78,21 @@ export function CanvasSurface({
     if (!canvas) return
     const observer = new ResizeObserver(repaint)
     observer.observe(canvas)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      const active = activeRef.current
+      if (active && active.frame !== null) cancelAnimationFrame(active.frame)
+      activeRef.current = null
+    }
   }, [repaint])
+
+  useEffect(() => {
+    if (!disabled) return
+    const active = activeRef.current
+    if (active && active.frame !== null) cancelAnimationFrame(active.frame)
+    activeRef.current = null
+    repaint()
+  }, [disabled, repaint])
 
   const flushPending = useCallback(() => {
     const active = activeRef.current
@@ -104,9 +117,9 @@ export function CanvasSurface({
     active.frame = null
   }, [authorId, onFrame])
 
-  const finishStroke = useCallback(() => {
+  const finishStroke = useCallback((event: ReactPointerEvent<HTMLCanvasElement>) => {
     const active = activeRef.current
-    if (!active) return
+    if (!active || active.pointerId !== event.pointerId) return
     if (active.frame !== null) cancelAnimationFrame(active.frame)
     flushPending()
     onFrame?.({ f: 'end', id: active.id })
@@ -123,7 +136,7 @@ export function CanvasSurface({
   }, [authorId, flushPending, onCommit, onFrame, settings])
 
   const onPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (disabled) return
+    if (disabled || activeRef.current) return
     const point = pointerPoint(event.currentTarget, event.clientX, event.clientY)
     if (settings.tool === 'fill') {
       const op: CanvasOp = { t: 'fill', id: nextId, by: authorId, x: point[0], y: point[1], color: settings.color }
@@ -180,6 +193,8 @@ export function CanvasSurface({
     <canvas
       ref={canvasRef}
       aria-label="Shared drawing canvas"
+      aria-disabled={disabled || undefined}
+      role="img"
       className={`block aspect-[8/5] w-full rounded-[var(--radius-doodle)] border-[3px] border-ink bg-white shadow-ink ${disabled ? 'cursor-not-allowed' : 'cursor-crosshair'} ${className}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

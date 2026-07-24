@@ -37,7 +37,9 @@ function buildSlots(shape: number[]): Slot[][] {
  */
 export function WordBlanks({ shape, revealed, full, className = '' }: WordBlanksProps) {
   const words = buildSlots(shape)
-  const label = full ?? shape.map((len) => '_'.repeat(len)).join(' ')
+  const label = full ?? words
+    .map((word) => word.map((slot) => revealed[slot.charIndex] ?? '_').join(''))
+    .join(' ')
 
   return (
     <div className={`flex flex-wrap items-end justify-center gap-x-4 gap-y-2 ${className}`} aria-label={`Word: ${label}`}>

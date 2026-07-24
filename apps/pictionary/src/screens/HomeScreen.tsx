@@ -1,5 +1,6 @@
 import type { PlayerProfile } from '../shared/types'
 import { Avatar, Panel, SketchButton, TornCard } from '../design'
+import { FOCUS_RING } from '../design/utils'
 import { ScreenFrame, inputClassName } from './ScreenFrame'
 
 export interface HomeScreenProps {
@@ -23,7 +24,7 @@ export function HomeScreen(props: HomeScreenProps) {
       title="Scribble Club"
       subtitle="Draw badly. Guess brilliantly. Everything happens peer-to-peer."
       actions={
-        <button className="flex items-center gap-2 rounded-full px-2 py-1 hover:bg-paper-deep" onClick={props.onEditProfile}>
+        <button type="button" className={`flex items-center gap-2 rounded-full px-2 py-1 hover:bg-paper-deep ${FOCUS_RING}`} onClick={props.onEditProfile}>
           <Avatar avatar={props.profile.avatar} color={props.profile.color} size={38} label={props.profile.nickname} />
           <span className="font-[family-name:var(--font-display)]">{props.profile.nickname}</span>
         </button>
@@ -71,4 +72,3 @@ export function HomeScreen(props: HomeScreenProps) {
     </ScreenFrame>
   )
 }
-

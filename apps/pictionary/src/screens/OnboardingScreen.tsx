@@ -1,5 +1,6 @@
 import { AVATAR_COLORS, LIMITS } from '../shared/types'
 import { Avatar, Panel, SketchButton } from '../design'
+import { FOCUS_RING } from '../design/utils'
 import { ScreenFrame, inputClassName } from './ScreenFrame'
 
 export interface OnboardingScreenProps {
@@ -59,7 +60,7 @@ export function OnboardingScreen(props: OnboardingScreenProps) {
                   <button
                     key={avatar}
                     type="button"
-                    className={`rounded-doodle border-[3px] p-1 ${props.avatar === avatar ? 'border-accent-deep bg-accent-wash' : 'border-transparent hover:border-ink-ghost'}`}
+                    className={`rounded-doodle border-[3px] p-1 ${FOCUS_RING} ${props.avatar === avatar ? 'border-accent-deep bg-accent-wash' : 'border-transparent hover:border-ink-ghost'}`}
                     aria-label={`Choose avatar ${avatar + 1}`}
                     aria-pressed={props.avatar === avatar}
                     onClick={() => props.onAvatarChange(avatar)}
@@ -79,7 +80,7 @@ export function OnboardingScreen(props: OnboardingScreenProps) {
                     type="button"
                     aria-label={`Choose color ${color}`}
                     aria-pressed={props.color === color}
-                    className={`h-9 w-9 rounded-full border-[3px] border-ink ${props.color === color ? 'outline-2 outline-offset-2 outline-accent-deep' : ''}`}
+                    className={`h-9 w-9 rounded-full border-[3px] border-ink ${FOCUS_RING} ${props.color === color ? 'outline outline-2 outline-offset-2 outline-accent-deep' : ''}`}
                     style={{ backgroundColor: color }}
                     onClick={() => props.onColorChange(color)}
                   />
@@ -96,4 +97,3 @@ export function OnboardingScreen(props: OnboardingScreenProps) {
     </ScreenFrame>
   )
 }
-
