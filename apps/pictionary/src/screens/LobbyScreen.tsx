@@ -1,3 +1,4 @@
+import type { RelayStatus } from '../net/protocol'
 import { CATEGORY_LABELS, CATEGORIES, LIMITS, type GameConfig, type Player } from '../shared/types'
 import { Panel, PlayerChip, SketchButton, Slider, Toggle } from '../design'
 import { ScreenFrame, inputClassName } from './ScreenFrame'
@@ -12,6 +13,7 @@ export interface LobbyScreenProps {
   customWordsText: string
   copied?: boolean
   starting?: boolean
+  relayStatus?: RelayStatus
   onCopyInvite: () => void
   onConfigChange: (config: GameConfig) => void
   onCustomWordsTextChange: (text: string) => void
@@ -31,6 +33,16 @@ export function LobbyScreen(props: LobbyScreenProps) {
       subtitle={isHost ? 'You are the host. Tune the rules while everyone finds a seat.' : 'The host is setting up the next game.'}
       actions={<SketchButton variant="danger" size="sm" onClick={props.onLeave}>Leave room</SketchButton>}
     >
+      {props.relayStatus !== 'connected' && (
+        <div
+          className={`mb-5 border-2 border-ink px-4 py-3 text-sm shadow-ink-sm ${props.relayStatus === 'failed' ? 'bg-alert-wash' : 'bg-accent-wash'}`}
+          role="status"
+        >
+          {props.relayStatus === 'failed'
+            ? 'Could not reach a signaling relay. Check your network or privacy settings, then reload to try again.'
+            : 'Connecting to a signaling relay… You can share the link while we find a route.'}
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.7fr)_minmax(0,1.3fr)]">
         <div className="flex flex-col gap-6">
           <Panel title={`Players · ${props.players.length}/${LIMITS.maxPlayers}`} wobbleKey="lobby-players">
@@ -112,4 +124,3 @@ export function LobbyScreen(props: LobbyScreenProps) {
     </ScreenFrame>
   )
 }
-
