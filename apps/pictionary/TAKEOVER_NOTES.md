@@ -35,7 +35,9 @@ P5 has started with:
   allocation, and per-author undo.
 - `src/canvas/codec.ts` — compact binary encoding for all live ink frames and complete op logs,
   with malformed/truncated payload rejection.
-- 15 new canvas tests. Current total: 222 passing across 18 files.
+- `src/canvas/renderer.ts` — deterministic software replay with scanline flood fill, erasing, and
+  clear behavior. Identical op logs produce byte-identical RGBA rasters.
+- 18 new canvas tests. Current total: 225 passing across 19 files.
 
 Colors are encoded as three RGB bytes and decoded to canonical uppercase `#RRGGBB`, matching
 `INK_PALETTE`.
