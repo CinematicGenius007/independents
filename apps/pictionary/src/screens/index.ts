@@ -18,3 +18,6 @@ export type { RoundSummaryScreenProps, ResultsScreenProps, StandingView } from '
 
 export { StatsScreen } from './StatsScreen'
 export type { StatsScreenProps } from './StatsScreen'
+
+export { PracticeScreen } from './PracticeScreen'
+export type { PracticeScreenProps } from './PracticeScreen'
