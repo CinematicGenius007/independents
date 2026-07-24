@@ -1,9 +1,13 @@
 import { inkCodec } from './codec'
-import type { CanvasHistory } from './history'
+import { createCanvasHistory, type CanvasHistory } from './history'
 
 const SNAPSHOT_MAGIC = [0x43, 0x4e, 0x53, 0x31] as const // CNS1
 const HEADER_BYTES = 20
 const UINT32_MAX = 0xffff_ffff
+
+function hasSnapshotMagic(bytes: Uint8Array): boolean {
+  return SNAPSHOT_MAGIC.every((value, index) => bytes[index] === value)
+}
 
 function assertUint32(value: number, label: string): void {
   if (!Number.isInteger(value) || value <= 0 || value > UINT32_MAX) {
@@ -75,4 +79,16 @@ export function decodeCanvasSnapshot(bytes: Uint8Array): CanvasHistory {
     },
     ops: inkCodec.decodeLog(bytes.slice(logLengthOffset + 4, end)),
   }
+}
+
+/** Uses the compact INK1 log until history has actually folded into a baseline. */
+export function encodeHistoryForSync(history: CanvasHistory): Uint8Array {
+  const baselineIsBlank = history.baseline.pixels.every((channel) => channel === 255)
+  return baselineIsBlank ? inkCodec.encodeLog(history.ops) : encodeCanvasSnapshot(history)
+}
+
+/** Accepts either the normal compact log or the folded CNS1 fallback. */
+export function decodeHistoryFromSync(bytes: Uint8Array): CanvasHistory {
+  if (hasSnapshotMagic(bytes)) return decodeCanvasSnapshot(bytes)
+  return { ...createCanvasHistory(), ops: inkCodec.decodeLog(bytes) }
 }

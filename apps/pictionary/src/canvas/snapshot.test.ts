@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { appendToHistory, createCanvasHistory, renderHistory } from './history'
 import type { CanvasOp } from './types'
-import { decodeCanvasSnapshot, encodeCanvasSnapshot } from './snapshot'
+import { decodeCanvasSnapshot, decodeHistoryFromSync, encodeCanvasSnapshot, encodeHistoryForSync } from './snapshot'
 
 const stroke = (id: number, color: string): CanvasOp => ({
   t: 'stroke',
@@ -61,5 +61,13 @@ describe('canvas snapshots', () => {
         ops: [],
       }),
     ).toThrow(/dimensions do not match/)
+  })
+
+  it('keeps an unfolded history as a compact op log for sync', () => {
+    const history = createCanvasHistory()
+    history.ops = [stroke(1, '#1A1A1A')]
+    const bytes = encodeHistoryForSync(history)
+    expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('INK1')
+    expect(decodeHistoryFromSync(bytes).ops).toEqual(history.ops)
   })
 })

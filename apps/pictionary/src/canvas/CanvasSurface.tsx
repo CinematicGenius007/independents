@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { applyOpToRaster, replayOps, type Raster } from './renderer'
+import { renderHistory } from './history'
 import { QUANT, type CanvasOp, type InkFrame, type ToolSettings } from './types'
 
 interface ActiveStroke {
@@ -17,6 +18,7 @@ interface ActiveStroke {
 
 export interface CanvasSurfaceProps {
   ops: CanvasOp[]
+  baseline?: Raster
   nextId: number
   authorId: string
   settings: ToolSettings
@@ -56,6 +58,7 @@ function pointerPoint(canvas: HTMLCanvasElement, clientX: number, clientY: numbe
 
 export function CanvasSurface({
   ops,
+  baseline,
   nextId,
   authorId,
   settings,
@@ -66,7 +69,10 @@ export function CanvasSurface({
 }: CanvasSurfaceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const activeRef = useRef<ActiveStroke | null>(null)
-  const raster = useMemo(() => replayOps(ops), [ops])
+  const raster = useMemo(
+    () => baseline ? renderHistory({ baseline, ops }) : replayOps(ops),
+    [baseline, ops],
+  )
 
   const repaint = useCallback(() => {
     if (canvasRef.current) paint(canvasRef.current, raster)
