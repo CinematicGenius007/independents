@@ -33,18 +33,18 @@ intentions. Plan of record is [PLAN.md](./PLAN.md); original brief is [INIT_PLAN
 | P3 · Networking | **Done** | 35 tests. Now reads `LIMITS.peerDisconnectMs`; `PresenceOptions` exposes `graceMs`/`disconnectMs` overrides for tests |
 | P4 · Game engine | **Done** | 147 tests. Both contract amendments below are implemented |
 | R1 · Tier-1 review gate | **Done** | Static contract audit, full tests/type-check/build, and `#kit` visual review at 1280 px completed during temporary takeover |
-| P5 · Canvas | **In progress** | Op model, codec, deterministic replay/fill, responsive DPR-aware surface, RAF-batched live strokes, and tool controls landed; history folding, snapshot fallback, visual verification, and performance checks remain |
+| P5 · Canvas | **In progress** | Op model, codec, replay/fill, responsive surface, RAF-batched live strokes, tools, baseline history folding, and a 5,000-point check landed; snapshot fallback and visual verification remain |
 | P6 · Screens | Not started | |
 | P7 · Controller wiring | Not started | Orchestrator-owned |
 | R2 · Integration gate | Not started | |
 | P8 · Practice + stats | Not started | |
 | P9 · Polish + docs | Not started | |
 
-**Test suite at latest checkpoint: 225 passing, 19 files, zero failures. `pnpm type-check`
+**Test suite at latest checkpoint: 228 passing, 20 files, zero failures. `pnpm type-check`
 and `pnpm build` clean.**
 
-Breakdown before P5: engine 147, net 35, db 24, plus seed assertions. P5 currently adds 18
-canvas model/codec/renderer tests.
+Breakdown before P5: engine 147, net 35, db 24, plus seed assertions. P5 currently adds 21
+canvas model/codec/renderer/history tests.
 
 ## Contract amendments made after Tier 1 reported
 

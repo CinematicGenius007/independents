@@ -40,7 +40,9 @@ P5 has started with:
 - `src/canvas/CanvasSurface.tsx` and `CanvasTools.tsx` — responsive DPR-aware presentation,
   logical coordinate mapping, coalesced pointer samples, animation-frame network batches,
   incremental live-stroke previews, and sketch-style drawing controls.
-- 18 new canvas tests. Current total: 225 passing across 19 files.
+- `src/canvas/history.ts` — folds old operations into a baseline raster at the retained-history
+  limit without changing output pixels; includes a 5,000-point stroke check.
+- 21 new canvas tests. Current total: 228 passing across 20 files.
 
 Colors are encoded as three RGB bytes and decoded to canonical uppercase `#RRGGBB`, matching
 `INK_PALETTE`.
