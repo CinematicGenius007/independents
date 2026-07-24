@@ -35,7 +35,11 @@ export function createRoomRoster(
 
   const unsubCtrl = transport.onCtrl((message, from) => {
     if (message.t === 'hello') {
-      players.set(from, { ...message.profile, id: from, joinedAt: message.joinedAt, connection: 'connected' })
+      if (hostId !== self.id) return
+      const lastJoinedAt = Math.max(...snapshot().map((player) => player.joinedAt))
+      // The established host stamps join order. A newcomer cannot seize host
+      // authority by claiming an earlier local clock value.
+      players.set(from, { ...message.profile, id: from, joinedAt: Math.max(Date.now(), lastJoinedAt + 1), connection: 'connected' })
       recomputeHost()
       emit()
       broadcastRoster()
@@ -45,6 +49,8 @@ export function createRoomRoster(
         : [...message.players, self]
       const elected = electHost(proposed)
       if (from !== elected || message.hostId !== elected) return
+      const bootstrapping = players.size === 1 && players.has(self.id) && transport.peers().includes(from)
+      if (!bootstrapping && from !== hostId) return
       players.clear()
       proposed.forEach((player) => players.set(player.id, player))
       hostId = elected

@@ -20,4 +20,22 @@ describe('room roster', () => {
     first.stop()
     second.stop()
   })
+
+  it('does not let an established guest replace the host with a forged roster', () => {
+    const { transports } = createMesh(2)
+    const first = createRoomRoster(transports[0], { id: 'x', nickname: 'Ada', color: '#F5D311', avatar: 0 }, 10)
+    const second = createRoomRoster(transports[1], { id: 'y', nickname: 'Bo', color: '#F2603C', avatar: 1 }, 20)
+    transports[1].sendCtrl({
+      t: 'roster',
+      hostId: 'peer-1',
+      players: [
+        { id: 'peer-1', nickname: 'Bo', color: '#F2603C', avatar: 1, connection: 'connected', joinedAt: 0 },
+        { id: 'peer-0', nickname: 'Ada', color: '#F5D311', avatar: 0, connection: 'connected', joinedAt: 10 },
+      ],
+    }, 'peer-0')
+    expect(first.hostId()).toBe('peer-0')
+    expect(second.hostId()).toBe('peer-0')
+    first.stop()
+    second.stop()
+  })
 })

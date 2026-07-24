@@ -42,7 +42,9 @@ export function remainingMs(state: GameState, now: number): number {
 /** True once every non-drawer player has a recorded correct guess this turn. */
 export function allGuessed(state: GameState): boolean {
   if (!state.turn) return false
-  const guessers = Object.keys(state.players).filter((id) => id !== state.turn!.drawerId)
+  const guessers = Object.keys(state.players).filter(
+    (id) => id !== state.turn!.drawerId && state.players[id].connection !== 'disconnected',
+  )
   if (guessers.length === 0) return false
   return guessers.every((id) => id in state.turn!.correct)
 }

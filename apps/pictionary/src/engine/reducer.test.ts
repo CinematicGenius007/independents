@@ -94,6 +94,13 @@ describe('PLAYER_JOINED / PLAYER_LEFT / PLAYER_CONNECTION / HOST_CHANGED / CONFI
     expect(next).toBe(state)
   })
 
+  it('keeps the seeded turn order immutable after a game starts', () => {
+    let state = baseState()
+    state = reduce(state, { type: 'GAME_STARTED', gameNonce: 'n', order: ['p1', 'p2', 'p3'], config: state.config, at: 0 })
+    const next = reduce(state, { type: 'PLAYER_LEFT', playerId: 'p2' })
+    expect(next.order).toEqual(['p1', 'p2', 'p3'])
+  })
+
   it('ends the turn with reason drawer_left when the drawer disconnects mid-turn', () => {
     let state = baseState()
     state = reduce(state, {

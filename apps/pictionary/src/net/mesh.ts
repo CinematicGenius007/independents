@@ -8,7 +8,7 @@
  * Snapshot rule (per protocol.ts's {@link SNAPSHOT_INLINE_LIMIT}): a small
  * encoded ink log rides inline on the ctrl channel as a plain number array.
  * A large one is sent as `sync_state` with `ink: null`, immediately followed by
- * the raw bytes on the ink channel; `onSyncState` correlates the two and hands
+ * a snapshot-tagged byte packet on the ink channel; `onSyncState` correlates the two and hands
  * the caller a single `Uint8Array` either way. The ink bytes themselves are
  * never inspected — only routed and, for the inline case, converted between
  * the wire's `number[]` and `Uint8Array`, which is just format normalization.
@@ -18,6 +18,26 @@ import type { Category, PlayerId, Unsubscribe } from '../shared/types'
 import type { CtrlMessage, Transport } from './protocol'
 import { SNAPSHOT_INLINE_LIMIT } from './protocol'
 import type { SharedAction, SyncableState } from '../engine/types'
+
+// Out-of-band snapshots share the transport's binary channel with live InkCodec
+// frames. A distinct prefix prevents a live stroke racing ahead of the snapshot
+// from being mistaken for the pending sync payload.
+const SNAPSHOT_PACKET_PREFIX = new Uint8Array([0x50, 0x49, 0x43, 0x53, 0x4e, 0x41, 0x50, 0x01])
+
+function snapshotPacket(ink: Uint8Array): Uint8Array {
+  const packet = new Uint8Array(SNAPSHOT_PACKET_PREFIX.byteLength + ink.byteLength)
+  packet.set(SNAPSHOT_PACKET_PREFIX)
+  packet.set(ink, SNAPSHOT_PACKET_PREFIX.byteLength)
+  return packet
+}
+
+function snapshotPayload(packet: Uint8Array): Uint8Array | null {
+  if (packet.byteLength < SNAPSHOT_PACKET_PREFIX.byteLength) return null
+  for (let index = 0; index < SNAPSHOT_PACKET_PREFIX.byteLength; index++) {
+    if (packet[index] !== SNAPSHOT_PACKET_PREFIX[index]) return null
+  }
+  return packet.slice(SNAPSHOT_PACKET_PREFIX.byteLength)
+}
 
 export interface Mesh {
   broadcastAction(action: SharedAction): void
@@ -98,12 +118,14 @@ export function createMesh(transport: Transport): Mesh {
   })
 
   const unsubInk = transport.onInk((bytes, from) => {
+    const ink = snapshotPayload(bytes)
+    if (!ink) return
     const queue = pendingSnapshots.get(from)
     if (!queue || queue.length === 0) return
     const state = queue.shift()
     if (!state) return
     if (queue.length === 0) pendingSnapshots.delete(from)
-    syncStateListeners.forEach(cb => cb(state, bytes, from))
+    syncStateListeners.forEach(cb => cb(state, ink, from))
   })
 
   let stopped = false
@@ -145,7 +167,7 @@ export function createMesh(transport: Transport): Mesh {
         transport.sendCtrl({ t: 'sync_state', state, ink: Array.from(ink) }, to)
       } else {
         transport.sendCtrl({ t: 'sync_state', state, ink: null }, to)
-        transport.sendInk(ink, to)
+        transport.sendInk(snapshotPacket(ink), to)
       }
     },
     onSyncState: cb => {

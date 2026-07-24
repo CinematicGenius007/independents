@@ -81,7 +81,10 @@ export const reduce: Reduce = (state: GameState, action: EngineAction): GameStat
     case 'PLAYER_LEFT': {
       if (!(action.playerId in state.players)) return state
       const players = omit(state.players, action.playerId)
-      const order = state.order.filter((id) => id !== action.playerId)
+      // Once a game starts the seeded schedule is immutable. Removing an id
+      // would shift every future drawer and shorten the game differently on
+      // peers that observe churn at different moments.
+      const order = state.phase === 'lobby' ? state.order.filter((id) => id !== action.playerId) : state.order
       const lastGuessAt = omit(state.lastGuessAt, action.playerId)
 
       let turn = state.turn

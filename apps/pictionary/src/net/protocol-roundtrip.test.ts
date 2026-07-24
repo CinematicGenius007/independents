@@ -144,4 +144,36 @@ describe('mesh.ts sync_state snapshot rule', () => {
     meshA.stop()
     meshB.stop()
   })
+
+  it('does not consume a live ink frame while a large snapshot payload is pending', () => {
+    const { transports, ids } = createMesh(2)
+    const delayedPackets: Array<{ bytes: Uint8Array; to?: string }> = []
+    const delayedTransport = {
+      ...transports[0],
+      sendInk: (bytes: Uint8Array, to?: string) => delayedPackets.push({ bytes, to }),
+    }
+    const meshA = createMeshLayer(delayedTransport)
+    const meshB = createMeshLayer(transports[1])
+    const snapshots: Uint8Array[] = []
+    const liveFrames: Uint8Array[] = []
+    meshB.onSyncState((_state, ink) => snapshots.push(ink))
+    transports[1].onInk((bytes) => liveFrames.push(bytes))
+
+    const snapshot = new Uint8Array(SNAPSHOT_INLINE_LIMIT + 1).fill(7)
+    meshA.serveSyncState(ids[1], fakeSyncableState({ hostId: ids[0] }), snapshot)
+    expect(delayedPackets).toHaveLength(1)
+
+    const live = new Uint8Array([1, 2, 3, 4])
+    transports[0].sendInk(live, ids[1])
+    expect(snapshots).toHaveLength(0)
+
+    const pending = delayedPackets[0]
+    transports[0].sendInk(pending.bytes, pending.to)
+    expect(snapshots).toHaveLength(1)
+    expect(snapshots[0]).toEqual(snapshot)
+    expect(liveFrames).toContainEqual(live)
+
+    meshA.stop()
+    meshB.stop()
+  })
 })

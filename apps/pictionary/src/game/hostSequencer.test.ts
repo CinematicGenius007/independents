@@ -70,4 +70,49 @@ describe('host sequencer', () => {
     host.stop()
     guest.stop()
   })
+
+  it('keeps host and guest action order identical when the last guess ends a turn', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(7_000)
+    const { transports } = createMemoryMesh(2)
+    const hostMesh = createMesh(transports[0])
+    const guestMesh = createMesh(transports[1])
+    const host = createGameController({ initialState: lobbyState('peer-0'), mesh: hostMesh })
+    const guest = createGameController({ initialState: lobbyState('peer-1'), mesh: guestMesh })
+    const sequencer = createHostSequencer({ controller: host, mesh: hostMesh, words: [{ word: 'cat', category: 'animals' }] })
+    sequencer.startGame()
+    const guesser = host.state().turn?.drawerId === 'peer-0' ? guest : host
+    expect(guesser.submitGuess('cat')).toBe(true)
+
+    const withoutSelf = ({ selfId: _selfId, ...state }: GameState) => state
+    expect(withoutSelf(guest.state())).toEqual(withoutSelf(host.state()))
+    expect(host.state().phase).toBe('turn_intro')
+
+    sequencer.stop()
+    host.stop()
+    guest.stop()
+  })
+
+  it('resumes the current timeout after host migration', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(10_000)
+    const { transports } = createMemoryMesh(2)
+    const promotedMesh = createMesh(transports[1])
+    let state = lobbyState('peer-1')
+    state = reduce(state, { type: 'GAME_STARTED', gameNonce: 'migrating-game', order: ['peer-0', 'peer-1'], config: state.config, at: 1_000 })
+    state = reduce(state, { type: 'TURN_STARTED', index: 0, round: 1, drawerId: 'peer-0', wordShape: [3], category: 'animals', startedAt: 1_000, endsAt: 12_000 })
+    state = reduce(state, { type: 'PLAYER_LEFT', playerId: 'peer-0' })
+    state = reduce(state, { type: 'HOST_CHANGED', hostId: 'peer-1' })
+    // Model the synced survivor state before the new host reconstructs timers.
+    state = { ...state, phase: 'drawing', turn: state.turn && { ...state.turn, endReason: null } }
+    const promoted = createGameController({ initialState: state, mesh: promotedMesh })
+    const sequencer = createHostSequencer({ controller: promoted, mesh: promotedMesh, words: [{ word: 'cat', category: 'animals' }] })
+
+    expect(sequencer.resumeGame()).toBe(true)
+    vi.advanceTimersByTime(2_000)
+    expect(promoted.state().turn).toMatchObject({ word: 'cat', endReason: 'timeout' })
+
+    sequencer.stop()
+    promoted.stop()
+  })
 })

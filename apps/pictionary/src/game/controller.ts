@@ -1,6 +1,6 @@
 import { canGuess, classifyGuess, guesserPoints, reduce } from '../engine'
 import type { EngineAction, GameState, SharedAction, SyncableState } from '../engine'
-import type { PlayerId, Unsubscribe } from '../shared/types'
+import { LIMITS, type PlayerId, type Unsubscribe } from '../shared/types'
 import type { Mesh } from '../net/mesh'
 
 export interface GameControllerOptions {
@@ -34,6 +34,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   const now = options.now ?? Date.now
   let state = options.initialState
   let secretWord: string | null = null
+  let expectedSyncFrom: PlayerId | null = null
   let stopped = false
   const listeners = new Set<(state: GameState) => void>()
 
@@ -46,14 +47,19 @@ export function createGameController(options: GameControllerOptions): GameContro
   }
 
   const dispatchShared = (action: SharedAction) => {
-    apply(action)
+    // Queue on the wire before notifying local subscribers. A subscriber may
+    // synchronously dispatch a follow-up (for example TURN_ENDED after the
+    // final correct guess); every peer must observe the initiating action first.
     options.mesh.broadcastAction(action)
+    apply(action)
   }
 
   const adjudicateGuess = (text: string, playerId: PlayerId, at: number): boolean => {
-    if (state.selfId !== state.hostId || !secretWord || !canGuess(state, playerId, at)) return false
-    dispatchShared({ type: 'GUESS_POSTED', playerId, text, at })
-    const result = classifyGuess(text, secretWord)
+    const player = state.players[playerId]
+    if (state.selfId !== state.hostId || !secretWord || !player || player.connection === 'disconnected' || !canGuess(state, playerId, at)) return false
+    const safeText = text.slice(0, LIMITS.maxChatLength)
+    dispatchShared({ type: 'GUESS_POSTED', playerId, text: safeText, at })
+    const result = classifyGuess(safeText, secretWord)
     if (result === 'close') {
       options.mesh.sendWhisper(playerId, "You're very close!", at)
     } else if (result === 'correct' && state.turn) {
@@ -82,11 +88,11 @@ export function createGameController(options: GameControllerOptions): GameContro
     options.mesh.onWhisper((text, at, from) => {
       if (from === state.hostId) apply({ type: 'WHISPER', text, at })
     }),
-    options.mesh.onGuess((text, at, from) => {
-      adjudicateGuess(text, from, at)
+    options.mesh.onGuess((text, _at, from) => {
+      adjudicateGuess(text, from, now())
     }),
     options.mesh.onSyncRequest((from) => {
-      if (state.selfId !== state.hostId) return
+      if (state.selfId !== state.hostId && from !== state.hostId) return
       options.mesh.serveSyncState(
         from,
         syncableState(state),
@@ -94,7 +100,8 @@ export function createGameController(options: GameControllerOptions): GameContro
       )
     }),
     options.mesh.onSyncState((synced, ink, from) => {
-      if (from !== state.hostId) return
+      if (from !== state.hostId && from !== expectedSyncFrom) return
+      expectedSyncFrom = null
       apply({ type: 'STATE_SYNCED', state: synced })
       options.applyInkSnapshot?.(ink)
     }),
@@ -118,7 +125,10 @@ export function createGameController(options: GameControllerOptions): GameContro
       options.mesh.sendGuess(text, at, state.hostId)
       return true
     },
-    requestSync: (to) => options.mesh.requestSync(to),
+    requestSync: (to) => {
+      expectedSyncFrom = to ?? null
+      options.mesh.requestSync(to)
+    },
     stop: () => {
       if (stopped) return
       stopped = true
@@ -127,4 +137,3 @@ export function createGameController(options: GameControllerOptions): GameContro
     },
   }
 }
-

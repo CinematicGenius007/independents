@@ -39,6 +39,22 @@ describe('game controller', () => {
     guest.stop()
   })
 
+  it('ignores a guest-provided timestamp when scoring', () => {
+    const { transports } = createMemoryMesh(2)
+    const hostMesh = createMesh(transports[0])
+    const guestMesh = createMesh(transports[1])
+    const host = createGameController({ initialState: drawingState('peer-0'), mesh: hostMesh, now: () => 7_000 })
+    const guest = createGameController({ initialState: drawingState('peer-1'), mesh: guestMesh })
+    host.setSecretWord('zebra')
+
+    guestMesh.sendGuess('zebra', 2_001, 'peer-0')
+    expect(host.state().turn?.correct['peer-1']?.elapsedMs).toBe(5_000)
+    expect(host.state().turn?.correct['peer-1']?.points).toBe(90)
+
+    host.stop()
+    guest.stop()
+  })
+
   it('serves engine and ink snapshots only from the host', () => {
     const { transports } = createMemoryMesh(2)
     let receivedInk: Uint8Array | null = null
@@ -60,5 +76,30 @@ describe('game controller', () => {
 
     host.stop()
     guest.stop()
+  })
+
+  it('lets a promoted host recover a snapshot from an explicitly requested survivor', () => {
+    const { transports } = createMemoryMesh(2)
+    let promotedState = reduce(drawingState('peer-0'), { type: 'HOST_CHANGED', hostId: 'peer-0' })
+    let survivorState = reduce(drawingState('peer-1'), { type: 'HOST_CHANGED', hostId: 'peer-0' })
+    promotedState = { ...promotedState, selfId: 'peer-0' }
+    survivorState = { ...survivorState, selfId: 'peer-1' }
+    let recovered: Uint8Array | null = null
+    const promoted = createGameController({
+      initialState: promotedState,
+      mesh: createMesh(transports[0]),
+      applyInkSnapshot: (bytes) => { recovered = bytes },
+    })
+    const survivor = createGameController({
+      initialState: survivorState,
+      mesh: createMesh(transports[1]),
+      getInkSnapshot: () => new Uint8Array([9, 8, 7]),
+    })
+
+    promoted.requestSync('peer-1')
+    expect(recovered).toEqual(new Uint8Array([9, 8, 7]))
+
+    promoted.stop()
+    survivor.stop()
   })
 })

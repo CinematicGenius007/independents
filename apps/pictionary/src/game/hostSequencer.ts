@@ -20,6 +20,7 @@ export interface HostSequencerOptions {
 
 export interface HostSequencer {
   startGame(): boolean
+  resumeGame(): boolean
   endTurn(reason?: 'timeout' | 'all_guessed' | 'skipped'): void
   stop(): void
 }
@@ -46,8 +47,37 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
     timers.clear()
   }
 
+  const selectGameWords = (gameNonce: string, count: number) => {
+    const picked = pickWords(options.words.map((entry) => entry.word), count, gameNonce)
+    selectedWords = picked.map((word) => options.words.find((entry) => entry.word === word) as HostWord)
+  }
+
+  const scheduleHints = (index: number, choice: HostWord, startedAt: number, endsAt: number) => {
+    const state = options.controller.state()
+    if (!state.config.hintsEnabled) return
+    const firstHintAt = startedAt + (endsAt - startedAt) * LIMITS.hintStartFraction
+    const letterCount = choice.word.replace(/\s/g, '').length
+    let latestElapsedCount = 0
+    for (let revealCount = 1; revealCount <= letterCount; revealCount++) {
+      const revealAt = firstHintAt + (revealCount - 1) * LIMITS.hintIntervalMs
+      if (revealAt <= now()) {
+        latestElapsedCount = revealCount
+        continue
+      }
+      schedule(() => {
+        const current = options.controller.state()
+        if (current.selfId !== current.hostId || current.phase !== 'drawing' || current.turn?.index !== index) return
+        options.controller.dispatchShared({ type: 'HINT_REVEALED', reveals: hintReveals(choice.word, revealCount, current.gameNonce, index) })
+      }, revealAt - now())
+    }
+    if (latestElapsedCount > 0) {
+      options.controller.dispatchShared({ type: 'HINT_REVEALED', reveals: hintReveals(choice.word, latestElapsedCount, state.gameNonce, index) })
+    }
+  }
+
   const startTurn = (index: number) => {
     const state = options.controller.state()
+    if (state.selfId !== state.hostId) return
     const totalTurns = state.order.length * state.config.rounds
     if (index >= totalTurns) {
       options.controller.dispatchShared({ type: 'GAME_ENDED', at: now() })
@@ -57,6 +87,11 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
     if (!choice) return
     const startedAt = now()
     const drawerId = state.order[index % state.order.length]
+    const drawer = state.players[drawerId]
+    if (!drawer || drawer.connection === 'disconnected') {
+      startTurn(index + 1)
+      return
+    }
     options.controller.dispatchShared({
       type: 'TURN_STARTED',
       index,
@@ -74,20 +109,7 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
       options.mesh.sendWord(drawerId, choice.word, choice.category, index)
     }
 
-    if (state.config.hintsEnabled) {
-      const firstHintAt = state.config.turnSeconds * 1_000 * LIMITS.hintStartFraction
-      const letterCount = choice.word.replace(/\s/g, '').length
-      for (let revealCount = 1; revealCount <= letterCount; revealCount++) {
-        schedule(() => {
-          const current = options.controller.state()
-          if (current.phase !== 'drawing' || current.turn?.index !== index) return
-          options.controller.dispatchShared({
-            type: 'HINT_REVEALED',
-            reveals: hintReveals(choice.word, revealCount, current.gameNonce, index),
-          })
-        }, firstHintAt + (revealCount - 1) * LIMITS.hintIntervalMs)
-      }
-    }
+    scheduleHints(index, choice, startedAt, startedAt + state.config.turnSeconds * 1_000)
     schedule(() => endTurn('timeout'), state.config.turnSeconds * 1_000)
   }
 
@@ -107,7 +129,10 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
     const nextIndex = state.turn.index + 1
     const totalTurns = state.order.length * state.config.rounds
     if (nextIndex >= totalTurns) {
-      schedule(() => options.controller.dispatchShared({ type: 'GAME_ENDED', at: now() }), LIMITS.intermissionMs)
+      schedule(() => {
+        const current = options.controller.state()
+        if (current.selfId === current.hostId) options.controller.dispatchShared({ type: 'GAME_ENDED', at: now() })
+      }, LIMITS.intermissionMs)
     } else {
       const nextTurnAt = now() + LIMITS.intermissionMs
       options.controller.dispatchShared({ type: 'INTERMISSION', nextTurnAt })
@@ -125,17 +150,33 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
   return {
     startGame: () => {
       const state = options.controller.state()
-      if (state.selfId !== state.hostId || options.words.length === 0) return false
+      if (state.selfId !== state.hostId || (state.phase !== 'lobby' && state.phase !== 'game_over') || options.words.length === 0) return false
       const playerIds = Object.keys(state.players).filter((id) => state.players[id].connection !== 'disconnected')
       if (playerIds.length < LIMITS.minPlayers) return false
       clearTimers()
       ending = false
       const gameNonce = `${state.roomId}:${now()}`
       const order = deriveOrder(playerIds, gameNonce)
-      const picked = pickWords(options.words.map((entry) => entry.word), order.length * state.config.rounds, gameNonce)
-      selectedWords = picked.map((word) => options.words.find((entry) => entry.word === word) as HostWord)
+      selectGameWords(gameNonce, order.length * state.config.rounds)
       options.controller.dispatchShared({ type: 'GAME_STARTED', gameNonce, order, config: state.config, at: now() })
       startTurn(0)
+      return true
+    },
+    resumeGame: () => {
+      const state = options.controller.state()
+      if (state.selfId !== state.hostId || !state.gameNonce || state.phase === 'lobby' || state.phase === 'game_over') return false
+      clearTimers()
+      ending = false
+      selectGameWords(state.gameNonce, state.order.length * state.config.rounds)
+      if (state.phase === 'drawing' && state.turn) {
+        const choice = selectedWords[state.turn.index]
+        if (!choice) return false
+        options.controller.setSecretWord(choice.word)
+        scheduleHints(state.turn.index, choice, state.turn.startedAt, state.turn.endsAt)
+        schedule(() => endTurn('timeout'), state.turn.endsAt - now())
+      } else if (state.nextTurnAt !== null) {
+        schedule(() => startTurn((state.turn?.index ?? -1) + 1), state.nextTurnAt - now())
+      }
       return true
     },
     endTurn,
@@ -147,4 +188,3 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
     },
   }
 }
-
