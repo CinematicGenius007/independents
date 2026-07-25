@@ -194,7 +194,14 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
         if (frame.f === 'append') {
           const partial = partialStrokesRef.current.get(key)
           if (partial) {
-            const stroke = { ...partial, pts: Int16Array.from([...partial.pts, ...frame.pts]) }
+            // `Int16Array.from([...a, ...b])` boxes every coordinate into a JS
+            // array first, and it ran on every append — so a long stroke was
+            // re-copied through boxed numbers ~20 times as it grew. Allocate
+            // the exact typed array and blit both halves instead.
+            const merged = new Int16Array(partial.pts.length + frame.pts.length)
+            merged.set(partial.pts, 0)
+            merged.set(frame.pts, partial.pts.length)
+            const stroke = { ...partial, pts: merged }
             partialStrokesRef.current.set(key, stroke)
             updateHistory((existing) => ({ ...existing, ops: [...existing.ops.filter((op) => !(op.by === from && op.id === frame.id)), stroke] }))
           }

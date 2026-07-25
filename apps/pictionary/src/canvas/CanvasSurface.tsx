@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react'
-import { applyOpToRaster, replayOps, type Raster } from './renderer'
-import { renderHistory } from './history'
+import { applyOpToRaster, createRaster, type Raster } from './renderer'
+import { createIncrementalRenderer, type IncrementalRenderer } from './incremental'
 import { QUANT, type CanvasOp, type InkFrame, type ToolSettings } from './types'
 
 interface ActiveStroke {
@@ -28,6 +28,32 @@ export interface CanvasSurfaceProps {
   className?: string
 }
 
+/**
+ * Scratch buffers for {@link paint}, kept alive between calls.
+ *
+ * Painting used to allocate a fresh offscreen canvas and a fresh `ImageData`
+ * every time — at the logical 1600x1000 that is two 6.4 MB allocations plus a
+ * 6.4 MB copy, on a path that runs on every incoming ink frame. The garbage
+ * alone was enough to make remote strokes arrive in stutters. One canvas and
+ * one `ImageData` per raster size are reused instead; only the pixel copy
+ * remains, which is unavoidable.
+ */
+let scratchCanvas: HTMLCanvasElement | null = null
+let scratchImage: ImageData | null = null
+
+function scratchFor(width: number, height: number): { canvas: HTMLCanvasElement; image: ImageData } {
+  if (!scratchCanvas || scratchCanvas.width !== width || scratchCanvas.height !== height) {
+    scratchCanvas = document.createElement('canvas')
+    scratchCanvas.width = width
+    scratchCanvas.height = height
+    scratchImage = null
+  }
+  if (!scratchImage || scratchImage.width !== width || scratchImage.height !== height) {
+    scratchImage = new ImageData(width, height)
+  }
+  return { canvas: scratchCanvas, image: scratchImage }
+}
+
 function paint(canvas: HTMLCanvasElement, raster: Raster): void {
   const rect = canvas.getBoundingClientRect()
   const dpr = window.devicePixelRatio || 1
@@ -36,10 +62,7 @@ function paint(canvas: HTMLCanvasElement, raster: Raster): void {
   if (canvas.width !== width) canvas.width = width
   if (canvas.height !== height) canvas.height = height
 
-  const source = document.createElement('canvas')
-  source.width = raster.width
-  source.height = raster.height
-  const image = new ImageData(raster.width, raster.height)
+  const { canvas: source, image } = scratchFor(raster.width, raster.height)
   image.data.set(raster.pixels)
   source.getContext('2d')?.putImageData(image, 0, 0)
   const context = canvas.getContext('2d')
@@ -69,14 +92,40 @@ export function CanvasSurface({
 }: CanvasSurfaceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const activeRef = useRef<ActiveStroke | null>(null)
-  const raster = useMemo(
-    () => baseline ? renderHistory({ baseline, ops }) : replayOps(ops),
+  const rendererRef = useRef<IncrementalRenderer | null>(null)
+  if (rendererRef.current === null) rendererRef.current = createIncrementalRenderer()
+
+  // The op log rendered against a stable baseline, so the renderer can tell an
+  // append from a rewrite. Without a baseline of its own the canvas starts blank.
+  const emptyBaselineRef = useRef<Raster | null>(null)
+  if (emptyBaselineRef.current === null) emptyBaselineRef.current = createRaster()
+  const history = useMemo(
+    () => ({ baseline: baseline ?? emptyBaselineRef.current!, ops }),
     [baseline, ops],
   )
 
+  const currentRaster = useCallback(() => rendererRef.current!.render(history), [history])
+
+  /**
+   * Repaint at most once per animation frame.
+   *
+   * Ink frames arrive far faster than the display refreshes, and painting once
+   * per message meant the tab did the same work several times for a single
+   * visible update. Coalescing to a frame makes the cost track the screen
+   * rather than the network.
+   */
+  const paintFrameRef = useRef<number | null>(null)
   const repaint = useCallback(() => {
-    if (canvasRef.current) paint(canvasRef.current, raster)
-  }, [raster])
+    if (paintFrameRef.current !== null) return
+    paintFrameRef.current = requestAnimationFrame(() => {
+      paintFrameRef.current = null
+      // A stroke in progress owns the canvas: its preview already includes the
+      // committed history, so repainting the committed raster under it would
+      // drop the part of the stroke that has not been committed yet.
+      if (activeRef.current) return
+      if (canvasRef.current) paint(canvasRef.current, currentRaster())
+    })
+  }, [currentRaster])
 
   useEffect(() => {
     repaint()
@@ -86,6 +135,8 @@ export function CanvasSurface({
     observer.observe(canvas)
     return () => {
       observer.disconnect()
+      if (paintFrameRef.current !== null) cancelAnimationFrame(paintFrameRef.current)
+      paintFrameRef.current = null
       const active = activeRef.current
       if (active && active.frame !== null) cancelAnimationFrame(active.frame)
       activeRef.current = null
@@ -146,7 +197,8 @@ export function CanvasSurface({
     const point = pointerPoint(event.currentTarget, event.clientX, event.clientY)
     if (settings.tool === 'fill') {
       const op: CanvasOp = { t: 'fill', id: nextId, by: authorId, x: point[0], y: point[1], color: settings.color }
-      const preview = { ...raster, pixels: raster.pixels.slice() }
+      const committed = currentRaster()
+      const preview = { ...committed, pixels: committed.pixels.slice() }
       applyOpToRaster(preview, op)
       paint(event.currentTarget, preview)
       onFrame?.({ f: 'op', op })
@@ -155,7 +207,8 @@ export function CanvasSurface({
     }
     event.currentTarget.setPointerCapture(event.pointerId)
     const tool = settings.tool === 'eraser' ? 'eraser' : 'pencil'
-    const preview = { ...raster, pixels: raster.pixels.slice() }
+    const committed = currentRaster()
+    const preview = { ...committed, pixels: committed.pixels.slice() }
     applyOpToRaster(preview, {
       t: 'stroke', id: nextId, by: authorId, tool, color: settings.color, size: settings.size,
       pts: Int16Array.from(point),
