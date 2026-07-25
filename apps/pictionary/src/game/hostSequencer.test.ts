@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { initialState, reduce, type GameState } from '../engine'
 import { createMesh as createMemoryMesh } from '../net/memory-transport'
 import { createMesh } from '../net/mesh'
-import { DEFAULT_CONFIG, type Player } from '../shared/types'
+import { DEFAULT_CONFIG, LIMITS, type Player } from '../shared/types'
 import { createGameController } from './controller'
 import { createHostSequencer } from './hostSequencer'
 
@@ -11,9 +11,14 @@ const players: Player[] = [
   { id: 'peer-1', nickname: 'Guest', color: '#F2603C', avatar: 1, connection: 'connected', joinedAt: 2 },
 ]
 
-function lobbyState(selfId: string): GameState {
+const trio: Player[] = [
+  ...players,
+  { id: 'peer-2', nickname: 'Third', color: '#3C7DF2', avatar: 2, connection: 'connected', joinedAt: 3 },
+]
+
+function lobbyState(selfId: string, roster: Player[] = players): GameState {
   let state = initialState('TEST00', selfId, { ...DEFAULT_CONFIG, turnSeconds: 30, rounds: 1 })
-  for (const player of players) state = reduce(state, { type: 'PLAYER_JOINED', player })
+  for (const player of roster) state = reduce(state, { type: 'PLAYER_JOINED', player })
   return reduce(state, { type: 'HOST_CHANGED', hostId: 'peer-0' })
 }
 
@@ -114,5 +119,79 @@ describe('host sequencer', () => {
 
     sequencer.stop()
     promoted.stop()
+  })
+
+  it('reveals the word and advances after the drawer disconnects mid-turn', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1_000)
+    const { transports } = createMemoryMesh(3)
+    const hostMesh = createMesh(transports[0])
+    const guestMesh = createMesh(transports[1])
+    const host = createGameController({ initialState: lobbyState('peer-0', trio), mesh: hostMesh })
+    const guest = createGameController({ initialState: lobbyState('peer-2', trio), mesh: guestMesh })
+    const sequencer = createHostSequencer({
+      controller: host,
+      mesh: hostMesh,
+      words: [
+        { word: 'zebra', category: 'animals' },
+        { word: 'cat', category: 'animals' },
+        { word: 'dog', category: 'animals' },
+      ],
+    })
+
+    expect(sequencer.startGame()).toBe(true)
+    const drawerId = host.state().turn!.drawerId
+    expect(drawerId).not.toBe('peer-0')
+
+    // What RoomView does on every peer when the roster notices a departure.
+    host.dispatchLocal({ type: 'PLAYER_LEFT', playerId: drawerId })
+    guest.dispatchLocal({ type: 'PLAYER_LEFT', playerId: drawerId })
+
+    // The host must publish the reveal rather than leaving the turn stranded.
+    // The word is whichever the seeded pick landed on; what matters is that it
+    // is revealed at all, and that both peers see the same one.
+    const revealed = host.state().turn?.word
+    expect(['zebra', 'cat', 'dog']).toContain(revealed)
+    expect(host.state().turn?.endReason).toBe('drawer_left')
+    expect(guest.state().turn).toMatchObject({ word: revealed, endReason: 'drawer_left' })
+
+    // ...and the game must move on instead of parking in turn_review forever.
+    vi.advanceTimersByTime(LIMITS.intermissionMs + 1_000)
+    expect(host.state().phase).not.toBe('turn_review')
+    expect(host.state().turn?.index).toBe(1)
+    expect(guest.state().turn?.index).toBe(1)
+
+    sequencer.stop()
+    host.stop()
+    guest.stop()
+  })
+
+  it('does not re-score a turn the drawer disconnect already closed', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1_000)
+    const { transports } = createMemoryMesh(3)
+    const hostMesh = createMesh(transports[0])
+    const host = createGameController({ initialState: lobbyState('peer-0', trio), mesh: hostMesh })
+    const sequencer = createHostSequencer({
+      controller: host,
+      mesh: hostMesh,
+      words: [
+        { word: 'zebra', category: 'animals' },
+        { word: 'cat', category: 'animals' },
+        { word: 'dog', category: 'animals' },
+      ],
+    })
+
+    sequencer.startGame()
+    const drawerId = host.state().turn!.drawerId
+    host.dispatchLocal({ type: 'PLAYER_LEFT', playerId: drawerId })
+    const scoreAfterClose = host.state().scores[drawerId] ?? 0
+
+    // The pending turn timer still fires; it must not pay the drawer twice.
+    vi.advanceTimersByTime(60_000)
+    expect(host.state().scores[drawerId] ?? 0).toBe(scoreAfterClose)
+
+    sequencer.stop()
+    host.stop()
   })
 })

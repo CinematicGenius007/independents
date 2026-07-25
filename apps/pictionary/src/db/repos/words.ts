@@ -39,9 +39,14 @@ export function createWordRepo(getDb: GetDb, persistence: PersistedStore): WordR
       const placeholders = categories.map(() => '?').join(', ')
       const rows = queryAll<WordRowRaw>(
         getDb(),
+        // Ordered explicitly: a promoted host re-derives the game's words from
+        // `gameNonce` against this pool, so every peer must build the pool in
+        // the same order or a migration would hand the drawer a different word
+        // than the shape everyone else is already looking at.
         `SELECT word_id, pack_id, word, difficulty, category
          FROM words
-         WHERE category IN (${placeholders})`,
+         WHERE category IN (${placeholders})
+         ORDER BY word_id ASC`,
         categories,
       )
       return rows.map((row) => ({

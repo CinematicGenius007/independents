@@ -1,7 +1,11 @@
 # Checkpoint — 2026-07-25
 
-Stopping point for the Pictionary build. Everything below is the actual state on disk, not
-intentions. Plan of record is [PLAN.md](./PLAN.md); original brief is [INIT_PLAN.md](./INIT_PLAN.md).
+> **Superseded for phases P5–P9.** This file records the end of Tier 1. The build was continued to
+> completion afterwards; see [TAKEOVER_NOTES.md](./TAKEOVER_NOTES.md) for what landed after this
+> point and [TODO.md](./TODO.md) for what remains genuinely unverified. The decisions, contract
+> amendments, and judgment calls recorded below all still hold.
+
+Plan of record is [PLAN.md](./PLAN.md); original brief is [INIT_PLAN.md](./INIT_PLAN.md).
 
 ## Decisions locked
 

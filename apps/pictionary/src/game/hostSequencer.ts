@@ -115,14 +115,22 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
 
   const endTurn = (reason: 'timeout' | 'all_guessed' | 'skipped' = 'skipped') => {
     const state = options.controller.state()
-    if (ending || state.selfId !== state.hostId || state.phase !== 'drawing' || !state.turn) return
+    if (ending || state.selfId !== state.hostId || !state.turn) return
+    // `PLAYER_LEFT` closes a turn locally the moment the drawer vanishes, which
+    // moves the phase to `turn_review` before the host has published anything.
+    // That turn still needs its `TURN_ENDED` — it carries the reveal and is what
+    // schedules the next turn — so the phase guard only applies to live turns.
+    const closedEarly = state.turn.endReason !== null
+    if (!closedEarly && state.phase !== 'drawing') return
     ending = true
     clearTimers()
     const choice = selectedWords[state.turn.index]
     options.controller.dispatchShared({
       type: 'TURN_ENDED',
       word: choice?.word ?? '',
-      reason,
+      // A turn closed early already knows why; don't overwrite that with the
+      // reason of whatever happened to trigger this call.
+      reason: state.turn.endReason ?? reason,
       drawerPoints: drawerPoints(Object.keys(state.turn.correct).length),
       at: now(),
     })
@@ -144,7 +152,15 @@ export function createHostSequencer(options: HostSequencerOptions): HostSequence
   }
 
   const unsubscribe: Unsubscribe = options.controller.subscribe((state) => {
-    if (!ending && state.selfId === state.hostId && allGuessed(state)) endTurn('all_guessed')
+    if (ending || state.selfId !== state.hostId) return
+    if (allGuessed(state)) {
+      endTurn('all_guessed')
+      return
+    }
+    // A turn the reducer closed on its own (the drawer disconnected) is still
+    // waiting on the host to reveal the word and schedule what comes next.
+    // `word === null` means no `TURN_ENDED` has been published for it yet.
+    if (state.turn && state.turn.endReason !== null && state.turn.word === null) endTurn()
   })
 
   return {
