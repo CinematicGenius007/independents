@@ -87,6 +87,11 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
     const empty = createCanvasHistory()
     historyRef.current = empty
     updateHistory(empty)
+    // Stroke ids restart with each turn's fresh history, so a partial stroke
+    // left unfinished by a dropped `end` frame would otherwise still be sitting
+    // under a key that a later turn reuses — and an `append` arriving without
+    // its `begin` would splice the old turn's points into the new stroke.
+    partialStrokesRef.current.clear()
   }, [game?.turn?.index])
 
   useEffect(() => {
@@ -108,6 +113,9 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
         const synced = decodeHistoryFromSync(bytes)
         historyRef.current = synced
         updateHistory(synced)
+        // The snapshot replaces the op log wholesale; strokes we were still
+        // assembling belong to the log we just discarded.
+        partialStrokesRef.current.clear()
       },
     })
     controllerRef.current = controller

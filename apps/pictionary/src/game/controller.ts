@@ -134,10 +134,18 @@ export function createGameController(options: GameControllerOptions): GameContro
         revision = syncedRevision
         apply({ type: 'STATE_SYNCED', state: { ...synced, players: state.players, hostId: state.hostId } })
         drainPendingActions()
+        // The canvas baseline travels with the state it belongs to. A snapshot
+        // we rejected as stale carries an equally stale op log, and applying it
+        // would drop strokes we already hold.
+        //
+        // Ordering cannot be used to justify applying it anyway: inline
+        // snapshots arrive on the ctrl channel rather than the ink channel, and
+        // a snapshot comes from the host while live ink comes from the drawer,
+        // so the two have no ordering relationship when those are different
+        // peers. Rejecting both halves together keeps this decision local
+        // instead of resting on how a caller happens to buffer ink.
+        options.applyInkSnapshot?.(ink)
       }
-      // Snapshot and subsequent live frames share one ordered ink channel, so
-      // this baseline is safe even if newer control actions arrived first.
-      options.applyInkSnapshot?.(ink)
       resolveSync?.(applied)
       resolveSync = null
     }),

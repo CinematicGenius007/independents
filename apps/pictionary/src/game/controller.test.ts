@@ -128,7 +128,31 @@ describe('game controller', () => {
     expect(await syncing).toBe(false)
     expect(guest.state().phase).toBe('turn_intro')
     expect(guest.state().turn?.word).toBe('zebra')
-    expect(appliedInk).toBe(true)
+    // The canvas baseline is rejected along with the state it belongs to: a
+    // snapshot too old to apply carries an equally old op log, and adopting it
+    // would drop strokes this peer already has.
+    expect(appliedInk).toBe(false)
+    host.stop()
+    guest.stop()
+  })
+
+  it('applies the canvas baseline when the snapshot is fresh enough to adopt', async () => {
+    const { transports } = createMemoryMesh(2)
+    const host = createGameController({
+      initialState: drawingState('peer-0'),
+      mesh: createMesh(transports[0]),
+      getInkSnapshot: () => new Uint8Array([4, 5, 6]),
+    })
+    let received: Uint8Array | null = null
+    const guest = createGameController({
+      initialState: drawingState('peer-1'),
+      mesh: createMesh(transports[1]),
+      applyInkSnapshot: (bytes) => { received = bytes },
+    })
+
+    expect(await guest.requestSync('peer-0')).toBe(true)
+    expect(received).toEqual(new Uint8Array([4, 5, 6]))
+
     host.stop()
     guest.stop()
   })
