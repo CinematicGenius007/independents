@@ -33,23 +33,24 @@ intentions. Plan of record is [PLAN.md](./PLAN.md); original brief is [INIT_PLAN
 | P3 · Networking | **Done** | 35 tests. Now reads `LIMITS.peerDisconnectMs`; `PresenceOptions` exposes `graceMs`/`disconnectMs` overrides for tests |
 | P4 · Game engine | **Done** | 147 tests. Both contract amendments below are implemented |
 | R1 · Tier-1 review gate | **Done** | Static contract audit, full tests/type-check/build, and `#kit` visual review at 1280 px completed during temporary takeover |
-| P5 · Canvas | **In progress** | Op model, codec, replay/fill, responsive surface, RAF-batched live strokes, tools, baseline history folding, and a 5,000-point check landed; snapshot fallback and visual verification remain |
-| P6 · Screens | Not started | |
-| P7 · Controller wiring | Not started | Orchestrator-owned |
-| R2 · Integration gate | Not started | |
-| P8 · Practice + stats | Not started | |
-| P9 · Polish + docs | Not started | |
+| P5 · Canvas | **Done** | Responsive DPR surface, tools, binary live ink, deterministic replay/fill, bounded history, and compact/snapshot sync |
+| P6 · Screens | **Done** | Onboarding, home, lobby, game, summaries, results, practice, and stats are routed and responsive |
+| P7 · Controller wiring | **Implemented; relay acceptance open** | Controller, sequencer, live ink, private words, late sync, disconnect and host migration are wired and unit-tested; public relays did not connect local browser tabs |
+| R2 · Integration gate | **Done** | Authority, ordering, migration, liveness, stale timer, snapshot race, and cleanup findings fixed |
+| P8 · Practice + stats | **Done** | Offline-capable practice and local multiplayer stats persistence wired; practice browser flow checked |
+| P9 · Polish + docs | **Done; 3-tab acceptance open** | 564 KB gzip build incl. one WASM asset, lazy DB chunk, reduced motion/ARIA/contrast, failure feedback, backup confirmation, and docs |
+| R3 · Final review | **Done** | Roster convergence, synchronous stat capture, recovery ordering, stale snapshot rejection, portable word pools, and duplicate WASM findings fixed |
 
-**Test suite at latest checkpoint: 228 passing, 20 files, zero failures. `pnpm type-check`
-and `pnpm build` clean.**
+**Test suite at latest checkpoint: 261 passing, 27 files, zero failures. `pnpm type-check`
+and `pnpm build` clean. Production output is about 1.45 MB raw / 564 KB gzip including WASM.**
 
-Breakdown before P5: engine 147, net 35, db 24, plus seed assertions. P5 currently adds 21
-canvas model/codec/renderer/history tests.
+The final suite spans engine, networking, persistence, canvas, controller, sequencer, practice,
+and local-stat projections. The 5,000-point canvas case remains part of the regular test run.
 
 ## Contract amendments made after Tier 1 reported
 
-The engine agent surfaced two genuine defects in the contracts I wrote in P0. Both are fixed in the
-type files; the implementations were sent back to match and had not finished at checkpoint time.
+The engine agent surfaced two genuine defects in the contracts written in P0. Both the type files
+and their implementations are now aligned.
 
 1. **Hints were structurally impossible.** `HINT_REVEALED` carried only `indices: number[]`. But
    guessers never hold the word, so positions alone gave them nothing to render — a design bug no
@@ -71,10 +72,9 @@ The two earlier cosmetic nits were re-checked after all inherited files landed. 
 knock out the border cleanly, and the paper grain reads as restrained rather than flat. No design
 change was needed.
 
-One documentation inconsistency was noted but behavior was deliberately left untouched: an early
-PLAN paragraph says host migration chooses the lowest peer ID, while the frozen shared/net
-contracts and implementation choose earliest `joinedAt`, breaking ties by peer ID. The latter is
-the plan of record because it preserves the longest-connected host.
+An earlier PLAN inconsistency around lowest peer ID versus earliest `joinedAt` has been corrected.
+The plan of record and implementation both preserve the longest-connected host, breaking ties by
+peer ID.
 
 ## Judgment calls adopted from agents
 
@@ -97,10 +97,12 @@ places 60, hard 60, idioms 50, popculture 50.
 
 ## To resume
 
-1. Continue P5 with the replay renderer and deterministic fill implementation.
-2. Add the responsive/DPR-aware drawing surface, pointer batching hook, and tool UI.
-3. Complete P5 pixel-replay and 5,000-point performance acceptance checks.
-4. Then P6 screens, followed by P7 controller integration.
+1. On a network where the public Nostr/MQTT routes are reachable, complete a three-player game and
+   verify draw, guess, score, advance, late join, drawer leave, and host migration in real tabs.
+2. Run the target-browser, touch/stylus, assistive-technology, and production-preview checks in
+   [TODO.md](./TODO.md).
+3. Review the continuation recorded in [TAKEOVER_NOTES.md](./TAKEOVER_NOTES.md), especially the
+   host recovery and compact canvas snapshot boundaries, before changing their protocols.
 
 Commands, from `apps/pictionary`:
 

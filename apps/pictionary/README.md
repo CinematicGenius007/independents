@@ -47,7 +47,7 @@ This has a few practical consequences:
 - Closing the last connected tab ends the live room. Local profile and statistics data remain in each browser, but the room itself is not stored on a server.
 - The transport reports connecting, connected, and failed states. It tries Nostr and MQTT, but it does not currently provide a manually configured relay or manual WebRTC fallback.
 
-The game model keeps deterministic choices, such as turn order and word selection, consistent across peers. The elected host sequences time-sensitive transitions and scoring. Host election prefers the longest-connected player, with peer ID as a deterministic tie-breaker. Secret words are sent only to the drawer rather than broadcast to every peer. Late join and recovery messages can carry a compact canvas operation log or a larger binary snapshot.
+The game model keeps deterministic choices, such as turn order and word selection, consistent across peers. The elected host sequences time-sensitive transitions and scoring. The initial peer pair establishes authority deterministically from peer IDs; that host then stamps join order so the longest-connected established player remains preferred. Secret words are sent only to the drawer rather than broadcast to every peer. Late join and recovery use an atomic revisioned state-and-canvas snapshot on the ordered binary channel.
 
 ## Local data and backup
 
@@ -86,6 +86,14 @@ Older browsers and embedded webviews are not supported. Private browsing or stor
 
 Automated unit, type, and production-build checks cover the core layers. Unless a release note says otherwise, do not treat those checks as proof that a full multiplayer game has been manually verified across all supported browsers, relay conditions, screen sizes, or three independent devices.
 
+## Verification snapshot
+
+On 25 July 2026, the project passed 261 tests across 27 files, TypeScript checking, and a production build. The complete production output is about 1.45 MB before compression and 564 KB gzip-compressed, including the single 660 KB `sql-wasm.wasm` asset (323 KB gzip), below the 2 MB compressed budget. The database and networking code are split into separate lazy/runtime chunks; SQLite is not part of the first application chunk.
+
+Onboarding, profile restoration, room creation, solo drawing, practice timeout and advancement, stats routing, the 375 px practice layout, and production-preview boot were exercised in a real browser. A 5,000-point canvas replay is covered by the test suite and completed within the 26 ms canvas-history test file on the checkpoint machine; this is a development measurement, not a cross-device latency guarantee.
+
+The attempted multi-tab relay check could not discover peers from the test environment through either public relay route. The lobby now reports relay connection failure explicitly, but the plan's complete two- and three-tab game acceptance remains a release-verification item for a network where WebRTC and the public relays are reachable.
+
 ## Current status
 
-This is an active build. See [TODO.md](./TODO.md) for remaining verification and stretch work. The repository's checkpoint and plan files describe implementation history; this README intentionally avoids claiming a browser or integration milestone until it has actually been run and recorded.
+The planned application is implemented through P9, with the relay-dependent and cross-browser release checks above still open. See [TODO.md](./TODO.md) for those checks and stretch work; [CHECKPOINT.md](./CHECKPOINT.md) records the exact handoff state.

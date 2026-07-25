@@ -47,10 +47,35 @@ P5 has started with:
 Colors are encoded as three RGB bytes and decoded to canonical uppercase `#RRGGBB`, matching
 `INK_PALETTE`.
 
-## Review / next work
+## First handoff notes (superseded)
 
 Please review the binary format before it becomes a compatibility boundary. P5 still needs the
 replay renderer, deterministic flood fill, responsive/DPR-aware canvas component, pointer-event
 batching, toolbar wiring, snapshot fallback, pixel equality test, and 5,000-point performance
-check. The op-history folding requirement also remains; the current pure model intentionally does
-not discard old ops before a baseline raster exists.
+check. The op-history folding requirement also remained at that point. These items were completed
+in the continuation below; this paragraph is retained only to preserve the handoff chronology.
+
+## Continuation through P9
+
+The stale paragraph above describes the first handoff only. The temporary takeover then completed
+P5–P9: snapshot-aware folded history, the application router, lobby/game/results flow, host
+sequencing and recovery, live ink, practice, local stats, backup controls, accessibility polish,
+and lazy browser-safe SQL.js loading. R2 found several authority and migration races; these were
+fixed in `992149a8`. Follow-on commits are `4706e449` (folded canvas sync), `5f5a4fa0`
+(browser SQL.js interop), and `3d9423e5` (complete application/practice wiring).
+
+R3 then found and prompted fixes for simultaneous roster split-brain, React-batched stat loss,
+host recovery ordering, stale out-of-band snapshots, custom-word recovery, and a duplicate build
+WASM. The current automated gate is 261 passing tests across 27 files plus clean type-check and
+build. Production output totals about 564 KB gzip with one WASM asset. Real-browser checks covered
+onboarding, profile persistence, room creation, practice drawing and advancement, stats routing,
+the 375 px layout, and production-preview boot. Public relay discovery did not connect the two
+local tabs in this environment, so full two-/three-tab gameplay, late join, and host-drop
+verification remain explicitly open rather than being reported as passed. The lobby now exposes
+relay failure to the player.
+
+R3 recovery fixes are collected in `72b3e851`: revisioned action delivery, gap buffering, atomic
+state/canvas snapshots, cross-peer live-ink replay during sync, stable roster bootstrap history,
+portable multiplayer word pools, and transition-synchronous local stats.
+The final incumbent/newcomer handshake ordering fix is `362aac4b`; the R3 reviewer rechecked the
+forced-order regression and reported the tree clean.

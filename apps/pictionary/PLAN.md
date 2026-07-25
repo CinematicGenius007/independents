@@ -20,8 +20,8 @@ dependency order, module ownership, and acceptance criteria per phase.
 1. **Host sequencer for timing.** Pure deterministic timing is not achievable across peers with
    drifting clocks; two peers would award different point totals for the same guess. The host
    stamps `TURN_END`, `HINT_REVEAL`, and `GUESS_CORRECT` (with elapsed ms). Everything else stays
-   deterministic. Host migration is deterministic (lowest peer ID) so this is not a single point
-   of failure.
+   deterministic. Host migration follows the established join order (bootstrapped by peer ID) so
+   this is not a single point of failure.
 2. **Canvas is an op-log, not a bitmap.** Late joiners receive the op-log (compact binary), not a
    PNG, unless the log exceeds a size threshold — then a PNG snapshot plus a truncated log.
 
@@ -55,12 +55,12 @@ Four independent layers. Game logic never imports the transport; the transport n
 
 ```
 apps/pictionary/
-  public/sql-wasm.wasm
   src/
     shared/types.ts        # cross-layer contract (owned by orchestrator)
     styles/theme.css       # design tokens
     design/                # presentational component kit
     db/                    # sqlite.ts, schema.sql, repos/, seed/words.json
+    sql-js-wasm.d.ts       # typed sql.js browser entry; Vite emits the wasm asset
     net/                   # protocol.ts, transport.ts, room.ts
     engine/                # types.ts, reducer.ts, rng.ts, scoring.ts, guess.ts, words.ts
     canvas/                # model.ts, codec.ts, renderer.ts, tools/, useDrawing.ts
@@ -84,9 +84,10 @@ against its own raster, which is identical because the op-log is identical.
 **Undo.** Op-log with monotonic IDs; `UNDO` pops the drawer's last op and triggers a replay.
 History capped at 100 ops per turn.
 
-**Host election.** Host = lexicographically smallest connected peer ID. On host disconnect, every
-client re-elects deterministically; the new host requests a canvas snapshot from any peer and
-resumes the current phase from its own last-known state.
+**Host election.** The first peer pair establishes deterministic order from peer IDs (there is no
+trusted clock or prior authority); afterward the host stamps arrivals and the longest-connected
+player remains host. On host disconnect, every client re-elects deterministically; the new host
+requests an atomic revisioned state/canvas snapshot from a survivor before resuming.
 
 ---
 
