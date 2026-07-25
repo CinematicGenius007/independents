@@ -46,7 +46,7 @@ function PracticeRoute({ database, onExit }: { database: Database; onExit(): voi
       setPrompts(rows.slice(0, 5).map((row) => ({ word: row.word, category: row.category })))
     })
   }, [database])
-  if (!prompts) return <main className="grid min-h-full place-items-center bg-chrome-deep pixel-heading text-[16px] leading-[16px] text-text">Opening practice…</main>
+  if (!prompts) return <main className="grid min-h-full place-items-center">Opening practice…</main>
   return <PracticeSession prompts={prompts} database={database} onExit={onExit} />
 }
 
@@ -68,7 +68,7 @@ function StatsRoute({ database, profile, onBack }: { database: Database; profile
     setHistory(nextHistory)
   })
   useEffect(refresh, [database])
-  if (!stats) return <main className="grid min-h-full place-items-center bg-chrome-deep pixel-heading text-[16px] leading-[16px] text-text">Opening stats…</main>
+  if (!stats) return <main className="grid min-h-full place-items-center">Opening stats…</main>
   return <StatsScreen
     profile={profile}
     stats={stats}
@@ -131,8 +131,8 @@ export function App() {
   }, [])
 
   if (route.name === 'kit') return <Showcase />
-  if (databaseError) return <main className="grid min-h-full place-items-center bg-chrome-deep p-6 text-center"><div><h1 className="pixel-heading text-[24px] leading-[24px] text-red-hi">The sketchbook would not open.</h1><p className="mt-3 text-text-muted">Reload the page to try again. Your local data has not been changed.</p></div></main>
-  if (!database) return <main className="pixel-heading grid min-h-full place-items-center bg-chrome-deep text-[24px] leading-[24px] text-text">Opening the sketchbook…</main>
+  if (databaseError) return <main className="grid min-h-full place-items-center p-6 text-center"><div><h1 className="font-[family-name:var(--font-display)] text-3xl">The sketchbook would not open.</h1><p className="mt-3 text-ink-soft">Reload the page to try again. Your local data has not been changed.</p></div></main>
+  if (!database) return <main className="grid min-h-full place-items-center font-[family-name:var(--font-display)] text-2xl">Opening the sketchbook…</main>
 
   if (!profile || editingProfile) {
     return <OnboardingScreen

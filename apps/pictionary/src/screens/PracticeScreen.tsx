@@ -1,6 +1,5 @@
 import { CanvasSurface, CanvasTools, type CanvasOp, type CanvasState, type ToolSettings } from '../canvas'
 import { Panel, SketchButton, Ticker, TornCard } from '../design'
-import { bevelClass } from '../design/utils'
 import type { PracticePrompt, PracticeState } from '../practice'
 import { CATEGORY_LABELS } from '../shared/types'
 import { ScreenFrame } from './ScreenFrame'
@@ -31,24 +30,24 @@ export function PracticeScreen(props: PracticeScreenProps) {
         actions={<SketchButton onClick={props.onExit}>Done</SketchButton>}
       >
         <div className="mx-auto grid w-full max-w-3xl gap-5 sm:grid-cols-3">
-          <TornCard>
-            <p className="pixel-heading text-[8px] leading-[16px] text-ink-faint">Words drawn</p>
-            <p className="pixel-heading mt-1 text-[32px] leading-[32px] text-ink">{props.state.results.length}</p>
+          <TornCard wobbleKey="practice-drawn">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">Words drawn</p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-4xl">{props.state.results.length}</p>
           </TornCard>
-          <TornCard>
-            <p className="pixel-heading text-[8px] leading-[16px] text-ink-faint">Bot guessed</p>
-            <p className="pixel-heading mt-1 text-[32px] leading-[32px] text-ink">{guessed}</p>
+          <TornCard wobbleKey="practice-guessed">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">Bot guessed</p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-4xl">{guessed}</p>
           </TornCard>
-          <TornCard>
-            <p className="pixel-heading text-[8px] leading-[16px] text-ink-faint">Bot missed</p>
-            <p className="pixel-heading mt-1 text-[32px] leading-[32px] text-ink">{props.state.results.length - guessed}</p>
+          <TornCard wobbleKey="practice-missed">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">Bot missed</p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-4xl">{props.state.results.length - guessed}</p>
           </TornCard>
-          <Panel title="Your practice pages" className="sm:col-span-3">
+          <Panel title="Your practice pages" wobble={false} className="sm:col-span-3">
             <ol className="grid gap-2 sm:grid-cols-2">
               {props.state.results.map((result, index) => (
-                <li key={`${index}:${result.category}:${result.word}`} className="flex justify-between gap-3 border-b border-dashed border-[color:var(--color-stone)] py-2">
-                  <span className="font-semibold text-text">{result.word}</span>
-                  <span className={result.guessed ? 'text-ok' : 'text-text-muted'}>{result.guessed ? 'Guessed' : 'Missed'}</span>
+                <li key={`${index}:${result.category}:${result.word}`} className="flex justify-between gap-3 border-b border-dashed border-ink-ghost py-2">
+                  <span className="font-semibold">{result.word}</span>
+                  <span className={result.guessed ? 'text-ok' : 'text-ink-faint'}>{result.guessed ? 'Guessed' : 'Missed'}</span>
                 </li>
               ))}
             </ol>
@@ -71,11 +70,11 @@ export function PracticeScreen(props: PracticeScreenProps) {
       actions={<SketchButton variant="ghost" size="sm" onClick={props.onExit}>Exit practice</SketchButton>}
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className={`bg-gold-lo px-4 py-2 ${bevelClass({ tone: 'gold', size: 'sm' })}`}>
-          <span className="pixel-heading mr-2 text-[8px] leading-[16px] text-gold-hi">
+        <div className="rounded-doodle border-[3px] border-ink bg-accent-wash px-4 py-2 shadow-ink-sm">
+          <span className="mr-2 text-xs font-bold uppercase tracking-wide text-ink-faint">
             {props.prompt ? CATEGORY_LABELS[props.prompt.category] : 'Prompt'}
           </span>
-          <strong className="pixel-heading text-[24px] leading-[24px] text-gold-hi">{props.prompt?.word}</strong>
+          <strong className="font-[family-name:var(--font-display)] text-2xl">{props.prompt?.word}</strong>
         </div>
         {!reviewing && <Ticker secondsRemaining={props.secondsRemaining} totalSeconds={props.state.turnDurationMs / 1000} />}
         {reviewing && (
@@ -85,27 +84,22 @@ export function PracticeScreen(props: PracticeScreenProps) {
 
       {/*
         The canvas is a fixed 8:5 aspect driven by its width, so on short
-        viewports it used to push the pencil case below the fold — the drawer
-        had to scroll away from their own drawing to change tools. Capping the
-        width by the space actually left over (`100dvh` minus the header, the
-        ticker row, the pencil case and the gaps) keeps the whole screen
-        reachable without scrolling, and gives back the full 64rem as soon as
-        the viewport is tall enough to afford it.
+        viewports it pushed the pencil case below the fold — the drawer had to
+        scroll away from their own drawing to change tools. Capping the width by
+        the space actually left over (`100dvh` minus the header, the ticker row,
+        the pencil case and the gaps) keeps the whole screen reachable, and
+        gives back the full 64rem once the viewport is tall enough to afford it.
       */}
-      <div className="mx-auto flex w-full max-w-[min(64rem,calc((100dvh-33rem)*1.6))] flex-1 flex-col gap-4">
-        <div className={`bg-chrome-panel p-2 ${bevelClass({ tone: 'chrome' })}`}>
-          <div className={`bg-parchment p-2 ${bevelClass({ tone: 'parchment' })}`}>
-            <CanvasSurface
-              ops={props.canvasState.ops}
-              nextId={props.canvasState.nextId}
-              authorId={props.authorId}
-              settings={props.settings}
-              disabled={reviewing}
-              onCommit={props.onCanvasCommit}
-            />
-          </div>
-        </div>
-        <Panel title="Pencil case">
+      <div className="mx-auto flex w-full max-w-[min(64rem,calc((100dvh-24.5rem)*1.6))] flex-1 flex-col gap-4">
+        <CanvasSurface
+          ops={props.canvasState.ops}
+          nextId={props.canvasState.nextId}
+          authorId={props.authorId}
+          settings={props.settings}
+          disabled={reviewing}
+          onCommit={props.onCanvasCommit}
+        />
+        <Panel title="Pencil case" wobble={false}>
           <CanvasTools
             value={props.settings}
             disabled={reviewing}

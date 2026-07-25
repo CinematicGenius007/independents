@@ -31,11 +31,9 @@ function buildSlots(shape: number[]): Slot[][] {
 }
 
 /**
- * The `_ _ _ _` word display. Each letter is its own recessed pixel slot;
- * known letters (from `revealed` or a turn-end `full` reveal) sit on top of
- * the blank instead of replacing it, so the shape never jumps. Plain
- * monospace, not the chrome pixel face — this is running content, not a UI
- * label, and needs to stay legible at small sizes.
+ * The `_ _ _ _` word display. Each letter is its own hand-drawn blank; known
+ * letters (from `revealed` or a turn-end `full` reveal) sit on top of the
+ * blank instead of replacing it, so the shape never jumps.
  */
 export function WordBlanks({ shape, revealed, full, className = '' }: WordBlanksProps) {
   const words = buildSlots(shape)
@@ -53,8 +51,7 @@ export function WordBlanks({ shape, revealed, full, className = '' }: WordBlanks
               <span
                 key={slot.charIndex}
                 aria-hidden
-                className="flex h-9 w-6 items-end justify-center pb-0.5 font-mono text-xl uppercase leading-none text-text sm:h-10 sm:w-7"
-                style={{ borderBottom: '3px solid var(--color-stone-hi)' }}
+                className="flex h-9 w-6 items-end justify-center border-b-[3px] border-ink pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase leading-none text-ink sm:h-10 sm:w-7"
               >
                 {letter ?? ''}
               </span>

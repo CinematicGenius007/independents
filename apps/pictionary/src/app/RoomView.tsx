@@ -244,7 +244,7 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, profile.id])
 
-  if (!game) return <main className="pixel-heading grid min-h-full place-items-center bg-chrome-deep text-[24px] leading-[24px] text-text">Opening room…</main>
+  if (!game) return <main className="grid min-h-full place-items-center font-[family-name:var(--font-display)] text-2xl">Opening room…</main>
 
   const controller = controllerRef.current
   const commitOp = (op: CanvasOp) => {

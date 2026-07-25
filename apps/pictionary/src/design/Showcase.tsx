@@ -16,14 +16,13 @@ import { Ticker } from './Ticker'
 import { WordBlanks } from './WordBlanks'
 import { ProgressBar } from './ProgressBar'
 import { Spinner } from './Spinner'
-import { bevelClass, ditherStyle } from './utils'
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="pixel-heading text-[24px] leading-[24px] text-gold-hi">{title}</h2>
-        {description && <p className="mt-2 max-w-2xl text-sm text-text-muted">{description}</p>}
+        <h2 className="font-[family-name:var(--font-display)] text-3xl text-ink">{title}</h2>
+        {description && <p className="mt-1 max-w-2xl text-sm text-ink-soft">{description}</p>}
       </div>
       <div className="flex flex-wrap items-start gap-5">{children}</div>
     </section>
@@ -33,7 +32,7 @@ function Section({ title, description, children }: { title: string; description?
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="pixel-heading text-[8px] leading-[16px] text-text-muted">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-ink-faint">{label}</span>
       <div className="flex flex-wrap items-center gap-3">{children}</div>
     </div>
   )
@@ -85,44 +84,50 @@ export function Showcase() {
   const addToast = () =>
     setToasts((list) => [
       ...list,
-      { id: `t${Date.now()}`, message: 'A fresh scroll unrolls top-right.', tone: 'paper' },
+      { id: `t${Date.now()}`, message: 'A fresh note lands top-right.', tone: 'paper' },
     ])
 
   return (
     <Paper className="min-h-screen">
       <div className="mx-auto flex max-w-5xl flex-col gap-14 px-6 py-10 pb-24">
         <header>
-          <p className="pixel-heading text-[8px] leading-[16px] text-text-muted">Phase P1</p>
-          <h1 className="pixel-heading text-[32px] leading-[32px] text-gold-hi">Design Kit</h1>
-          <p className="mt-3 max-w-2xl text-text-muted">
-            Every component in every state — cozy pixel-art RPG HUD. Dark navy-green chrome with hard
-            bevels around a bright canvas, warm parchment for alerts, one saturated gold, red reserved
-            for urgency.
+          <p className="text-sm font-semibold uppercase tracking-wide text-ink-faint">Phase P1</p>
+          <h1 className="font-[family-name:var(--font-display)] text-5xl text-ink">Design Kit</h1>
+          <p className="mt-2 max-w-2xl text-ink-soft">
+            Every component in every state — hand-drawn sketch diorama. Ink on textured paper, one
+            saturated yellow, red-orange reserved for urgency.
           </p>
         </header>
 
-        <Section title="Window chrome" description="The segmented title bar: bevelled end-caps bracketing a label plate.">
-          <Panel title="Lobby" tone="paper" className="w-56">
-            <p className="text-sm text-text-muted">Chrome tone, default.</p>
-          </Panel>
-          <Panel title="Your turn" tone="accent" className="w-56">
-            <p className="text-sm text-text-muted">Gold accent tone.</p>
-          </Panel>
-          <Panel title="Time's up" tone="alert" className="w-56">
-            <p className="text-sm text-text-muted">Red alert tone.</p>
-          </Panel>
+        <Section title="Paper &amp; Panel" description="The base surface, plus the bordered ink panel every other surface builds on.">
+          <Row label="Tones">
+            <Panel title="Lobby" tone="paper" wobbleKey="kit-panel-paper" className="w-56">
+              <p className="text-sm text-ink-soft">Paper tone, default.</p>
+            </Panel>
+            <Panel title="Your turn" tone="accent" wobbleKey="kit-panel-accent" className="w-56">
+              <p className="text-sm text-ink-soft">Accent tone.</p>
+            </Panel>
+            <Panel title="Time's up" tone="alert" wobbleKey="kit-panel-alert" className="w-56">
+              <p className="text-sm text-ink-soft">Alert tone.</p>
+            </Panel>
+          </Row>
+          <Row label="Wobble off">
+            <Panel title="Perfectly square" wobble={false} className="w-56">
+              <p className="text-sm text-ink-soft">No rotation, still hand-drawn corners.</p>
+            </Panel>
+          </Row>
         </Section>
 
-        <Section title="Parchment scroll" description="The reference's cream alert panel, with bevelled wooden dowel ends — used for Toast and turn-end reveals.">
-          <TornCard title="Round 2 recap" className="w-64">
+        <Section title="TornCard" description="Panel variant with a torn bottom edge — deterministic jagged clip-path.">
+          <TornCard title="Round 2 recap" wobbleKey="kit-torn-1" className="w-64">
             <p className="text-sm text-ink-soft">Ada scored 90 points this round.</p>
           </TornCard>
-          <TornCard title="Alert variant" tone="alert" className="w-64">
+          <TornCard title="Alert variant" tone="alert" wobbleKey="kit-torn-2" className="w-64">
             <p className="text-sm text-ink-soft">Time ran out before anyone guessed.</p>
           </TornCard>
         </Section>
 
-        <Section title="SketchButton" description="Primary (gold), ghost, danger — each in sm/md/lg, plus disabled and loading. Presses in on click.">
+        <Section title="SketchButton" description="Primary (yellow-filled), ghost, danger — each in sm/md/lg, plus disabled and loading.">
           <Row label="Primary">
             <SketchButton size="sm">Small</SketchButton>
             <SketchButton size="md">Medium</SketchButton>
@@ -136,17 +141,17 @@ export function Showcase() {
           </Row>
           <Row label="States">
             <SketchButton disabled>Disabled</SketchButton>
-            <SketchButton loading>Connecting</SketchButton>
+            <SketchButton loading>Loading</SketchButton>
           </Row>
         </Section>
 
-        <Section title="IconButton &amp; toolbar tiles" description="Square bevelled chrome tiles. Active state: pressed-in bevel plus a gold outline ring.">
+        <Section title="IconButton" description="Square toolbar buttons. Active state uses the dashed-outline treatment.">
           <Row label="Default / active / disabled">
             <IconButton
               label="Pencil"
               icon={
-                <svg viewBox="0 0 16 16" width={18} height={18} shapeRendering="crispEdges">
-                  <path d="M3 13 L3 11 L10 4 L12 6 L5 13 Z M9 5 L11 7" stroke="currentColor" strokeWidth={1.5} fill="none" />
+                <svg viewBox="0 0 24 24" width={18} height={18}>
+                  <path d="M4 20 L4 16 L15 5 L19 9 L8 20 Z M13 7 L17 11" stroke="currentColor" strokeWidth={2} fill="none" strokeLinejoin="round" />
                 </svg>
               }
             />
@@ -154,8 +159,8 @@ export function Showcase() {
               label="Eraser"
               active
               icon={
-                <svg viewBox="0 0 16 16" width={18} height={18} shapeRendering="crispEdges">
-                  <rect x={3} y={7} width={10} height={5} fill="none" stroke="currentColor" strokeWidth={1.5} />
+                <svg viewBox="0 0 24 24" width={18} height={18}>
+                  <rect x="4" y="10" width="16" height="8" rx="2" stroke="currentColor" strokeWidth={2} fill="none" />
                 </svg>
               }
             />
@@ -163,31 +168,39 @@ export function Showcase() {
               label="Fill"
               disabled
               icon={
-                <svg viewBox="0 0 16 16" width={18} height={18} shapeRendering="crispEdges">
-                  <path d="M3 8 L8 3 L13 8 L8 13 Z" fill="none" stroke="currentColor" strokeWidth={1.5} />
+                <svg viewBox="0 0 24 24" width={18} height={18}>
+                  <path d="M4 12 L12 4 L20 12 L12 20 Z" stroke="currentColor" strokeWidth={2} fill="none" />
                 </svg>
               }
             />
           </Row>
           <Row label="Sizes">
-            <IconButton label="Small" size="sm" icon={<span className="pixel-heading text-[16px] leading-[16px]">S</span>} />
-            <IconButton label="Medium" size="md" icon={<span className="pixel-heading text-[16px] leading-[16px]">M</span>} />
-            <IconButton label="Large" size="lg" icon={<span className="pixel-heading text-[24px] leading-[24px]">L</span>} />
+            <IconButton label="Small" size="sm" icon={<span>S</span>} />
+            <IconButton label="Medium" size="md" icon={<span>M</span>} />
+            <IconButton label="Large" size="lg" icon={<span>L</span>} />
           </Row>
         </Section>
 
-        <Section title="SpeechBubble" description="A dialogue plate with a stepped pixel tail — right angles only. Tails: left, right, bottom, none.">
-          <SpeechBubble tail="left"><span className="text-sm">Left tail</span></SpeechBubble>
-          <SpeechBubble tail="right" tone="accent"><span className="text-sm">Right tail, accent</span></SpeechBubble>
-          <SpeechBubble tail="bottom" tone="alert"><span className="text-sm">Bottom tail, alert</span></SpeechBubble>
-          <SpeechBubble tail="none"><span className="text-sm">No tail</span></SpeechBubble>
+        <Section title="SpeechBubble" description="Tails: left, right, bottom, none.">
+          <SpeechBubble tail="left" wobbleKey="kit-bubble-left">
+            <span className="text-sm">Left tail</span>
+          </SpeechBubble>
+          <SpeechBubble tail="right" tone="accent" wobbleKey="kit-bubble-right">
+            <span className="text-sm">Right tail, accent</span>
+          </SpeechBubble>
+          <SpeechBubble tail="bottom" tone="alert" wobbleKey="kit-bubble-bottom">
+            <span className="text-sm">Bottom tail, alert</span>
+          </SpeechBubble>
+          <SpeechBubble tail="none" wobbleKey="kit-bubble-none">
+            <span className="text-sm">No tail</span>
+          </SpeechBubble>
         </Section>
 
-        <Section title="Avatar" description="8 distinct pixel-grid faces, index 0-7, tinted with the player's color, each with its own bevel frame.">
+        <Section title="Avatar" description="8 distinct hand-drawn faces, index 0-7, tinted with the player's color.">
           {Array.from({ length: 8 }, (_, i) => (
             <div key={i} className="flex flex-col items-center gap-1">
               <Avatar avatar={i} color={AVATAR_COLORS[i % AVATAR_COLORS.length]} size={52} label={`Avatar ${i}`} />
-              <span className="font-mono text-xs text-text-muted">{i}</span>
+              <span className="font-mono text-xs text-ink-faint">{i}</span>
             </div>
           ))}
         </Section>
@@ -200,9 +213,17 @@ export function Showcase() {
           </div>
         </Section>
 
-        <Section title="Slider &amp; Toggle" description="Recessed pixel groove with a square gold thumb; a square checkbox that presses in when checked.">
+        <Section title="Slider &amp; Toggle" description="Ink-track range input; hand-drawn checkbox.">
           <div className="w-64">
-            <Slider label="Turn time" value={sliderValue} min={30} max={180} step={10} onChange={setSliderValue} formatValue={(v) => `${v}s`} />
+            <Slider
+              label="Turn time"
+              value={sliderValue}
+              min={30}
+              max={180}
+              step={10}
+              onChange={setSliderValue}
+              formatValue={(v) => `${v}s`}
+            />
           </div>
           <div className="w-64">
             <Slider label="Disabled" value={45} min={0} max={100} onChange={() => {}} disabled />
@@ -214,31 +235,37 @@ export function Showcase() {
           </div>
         </Section>
 
-        <Section title="Modal" description="Window frame with a red close box. Focus-trapped, closes on Esc or backdrop click, restores focus on close.">
+        <Section title="Modal" description="Focus-trapped, closes on Esc or backdrop click, restores focus on close.">
           <SketchButton onClick={() => setModalOpen(true)}>Open modal</SketchButton>
           <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Leave the room?">
-            <p className="mb-4 text-sm text-text-muted">
+            <p className="mb-4 text-sm text-ink-soft">
               You&rsquo;ll lose your spot in the current game. Everyone else keeps playing.
             </p>
             <div className="flex justify-end gap-2">
-              <SketchButton variant="ghost" onClick={() => setModalOpen(false)}>Cancel</SketchButton>
-              <SketchButton variant="danger" onClick={() => setModalOpen(false)}>Leave</SketchButton>
+              <SketchButton variant="ghost" onClick={() => setModalOpen(false)}>
+                Cancel
+              </SketchButton>
+              <SketchButton variant="danger" onClick={() => setModalOpen(false)}>
+                Leave
+              </SketchButton>
             </div>
           </Modal>
         </Section>
 
-        <Section title="Toast / ToastHost" description="Transient parchment scrolls, top-right, aria-live polite.">
-          <SketchButton variant="ghost" onClick={addToast}>Fire a toast</SketchButton>
+        <Section title="Toast / ToastHost" description="Transient ink notes, top-right, aria-live polite.">
+          <SketchButton variant="ghost" onClick={addToast}>
+            Fire a toast
+          </SketchButton>
           <ToastHost toasts={toasts} onDismiss={dismissToast} />
         </Section>
 
-        <Section title="Ticker" description="Turn countdown. Pulses red under 10 seconds — this one is live.">
+        <Section title="Ticker" description="Turn countdown. Alert-orange and pulsing under 10 seconds — this one is live.">
           <Ticker secondsRemaining={seconds} totalSeconds={80} />
           <Ticker secondsRemaining={7} totalSeconds={80} />
           <Ticker secondsRemaining={0} totalSeconds={80} />
         </Section>
 
-        <Section title="WordBlanks" description="Token-length blanks with letter reveal, and full reveal at turn end. Plain monospace — never the chrome pixel face.">
+        <Section title="WordBlanks" description="Token-length blanks with letter reveal, and full reveal at turn end.">
           <div className="flex w-full flex-col gap-4">
             <WordBlanks shape={[3, 5]} revealed={{}} />
             <WordBlanks shape={[3, 5]} revealed={{ 0: 'I', 4: 'C' }} />
@@ -246,7 +273,7 @@ export function Showcase() {
           </div>
         </Section>
 
-        <Section title="ProgressBar" description="Recessed groove fill with a dithered leading edge instead of a smooth gradient.">
+        <Section title="ProgressBar" description="Sketchy fill with a torn leading edge.">
           <div className="flex w-full flex-col gap-4">
             <ProgressBar value={20} tone="accent" label="Round 1 of 3" />
             <ProgressBar value={65} tone="ok" label="4 of 6 guessed" />
@@ -254,23 +281,10 @@ export function Showcase() {
           </div>
         </Section>
 
-        <Section title="Spinner" description="Pixel-dot loading ring, in context.">
+        <Section title="Spinner" description="Doodle loading indicator, in context.">
           <Spinner />
           <Spinner size={44} />
           <SketchButton loading>Connecting</SketchButton>
-        </Section>
-
-        <Section title="Dither texture" description="Ordered 2x2 checkerboard dither, tiled — stands in for smooth gradient shading everywhere in the kit.">
-          <div className={`h-20 w-40 bg-chrome-panel ${bevelClass({ tone: 'chrome' })}`} style={{ ...ditherStyle({ colorB: 'rgb(255 255 255 / 0.08)', cell: 3 }), backgroundColor: 'var(--color-chrome-panel)' }} />
-          <div className={`h-20 w-40 bg-parchment ${bevelClass({ tone: 'parchment' })}`} style={{ ...ditherStyle({ colorB: 'rgb(0 0 0 / 0.08)', cell: 3 }), backgroundColor: 'var(--color-parchment)' }} />
-        </Section>
-
-        <Section title="Canvas contrast" description="The one deliberate rule: the drawing canvas stays bright and near-white, wrapped in a parchment mat, inside dark chrome.">
-          <div className={`p-3 ${bevelClass({ tone: 'chrome' })} bg-chrome-panel`}>
-            <div className={`p-3 bg-parchment ${bevelClass({ tone: 'parchment' })}`}>
-              <div className={`h-24 w-56 bg-canvas ${bevelClass({ tone: 'canvas' })}`} />
-            </div>
-          </div>
         </Section>
       </div>
     </Paper>

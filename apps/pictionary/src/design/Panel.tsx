@@ -1,5 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { bevelClass, type BevelTone } from './utils'
+import { useId, type CSSProperties, type ReactNode } from 'react'
+import { doodleRadius, doodleRotation, fallbackKey } from './utils'
 
 export type PanelTone = 'paper' | 'accent' | 'alert'
 
@@ -7,36 +7,56 @@ export interface PanelProps {
   children?: ReactNode
   title?: string
   tone?: PanelTone
+  /** Apply a tiny, stable per-instance rotation so the panel doesn't look machine-cut. Default true. */
+  wobble?: boolean
   className?: string
   style?: CSSProperties
+  /** Stable key used to derive rotation/corner jitter. Defaults to `title`, else a per-instance id. */
+  wobbleKey?: string
 }
 
-const TONE: Record<PanelTone, { bevel: BevelTone; barBg: string; barLine: string; label: string }> = {
-  paper: { bevel: 'chrome', barBg: 'bg-chrome', barLine: 'var(--color-chrome-lo)', label: 'text-text' },
-  accent: { bevel: 'gold', barBg: 'bg-gold-lo', barLine: 'var(--color-gold-lo)', label: 'text-gold-hi' },
-  alert: { bevel: 'red', barBg: 'bg-red-lo', barLine: 'var(--color-red-lo)', label: 'text-red-hi' },
+const TONE_CLASSES: Record<PanelTone, string> = {
+  paper: 'bg-paper-white',
+  accent: 'bg-accent-wash',
+  alert: 'bg-alert-wash',
 }
 
 /**
- * The base bevelled chrome panel every surface in the kit is built from. A
- * titled panel gets reference-A's segmented title bar: two small bevelled
- * end-cap tiles bracketing an uppercase label plate.
+ * The base bordered ink panel every surface in the kit is built from: 3px
+ * near-black border, hard offset shadow, hand-drawn corner radius, and a
+ * whisper of per-instance rotation.
  */
-export function Panel({ children, title, tone = 'paper', className = '', style }: PanelProps) {
-  const t = TONE[tone]
+export function Panel({
+  children,
+  title,
+  tone = 'paper',
+  wobble = true,
+  className = '',
+  style,
+  wobbleKey,
+}: PanelProps) {
+  const reactId = useId()
+  const key = wobbleKey ?? title ?? fallbackKey('panel', reactId)
+  const rotation = wobble ? doodleRotation(key) : 0
+
   return (
-    <section className={`relative bg-chrome-panel ${bevelClass({ tone: t.bevel })} ${className}`} style={style}>
+    <section
+      className={`relative border-[3px] border-ink ${TONE_CLASSES[tone]} shadow-ink px-5 py-4 ${className}`}
+      style={{
+        borderRadius: doodleRadius(key),
+        transform: rotation ? `rotate(${rotation.toFixed(2)}deg)` : undefined,
+        ...style,
+      }}
+    >
       {title && (
-        <header
-          className={`flex items-center gap-2 px-2 py-1 ${t.barBg}`}
-          style={{ borderBottom: `3px solid ${t.barLine}` }}
+        <h3
+          className="absolute -top-3.5 left-4 bg-paper px-2 font-[family-name:var(--font-display)] text-base leading-none text-ink"
+          style={{ transform: rotation ? `rotate(${(-rotation * 0.6).toFixed(2)}deg)` : undefined }}
         >
-          <span aria-hidden className={`h-2.5 w-2.5 shrink-0 ${bevelClass({ tone: t.bevel, size: 'sm' })}`} />
-          <h3 className={`pixel-heading min-w-0 flex-1 truncate text-[16px] leading-[16px] ${t.label}`}>{title}</h3>
-          <span aria-hidden className={`h-2.5 w-2.5 shrink-0 ${bevelClass({ tone: t.bevel, size: 'sm' })}`} />
-        </header>
+          {title}
+        </h3>
       )}
-      <div className="px-4 py-4">{children}</div>
+      {children}
     </section>
   )
 }

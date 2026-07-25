@@ -24,35 +24,24 @@ export function HomeScreen(props: HomeScreenProps) {
       title="Scribble Club"
       subtitle="Draw badly. Guess brilliantly. Everything happens peer-to-peer."
       actions={
-        <button type="button" className={`flex items-center gap-2 bg-chrome-panel px-2 py-1 hover:bg-chrome ${FOCUS_RING}`} onClick={props.onEditProfile}>
+        <button type="button" className={`flex items-center gap-2 rounded-full px-2 py-1 hover:bg-paper-deep ${FOCUS_RING}`} onClick={props.onEditProfile}>
           <Avatar avatar={props.profile.avatar} color={props.profile.color} size={38} label={props.profile.nickname} />
-          <span className="text-sm font-semibold text-text">{props.profile.nickname}</span>
+          <span className="font-[family-name:var(--font-display)]">{props.profile.nickname}</span>
         </button>
       }
     >
       <div className="grid flex-1 items-center gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <Panel tone="accent" className="p-7 sm:p-10">
+        <Panel tone="accent" wobbleKey="home-create" className="p-7 sm:p-10">
           <div className="max-w-xl">
-            {/* Drawn as rects on a 16x16 grid rather than a text glyph: the
-                unicode pencil renders as a thin antialiased outline in the
-                system font, which is the one thing this skin can't have. */}
-            <svg viewBox="0 0 16 16" width={48} height={48} shapeRendering="crispEdges" aria-hidden>
-              <rect x={5} y={1} width={6} height={3} fill="var(--color-red)" />
-              <rect x={5} y={4} width={6} height={1} fill="var(--color-stone-hi)" />
-              <rect x={5} y={5} width={6} height={6} fill="var(--color-gold)" />
-              <rect x={5} y={5} width={2} height={6} fill="var(--color-gold-hi)" />
-              <rect x={5} y={11} width={6} height={1} fill="var(--color-parchment)" />
-              <rect x={6} y={12} width={4} height={1} fill="var(--color-parchment)" />
-              <rect x={7} y={13} width={2} height={2} fill="var(--color-ink)" />
-            </svg>
-            <h2 className="pixel-heading mt-3 text-[32px] leading-[32px] text-gold-hi">Start a fresh page</h2>
-            <p className="mb-7 mt-3 text-text-muted">Create a room, share its short link, and invite up to seven friends.</p>
+            <span className="text-5xl" aria-hidden>✎</span>
+            <h2 className="mt-3 font-[family-name:var(--font-display)] text-4xl">Start a fresh page</h2>
+            <p className="mb-7 mt-3 text-ink-soft">Create a room, share its short link, and invite up to seven friends.</p>
             <SketchButton size="lg" onClick={props.onCreateRoom}>Create a room</SketchButton>
           </div>
         </Panel>
 
         <div className="flex flex-col gap-6">
-          <TornCard title="Join your friends">
+          <TornCard title="Join your friends" wobbleKey="home-join">
             <form
               className="flex flex-col gap-3 sm:flex-row"
               onSubmit={(event) => {
@@ -71,7 +60,7 @@ export function HomeScreen(props: HomeScreenProps) {
               />
               <SketchButton type="submit" disabled={!canJoin} loading={props.joining}>Join</SketchButton>
             </form>
-            {props.error && <p role="alert" className="mt-3 text-sm font-semibold text-red-deep">{props.error}</p>}
+            {props.error && <p role="alert" className="mt-3 text-sm font-semibold text-alert-deep">{props.error}</p>}
           </TornCard>
 
           <div className="grid grid-cols-2 gap-3">
