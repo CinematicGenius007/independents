@@ -1,6 +1,5 @@
 import type { Player } from '../shared/types'
 import { Avatar } from './Avatar'
-import { doodleRadius } from './utils'
 
 export type PlayerChipStatus = 'drawing' | 'guessed' | 'disconnected' | 'idle'
 
@@ -34,14 +33,12 @@ const STATUS_CLASSES: Record<PlayerChipStatus, string> = {
  */
 export function PlayerChip({ player, score, status = 'idle', isSelf = false, className = '' }: PlayerChipProps) {
   const offline = player.connection === 'disconnected'
-  const key = `chip:${player.id}`
 
   return (
     <div
       className={`relative flex items-center gap-2.5 border-[3px] border-ink bg-paper-white px-3 py-2 shadow-ink-sm ${
         offline ? 'opacity-55 grayscale' : ''
       } ${className}`}
-      style={{ borderRadius: doodleRadius(key) }}
     >
       <div className="relative shrink-0">
         <Avatar avatar={player.avatar} color={player.color} size={36} label={player.nickname} />

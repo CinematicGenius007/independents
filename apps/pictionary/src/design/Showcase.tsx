@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { AVATAR_COLORS, type Player } from '../shared/types'
 import { Paper } from './Paper'
 import { Panel } from './Panel'
-import { TornCard } from './TornCard'
+import { NoteCard } from './NoteCard'
 import { SketchButton } from './SketchButton'
 import { IconButton } from './IconButton'
 import { SpeechBubble } from './SpeechBubble'
@@ -101,30 +101,25 @@ export function Showcase() {
 
         <Section title="Paper &amp; Panel" description="The base surface, plus the bordered ink panel every other surface builds on.">
           <Row label="Tones">
-            <Panel title="Lobby" tone="paper" wobbleKey="kit-panel-paper" className="w-56">
+            <Panel title="Lobby" tone="paper" className="w-56">
               <p className="text-sm text-ink-soft">Paper tone, default.</p>
             </Panel>
-            <Panel title="Your turn" tone="accent" wobbleKey="kit-panel-accent" className="w-56">
+            <Panel title="Your turn" tone="accent" className="w-56">
               <p className="text-sm text-ink-soft">Accent tone.</p>
             </Panel>
-            <Panel title="Time's up" tone="alert" wobbleKey="kit-panel-alert" className="w-56">
+            <Panel title="Time's up" tone="alert" className="w-56">
               <p className="text-sm text-ink-soft">Alert tone.</p>
-            </Panel>
-          </Row>
-          <Row label="Wobble off">
-            <Panel title="Perfectly square" wobble={false} className="w-56">
-              <p className="text-sm text-ink-soft">No rotation, still hand-drawn corners.</p>
             </Panel>
           </Row>
         </Section>
 
-        <Section title="TornCard" description="Panel variant with a torn bottom edge — deterministic jagged clip-path.">
-          <TornCard title="Round 2 recap" wobbleKey="kit-torn-1" className="w-64">
+        <Section title="NoteCard" description="Panel variant that keeps its title inside, over a ruled line, instead of on the border.">
+          <NoteCard title="Round 2 recap" className="w-64">
             <p className="text-sm text-ink-soft">Ada scored 90 points this round.</p>
-          </TornCard>
-          <TornCard title="Alert variant" tone="alert" wobbleKey="kit-torn-2" className="w-64">
+          </NoteCard>
+          <NoteCard title="Alert variant" tone="alert" className="w-64">
             <p className="text-sm text-ink-soft">Time ran out before anyone guessed.</p>
-          </TornCard>
+          </NoteCard>
         </Section>
 
         <Section title="SketchButton" description="Primary (yellow-filled), ghost, danger — each in sm/md/lg, plus disabled and loading.">
@@ -182,16 +177,16 @@ export function Showcase() {
         </Section>
 
         <Section title="SpeechBubble" description="Tails: left, right, bottom, none.">
-          <SpeechBubble tail="left" wobbleKey="kit-bubble-left">
+          <SpeechBubble tail="left">
             <span className="text-sm">Left tail</span>
           </SpeechBubble>
-          <SpeechBubble tail="right" tone="accent" wobbleKey="kit-bubble-right">
+          <SpeechBubble tail="right" tone="accent">
             <span className="text-sm">Right tail, accent</span>
           </SpeechBubble>
-          <SpeechBubble tail="bottom" tone="alert" wobbleKey="kit-bubble-bottom">
+          <SpeechBubble tail="bottom" tone="alert">
             <span className="text-sm">Bottom tail, alert</span>
           </SpeechBubble>
-          <SpeechBubble tail="none" wobbleKey="kit-bubble-none">
+          <SpeechBubble tail="none">
             <span className="text-sm">No tail</span>
           </SpeechBubble>
         </Section>
@@ -273,7 +268,7 @@ export function Showcase() {
           </div>
         </Section>
 
-        <Section title="ProgressBar" description="Sketchy fill with a torn leading edge.">
+        <Section title="ProgressBar" description="Ink fill on a paper track, flat leading edge.">
           <div className="flex w-full flex-col gap-4">
             <ProgressBar value={20} tone="accent" label="Round 1 of 3" />
             <ProgressBar value={65} tone="ok" label="4 of 6 guessed" />

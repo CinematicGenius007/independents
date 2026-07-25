@@ -1,5 +1,5 @@
 import { CanvasSurface, CanvasTools, type CanvasOp, type CanvasState, type ToolSettings } from '../canvas'
-import { Panel, SketchButton, Ticker, TornCard } from '../design'
+import { Panel, SketchButton, Ticker, NoteCard } from '../design'
 import type { PracticePrompt, PracticeState } from '../practice'
 import { CATEGORY_LABELS } from '../shared/types'
 import { ScreenFrame } from './ScreenFrame'
@@ -30,19 +30,19 @@ export function PracticeScreen(props: PracticeScreenProps) {
         actions={<SketchButton onClick={props.onExit}>Done</SketchButton>}
       >
         <div className="mx-auto grid w-full max-w-3xl gap-5 sm:grid-cols-3">
-          <TornCard wobbleKey="practice-drawn">
+          <NoteCard>
             <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">Words drawn</p>
             <p className="mt-1 font-[family-name:var(--font-display)] text-4xl">{props.state.results.length}</p>
-          </TornCard>
-          <TornCard wobbleKey="practice-guessed">
+          </NoteCard>
+          <NoteCard>
             <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">Bot guessed</p>
             <p className="mt-1 font-[family-name:var(--font-display)] text-4xl">{guessed}</p>
-          </TornCard>
-          <TornCard wobbleKey="practice-missed">
+          </NoteCard>
+          <NoteCard>
             <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">Bot missed</p>
             <p className="mt-1 font-[family-name:var(--font-display)] text-4xl">{props.state.results.length - guessed}</p>
-          </TornCard>
-          <Panel title="Your practice pages" wobble={false} className="sm:col-span-3">
+          </NoteCard>
+          <Panel title="Your practice pages" className="sm:col-span-3">
             <ol className="grid gap-2 sm:grid-cols-2">
               {props.state.results.map((result, index) => (
                 <li key={`${index}:${result.category}:${result.word}`} className="flex justify-between gap-3 border-b border-dashed border-ink-ghost py-2">
@@ -90,7 +90,7 @@ export function PracticeScreen(props: PracticeScreenProps) {
         the pencil case and the gaps) keeps the whole screen reachable, and
         gives back the full 64rem once the viewport is tall enough to afford it.
       */}
-      <div className="mx-auto flex w-full max-w-[min(64rem,calc((100dvh-24.5rem)*1.6))] flex-1 flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[min(64rem,calc((100dvh-21rem)*1.6))] flex-1 flex-col gap-4">
         <CanvasSurface
           ops={props.canvasState.ops}
           nextId={props.canvasState.nextId}
@@ -99,7 +99,7 @@ export function PracticeScreen(props: PracticeScreenProps) {
           disabled={reviewing}
           onCommit={props.onCanvasCommit}
         />
-        <Panel title="Pencil case" wobble={false}>
+        <Panel title="Pencil case">
           <CanvasTools
             value={props.settings}
             disabled={reviewing}

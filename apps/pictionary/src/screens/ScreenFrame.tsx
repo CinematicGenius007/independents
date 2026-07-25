@@ -10,16 +10,38 @@ export interface ScreenFrameProps {
   compact?: boolean
 }
 
-/** Shared page chrome for the prop-driven screens. */
+/**
+ * Shared page chrome for the prop-driven screens.
+ *
+ * `compact` is for the two screens built around the canvas (game, practice).
+ * There the header is supporting information, not the point of the page, and
+ * every pixel it takes comes straight out of the drawing area — so it shrinks
+ * the padding, the title and the gap below it together rather than just the
+ * outer padding.
+ */
 export function ScreenFrame({ children, eyebrow, title, subtitle, actions, compact = false }: ScreenFrameProps) {
   return (
     <Paper className="min-h-screen">
-      <main className={`mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 sm:px-6 ${compact ? 'py-4' : 'py-7 sm:py-10'}`}>
-        <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+      <main className={`mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 sm:px-6 ${compact ? 'py-3' : 'py-7 sm:py-10'}`}>
+        <header
+          className={`flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between ${
+            compact ? 'mb-3' : 'mb-6 sm:mb-8'
+          }`}
+        >
           <div>
             {eyebrow && <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink-faint">{eyebrow}</p>}
-            <h1 className="font-[family-name:var(--font-display)] text-4xl leading-none text-ink sm:text-5xl">{title}</h1>
-            {subtitle && <p className="mt-2 max-w-2xl text-sm text-ink-soft sm:text-base">{subtitle}</p>}
+            <h1
+              className={`font-[family-name:var(--font-display)] leading-none text-ink ${
+                compact ? 'text-3xl' : 'text-4xl sm:text-5xl'
+              }`}
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              <p className={`max-w-2xl text-ink-soft ${compact ? 'mt-1 text-sm' : 'mt-2 text-sm sm:text-base'}`}>
+                {subtitle}
+              </p>
+            )}
           </div>
           {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </header>

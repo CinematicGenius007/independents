@@ -1,5 +1,5 @@
 import type { PlayerProfile } from '../shared/types'
-import { Avatar, Panel, SketchButton, TornCard } from '../design'
+import { Avatar, Panel, SketchButton, NoteCard } from '../design'
 import { FOCUS_RING } from '../design/utils'
 import { ScreenFrame, inputClassName } from './ScreenFrame'
 
@@ -31,7 +31,7 @@ export function HomeScreen(props: HomeScreenProps) {
       }
     >
       <div className="grid flex-1 items-center gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <Panel tone="accent" wobbleKey="home-create" className="p-7 sm:p-10">
+        <Panel tone="accent" className="p-7 sm:p-10">
           <div className="max-w-xl">
             <span className="text-5xl" aria-hidden>✎</span>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-4xl">Start a fresh page</h2>
@@ -41,7 +41,7 @@ export function HomeScreen(props: HomeScreenProps) {
         </Panel>
 
         <div className="flex flex-col gap-6">
-          <TornCard title="Join your friends" wobbleKey="home-join">
+          <NoteCard title="Join your friends">
             <form
               className="flex flex-col gap-3 sm:flex-row"
               onSubmit={(event) => {
@@ -61,7 +61,7 @@ export function HomeScreen(props: HomeScreenProps) {
               <SketchButton type="submit" disabled={!canJoin} loading={props.joining}>Join</SketchButton>
             </form>
             {props.error && <p role="alert" className="mt-3 text-sm font-semibold text-alert-deep">{props.error}</p>}
-          </TornCard>
+          </NoteCard>
 
           <div className="grid grid-cols-2 gap-3">
             <SketchButton variant="ghost" onClick={props.onPractice}>Practice solo</SketchButton>

@@ -1,5 +1,5 @@
 import type { Player } from '../shared/types'
-import { Avatar, Panel, ProgressBar, SketchButton, TornCard } from '../design'
+import { Avatar, Panel, ProgressBar, SketchButton, NoteCard } from '../design'
 import { ScreenFrame } from './ScreenFrame'
 
 export interface StandingView {
@@ -30,7 +30,7 @@ export function RoundSummaryScreen(props: RoundSummaryScreenProps) {
       actions={<SketchButton variant="danger" size="sm" onClick={props.onLeave}>Leave</SketchButton>}
     >
       <div className="mx-auto grid w-full max-w-3xl gap-6 md:grid-cols-[1fr_0.8fr]">
-        <Panel title="Standings" wobbleKey="round-standing">
+        <Panel title="Standings">
           <ol className="space-y-3">
             {[...props.standings].sort((a, b) => b.score - a.score).map(({ player, score, pointsGained }, index) => (
               <li key={player.id} className="flex items-center gap-3 border-b-2 border-dashed border-ink-ghost pb-2 last:border-0">
@@ -43,7 +43,7 @@ export function RoundSummaryScreen(props: RoundSummaryScreenProps) {
             ))}
           </ol>
         </Panel>
-        <TornCard tone="accent" title={lastRound ? 'Final scores next' : 'Next page'} wobbleKey="round-next">
+        <NoteCard tone="accent" title={lastRound ? 'Final scores next' : 'Next page'}>
           <p className="mb-4 text-sm text-ink-soft">
             {props.secondsUntilNext != null ? `Continuing in ${props.secondsUntilNext} seconds…` : 'Waiting for the host…'}
           </p>
@@ -51,7 +51,7 @@ export function RoundSummaryScreen(props: RoundSummaryScreenProps) {
             <ProgressBar accessibleLabel="Time until next turn" value={(props.secondsUntilNext / 5) * 100} />
           )}
           {props.isHost && props.onContinue && <SketchButton className="mt-5 w-full" onClick={props.onContinue}>{lastRound ? 'See results' : 'Next turn'}</SketchButton>}
-        </TornCard>
+        </NoteCard>
       </div>
     </ScreenFrame>
   )
@@ -73,7 +73,7 @@ export function ResultsScreen(props: ResultsScreenProps) {
     <ScreenFrame eyebrow="Game over" title="The final scribble" subtitle="The page is full and the points are counted.">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-7">
         {winner && (
-          <Panel tone="accent" wobbleKey="winner" className="flex flex-col items-center py-7 text-center">
+          <Panel tone="accent" className="flex flex-col items-center py-7 text-center">
             <span className="text-4xl" aria-hidden>★</span>
             <Avatar avatar={winner.player.avatar} color={winner.player.color} size={92} label={winner.player.nickname} />
             <h2 className="font-[family-name:var(--font-display)] text-3xl">{winner.player.nickname} wins!</h2>

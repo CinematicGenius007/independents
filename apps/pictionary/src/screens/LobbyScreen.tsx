@@ -45,7 +45,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
       )}
       <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.7fr)_minmax(0,1.3fr)]">
         <div className="flex flex-col gap-6">
-          <Panel title={`Players · ${props.players.length}/${LIMITS.maxPlayers}`} wobbleKey="lobby-players">
+          <Panel title={`Players · ${props.players.length}/${LIMITS.maxPlayers}`}>
             <div className="flex flex-col gap-3">
               {props.players.map((player) => (
                 <PlayerChip
@@ -57,13 +57,13 @@ export function LobbyScreen(props: LobbyScreenProps) {
               ))}
             </div>
           </Panel>
-          <Panel tone="accent" title="Invite link" wobbleKey="lobby-invite">
+          <Panel tone="accent" title="Invite link">
             <p className="mb-3 break-all font-mono text-xs text-ink-soft">{props.inviteUrl}</p>
             <SketchButton size="sm" onClick={props.onCopyInvite}>{props.copied ? 'Copied!' : 'Copy invite'}</SketchButton>
           </Panel>
         </div>
 
-        <Panel title="House rules" wobbleKey="lobby-rules" className={!isHost ? 'opacity-80' : ''}>
+        <Panel title="House rules" className={!isHost ? 'opacity-80' : ''}>
           <fieldset disabled={!isHost} className="grid gap-6 sm:grid-cols-2 disabled:opacity-65">
             <Slider
               label="Drawing time"

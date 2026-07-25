@@ -24,7 +24,7 @@ export function OnboardingScreen(props: OnboardingScreenProps) {
       title="Scribble Club"
       subtitle="Pick a face for the sketchbook. No account, no password — this stays on your device."
     >
-      <Panel className="mx-auto w-full max-w-2xl p-5 sm:p-8" wobbleKey="onboarding-card">
+      <Panel className="mx-auto w-full max-w-2xl p-5 sm:p-8">
         <form
           className="grid gap-7 sm:grid-cols-[180px_1fr]"
           onSubmit={(event) => {

@@ -57,8 +57,13 @@
   --shadow-lift: 4px 4px 0 rgb(26 26 26 / 0.18);
 
   /* Corners — square geometry. Just enough rounding that ink corners don't
-     fray under anti-aliasing; nothing here should read as "rounded". */
+     fray under anti-aliasing; nothing here should read as "rounded".
+     `--radius-doodle` used to be picked per-instance from two values via a
+     hash, which is what made the boxes look misshapen — and it was never
+     actually defined here, so every `rounded-doodle` in the app was silently
+     a no-op. It is now one uniform value, so corners match everywhere. */
   --radius-ink: 3px;
+  --radius-doodle: 2px;
 
   /* Motion — every value must be neutralised under prefers-reduced-motion */
   --ease-snap: cubic-bezier(0.2, 0.9, 0.3, 1.4);

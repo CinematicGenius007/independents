@@ -17,9 +17,13 @@ const SIZE_PX: Record<NonNullable<IconButtonProps['size']>, string> = {
 }
 
 /**
- * Square icon-only button for the drawing toolbar. `active` swaps the solid
- * ink border for a dashed accent outline, matching the reference's
- * dashed-diamond "selected target" language.
+ * Square icon-only button for the drawing toolbar.
+ *
+ * `active` reads as pressed into the page: the ink border stays (a dashed
+ * accent outline alone was too faint to find at a glance while drawing), the
+ * fill goes to the accent wash, and the offset shadow collapses so the tile
+ * sits lower than its neighbours. Shape, fill and elevation all move together,
+ * so the selected tool is legible without relying on color.
  */
 export function IconButton({ icon, label, active = false, size = 'md', className = '', disabled, ...rest }: IconButtonProps) {
   return (
@@ -30,13 +34,17 @@ export function IconButton({ icon, label, active = false, size = 'md', className
       title={label}
       disabled={disabled}
       className={[
-        'inline-flex items-center justify-center rounded-[10px] border-[3px] bg-paper-white text-ink',
+        // No `bg-*` or `border-*` in the base: Tailwind resolves conflicting
+        // utilities by their order in the generated stylesheet, not by their
+        // order in this string, so a base colour here can silently beat the
+        // state colour below. Each state owns its own background and border.
+        'inline-flex items-center justify-center rounded-doodle border-[3px] text-ink',
         'transition-[transform,box-shadow] duration-100 ease-out',
         disabled
-          ? 'cursor-not-allowed border-ink-ghost text-ink-faint opacity-60'
+          ? 'cursor-not-allowed border-ink-ghost bg-paper-white text-ink-faint opacity-60'
           : active
-            ? 'border-dashed border-accent-deep bg-accent-wash shadow-ink-sm'
-            : 'border-ink shadow-ink-sm hover:-translate-y-0.5 hover:shadow-ink active:translate-y-0.5 active:shadow-none',
+            ? 'translate-x-[2px] translate-y-[2px] border-ink bg-accent-wash shadow-none'
+            : 'border-ink bg-paper-white shadow-ink-sm hover:-translate-y-0.5 hover:shadow-ink active:translate-y-0.5 active:shadow-none',
         SIZE_PX[size],
         FOCUS_RING,
         className,

@@ -1,6 +1,3 @@
-import { useId } from 'react'
-import { tornBottomClipPath } from './utils'
-
 export interface ProgressBarProps {
   /** 0-100. */
   value: number
@@ -17,11 +14,9 @@ const TONE_BG: Record<NonNullable<ProgressBarProps['tone']>, string> = {
   ok: 'bg-ok',
 }
 
-/** A sketchy fill bar — the ink track is straight, the fill's leading edge is torn/jagged. */
+/** A fill bar drawn as ink on paper: straight track, flat leading edge. */
 export function ProgressBar({ value, label, accessibleLabel, tone = 'accent', className = '' }: ProgressBarProps) {
-  const reactId = useId()
   const clamped = Math.min(100, Math.max(0, value))
-  const clip = tornBottomClipPath(`progress:${reactId}`, 5)
 
   return (
     <div className={className}>
@@ -41,7 +36,7 @@ export function ProgressBar({ value, label, accessibleLabel, tone = 'accent', cl
       >
         <div
           className={`h-full origin-left transition-[width] duration-300 ease-out ${TONE_BG[tone]}`}
-          style={{ width: `${clamped}%`, clipPath: clamped < 100 ? clip : undefined }}
+          style={{ width: `${clamped}%` }}
         />
       </div>
     </div>

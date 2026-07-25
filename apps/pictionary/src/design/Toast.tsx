@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { PanelTone } from './Panel'
-import { doodleRadius, FOCUS_RING } from './utils'
+import { FOCUS_RING } from './utils'
 
 export interface ToastData {
   id: string
@@ -26,7 +26,6 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   return (
     <div
       className={`pointer-events-auto flex max-w-sm items-start gap-2 border-[3px] border-ink px-3.5 py-2.5 shadow-ink-sm ${TONE_CLASSES[toast.tone ?? 'paper']}`}
-      style={{ borderRadius: doodleRadius(toast.id) }}
     >
       <p className="min-w-0 flex-1 text-sm leading-snug text-ink">{toast.message}</p>
       <button

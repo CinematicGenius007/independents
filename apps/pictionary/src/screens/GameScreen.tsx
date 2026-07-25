@@ -81,7 +81,7 @@ export function GameScreen(props: GameScreenProps) {
       </div>
 
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)_300px]">
-        <Panel title="Scoreboard" wobble={false} className="order-2 h-fit lg:order-1">
+        <Panel title="Scoreboard" className="order-2 h-fit lg:order-1">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {[...props.players].sort((a, b) => b.score - a.score).map(({ player, score, status }) => (
               <PlayerChip key={player.id} player={player} score={score} status={status} isSelf={player.id === props.selfId} />
@@ -93,7 +93,7 @@ export function GameScreen(props: GameScreenProps) {
           {props.canvas}
         </section>
 
-        <Panel title="Guesses" wobble={false} className={`${props.chatExpanded ? 'flex' : 'hidden'} order-3 min-h-72 flex-col lg:flex`}>
+        <Panel title="Guesses" className={`${props.chatExpanded ? 'flex' : 'hidden'} order-3 min-h-72 flex-col lg:flex`}>
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1" role="log" aria-live="polite" aria-label="Game chat">
             {props.messages.map((message) => (
               <p key={message.id} className={`text-sm ${messageTone[message.tone]}`}>

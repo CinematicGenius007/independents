@@ -9,8 +9,8 @@ export type { PaperProps } from './Paper'
 export { Panel } from './Panel'
 export type { PanelProps, PanelTone } from './Panel'
 
-export { TornCard } from './TornCard'
-export type { TornCardProps } from './TornCard'
+export { NoteCard } from './NoteCard'
+export type { NoteCardProps } from './NoteCard'
 
 export { SketchButton } from './SketchButton'
 export type { SketchButtonProps, SketchButtonVariant, SketchButtonSize } from './SketchButton'
@@ -51,14 +51,4 @@ export type { ProgressBarProps } from './ProgressBar'
 export { Spinner } from './Spinner'
 export type { SpinnerProps } from './Spinner'
 
-export {
-  hashString,
-  wobbleFromKey,
-  pickFromKey,
-  doodleRadius,
-  doodleRotation,
-  tornBottomClipPath,
-  fallbackKey,
-  FOCUS_RING,
-  DOODLE_RADII,
-} from './utils'
+export { hashString, pickFromKey, FOCUS_RING } from './utils'

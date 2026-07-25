@@ -1,5 +1,5 @@
 import { CATEGORY_LABELS, type GameHistoryEntry, type PlayerProfile, type PlayerStats } from '../shared/types'
-import { Avatar, Panel, ProgressBar, SketchButton, TornCard } from '../design'
+import { Avatar, Panel, ProgressBar, SketchButton, NoteCard } from '../design'
 import { ScreenFrame } from './ScreenFrame'
 
 export interface StatsScreenProps {
@@ -16,11 +16,11 @@ export interface StatsScreenProps {
 
 function StatCard({ label, value, note }: { label: string; value: string | number; note?: string }) {
   return (
-    <TornCard wobbleKey={`stat-${label}`}>
+    <NoteCard>
       <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">{label}</p>
       <p className="mt-1 font-[family-name:var(--font-display)] text-3xl">{value}</p>
       {note && <p className="mt-1 text-xs text-ink-soft">{note}</p>}
-    </TornCard>
+    </NoteCard>
   )
 }
 
@@ -36,7 +36,7 @@ export function StatsScreen(props: StatsScreenProps) {
       actions={<SketchButton variant="ghost" onClick={props.onBack}>Back</SketchButton>}
     >
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-        <Panel tone="accent" wobbleKey="stats-profile" className="h-fit text-center">
+        <Panel tone="accent" className="h-fit text-center">
           <Avatar avatar={props.profile.avatar} color={props.profile.color} size={104} label={props.profile.nickname} />
           <p className="mt-2 font-[family-name:var(--font-display)] text-2xl">{props.profile.nickname}</p>
           <p className="font-mono text-sm text-ink-soft">Rating {props.stats.rating}</p>
@@ -53,7 +53,7 @@ export function StatsScreen(props: StatsScreenProps) {
             <StatCard label="Favorite" value={props.stats.favoriteCategory ? CATEGORY_LABELS[props.stats.favoriteCategory] : '—'} />
           </div>
 
-          <Panel title="Recent pages" wobbleKey="stats-history" className="mt-7">
+          <Panel title="Recent pages" className="mt-7">
             {props.history.length ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] text-left text-sm">

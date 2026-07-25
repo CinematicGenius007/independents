@@ -1,5 +1,4 @@
-import { useId, type ReactNode } from 'react'
-import { doodleRadius, doodleRotation, fallbackKey } from './utils'
+import type { ReactNode } from 'react'
 import type { PanelTone } from './Panel'
 
 export type SpeechBubbleTail = 'left' | 'right' | 'bottom' | 'none'
@@ -8,9 +7,7 @@ export interface SpeechBubbleProps {
   children?: ReactNode
   tail?: SpeechBubbleTail
   tone?: PanelTone
-  wobble?: boolean
   className?: string
-  wobbleKey?: string
 }
 
 const TONE_BG: Record<PanelTone, string> = {
@@ -26,20 +23,10 @@ const TAIL_POSITION: Record<Exclude<SpeechBubbleTail, 'none'>, string> = {
   bottom: 'bottom-[-9px] left-6 border-t-0 border-l-0',
 }
 
-export function SpeechBubble({ children, tail = 'bottom', tone = 'paper', wobble = false, className = '', wobbleKey }: SpeechBubbleProps) {
-  const reactId = useId()
-  const key = wobbleKey ?? fallbackKey('bubble', reactId)
-  const rotation = wobble ? doodleRotation(key, 0.6) : 0
-
+export function SpeechBubble({ children, tail = 'bottom', tone = 'paper', className = '' }: SpeechBubbleProps) {
   return (
-    <div
-      className={`relative inline-block ${className}`}
-      style={{ transform: rotation ? `rotate(${rotation.toFixed(2)}deg)` : undefined }}
-    >
-      <div
-        className={`relative border-[3px] border-ink px-3 py-2 shadow-ink-sm ${TONE_BG[tone]}`}
-        style={{ borderRadius: doodleRadius(key) }}
-      >
+    <div className={`relative inline-block ${className}`}>
+      <div className={`relative border-[3px] border-ink px-3 py-2 shadow-ink-sm ${TONE_BG[tone]}`}>
         {children}
       </div>
       {tail !== 'none' && (
