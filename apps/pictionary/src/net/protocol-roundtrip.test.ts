@@ -26,7 +26,7 @@ function fakeSyncableState(overrides: Partial<SyncableState> = {}): SyncableStat
 
 describe('CtrlMessage round trip', () => {
   const variants: CtrlMessage[] = [
-    { t: 'hello', profile: { id: 'peer-1', nickname: 'Ada', color: '#F5D311', avatar: 0 }, joinedAt: 1000 },
+    { t: 'hello', profile: { id: 'peer-1', nickname: 'Ada', color: '#F5D311', avatar: 0 }, joinedAt: 1000, established: false },
     {
       t: 'roster',
       players: [

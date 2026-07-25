@@ -27,7 +27,7 @@ export const APP_ID = 'scribble-club-v1'
 
 export type CtrlMessage =
   /** First thing every peer sends on connect, and replies with on receipt. */
-  | { t: 'hello'; profile: PlayerProfile; joinedAt: number }
+  | { t: 'hello'; profile: PlayerProfile; joinedAt: number; established: boolean }
   /** Host's authoritative roster; recipients reconcile against it. */
   | { t: 'roster'; players: Player[]; hostId: PlayerId }
   /** A replicated engine action. The only path by which game state changes. */

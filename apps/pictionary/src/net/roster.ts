@@ -32,7 +32,7 @@ export function createRoomRoster(
   const broadcastRoster = () => {
     if (hostId === self.id) transport.sendCtrl({ t: 'roster', players: snapshot(), hostId })
   }
-  const sendHello = (to?: PlayerId) => transport.sendCtrl({ t: 'hello', profile: self, joinedAt }, to)
+  const sendHello = (to?: PlayerId) => transport.sendCtrl({ t: 'hello', profile: self, joinedAt, established: hasEstablishedRoster }, to)
 
   const unsubCtrl = transport.onCtrl((message, from) => {
     if (message.t === 'hello') {
@@ -42,15 +42,18 @@ export function createRoomRoster(
       // host. Assign deterministic synthetic ranks by peer id so clock skew or
       // a forged hello cannot split authority. Once a roster exists, its host
       // stamps every later newcomer after the established players.
-      const bootstrap = !hasEstablishedRoster && players.size === 1
-      if (bootstrap) {
+      const establishedIncumbent = !hasEstablishedRoster && message.established
+      const bootstrap = !hasEstablishedRoster && !message.established && players.size === 1
+      if (establishedIncumbent) {
+        players.set(self.id, { ...self, joinedAt: 1 })
+      } else if (bootstrap) {
         const [firstId] = [self.id, from].sort()
         players.set(self.id, { ...self, joinedAt: self.id === firstId ? 0 : 1 })
       }
       players.set(from, {
         ...message.profile,
         id: from,
-        joinedAt: bootstrap ? (from < self.id ? 0 : 1) : Math.max(Date.now(), lastJoinedAt + 1),
+        joinedAt: establishedIncumbent ? 0 : bootstrap ? (from < self.id ? 0 : 1) : Math.max(Date.now(), lastJoinedAt + 1),
         connection: 'connected',
       })
       hasEstablishedRoster = true

@@ -70,7 +70,17 @@ describe('room roster', () => {
     mesh.leave('peer-0')
 
     const newcomerTransport = mesh.join('aaa')
+    const queued: Array<() => void> = []
+    const sendCtrl = newcomerTransport.sendCtrl.bind(newcomerTransport)
+    newcomerTransport.sendCtrl = (message, to) => queued.push(() => sendCtrl(message, to))
     const newcomer = createRoomRoster(newcomerTransport, { id: 'z', nickname: 'Cy', color: '#3C7DF2', avatar: 2 }, 0)
+    transports[1].sendCtrl({
+      t: 'hello',
+      profile: { id: 'ignored', nickname: 'Bo', color: '#F2603C', avatar: 1 },
+      joinedAt: 20,
+      established: true,
+    }, 'aaa')
+    queued.splice(0).forEach((send) => send())
     expect(survivor.hostId()).toBe('peer-1')
     expect(newcomer.hostId()).toBe('peer-1')
 
