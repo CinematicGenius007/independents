@@ -78,8 +78,39 @@ export interface TrysteroConnection {
   onStatus: (cb: (status: RelayStatus) => void) => Unsubscribe
 }
 
-/** Connects to `roomId` over Trystero, trying Nostr first and MQTT on timeout. */
-export function createTrysteroTransport(roomId: RoomId): TrysteroConnection {
+interface SessionConnection {
+  transport: Omit<Transport, 'leave'>
+  destroy: () => void
+  status: () => RelayStatus
+  onStatus: (cb: (status: RelayStatus) => void) => Unsubscribe
+}
+
+interface Session {
+  roomId: RoomId
+  refs: number
+  teardown: () => void
+  teardownTimer: ReturnType<typeof setTimeout> | null
+  connection: SessionConnection
+}
+
+/**
+ * Live sessions keyed by room, reference counted.
+ *
+ * Trystero keeps relay subscriptions and its offer pool in module scope, so a
+ * join/leave/join of the same room in quick succession races its own teardown
+ * and leaves the surviving room deaf — it stays subscribed to nothing and no
+ * peer is ever discovered. React StrictMode does exactly that on every mount in
+ * development, and so does any fast route change.
+ *
+ * Sharing one session per room and deferring teardown past the remount window
+ * makes those sequences a no-op instead of a silent, permanent failure.
+ */
+const sessions = new Map<RoomId, Session>()
+
+/** How long a session with no holders is kept alive in case of a remount. */
+const TEARDOWN_GRACE_MS = 1500
+
+function createSession(roomId: RoomId): SessionConnection {
   const ctrlListeners = new Set<(msg: CtrlMessage, from: PlayerId) => void>()
   const inkListeners = new Set<(bytes: Uint8Array, from: PlayerId) => void>()
   const joinListeners = new Set<(id: PlayerId) => void>()
@@ -88,7 +119,7 @@ export function createTrysteroTransport(roomId: RoomId): TrysteroConnection {
 
   let status: RelayStatus = 'connecting'
   let bound: Bound | null = null
-  let leftPermanently = false
+  const leftPermanently = false
   let disposed = false
   let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -150,7 +181,7 @@ export function createTrysteroTransport(roomId: RoomId): TrysteroConnection {
     })
   })
 
-  const transport: Transport = {
+  const transport: Omit<Transport, 'leave'> = {
     roomId,
     selfId: trysteroSelfId,
     peers: () => (bound ? Object.keys(bound.room.getPeers()) : []),
@@ -178,27 +209,90 @@ export function createTrysteroTransport(roomId: RoomId): TrysteroConnection {
       leaveListeners.add(cb)
       return () => leaveListeners.delete(cb)
     },
-    leave: () => {
-      if (leftPermanently) return
-      leftPermanently = true
-      disposed = true
-      clearPoll()
-      ctrlListeners.clear()
-      inkListeners.clear()
-      joinListeners.clear()
-      leaveListeners.clear()
-      statusListeners.clear()
-      void bound?.room.leave()
-      bound = null
-    },
+  }
+
+  const destroy = () => {
+    if (disposed) return
+    disposed = true
+    clearPoll()
+    ctrlListeners.clear()
+    inkListeners.clear()
+    joinListeners.clear()
+    leaveListeners.clear()
+    statusListeners.clear()
+    void bound?.room.leave()
+    bound = null
   }
 
   return {
     transport,
+    destroy,
     status: () => status,
     onStatus: cb => {
       statusListeners.add(cb)
       return () => statusListeners.delete(cb)
     },
+  }
+}
+
+/**
+ * Connects to `roomId` over Trystero, trying Nostr first and MQTT on timeout.
+ *
+ * Callers get their own handle over a shared per-room session. `leave()`
+ * releases only that handle's subscriptions; the underlying room is torn down
+ * once the last holder leaves and the grace window passes.
+ */
+export function createTrysteroTransport(roomId: RoomId): TrysteroConnection {
+  let session = sessions.get(roomId)
+  if (session) {
+    if (session.teardownTimer) {
+      clearTimeout(session.teardownTimer)
+      session.teardownTimer = null
+    }
+    session.refs += 1
+  } else {
+    const connection = createSession(roomId)
+    session = {
+      roomId,
+      refs: 1,
+      teardownTimer: null,
+      teardown: connection.destroy,
+      connection,
+    }
+    sessions.set(roomId, session)
+  }
+
+  const held = session
+  const owned: Unsubscribe[] = []
+  let released = false
+  const track = (unsubscribe: Unsubscribe): Unsubscribe => {
+    owned.push(unsubscribe)
+    return unsubscribe
+  }
+
+  const transport: Transport = {
+    ...held.connection.transport,
+    onCtrl: cb => track(held.connection.transport.onCtrl(cb)),
+    onInk: cb => track(held.connection.transport.onInk(cb)),
+    onPeerJoin: cb => track(held.connection.transport.onPeerJoin(cb)),
+    onPeerLeave: cb => track(held.connection.transport.onPeerLeave(cb)),
+    leave: () => {
+      if (released) return
+      released = true
+      owned.splice(0).forEach(unsubscribe => unsubscribe())
+      held.refs -= 1
+      if (held.refs > 0) return
+      held.teardownTimer = setTimeout(() => {
+        if (held.refs > 0) return
+        sessions.delete(held.roomId)
+        held.teardown()
+      }, TEARDOWN_GRACE_MS)
+    },
+  }
+
+  return {
+    transport,
+    status: () => held.connection.status(),
+    onStatus: cb => track(held.connection.onStatus(cb)),
   }
 }

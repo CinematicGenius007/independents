@@ -1,11 +1,14 @@
 /**
- * Design tokens — hand-drawn sketch diorama.
+ * Design tokens — hand-drawn isometric ink map.
  *
  * OWNED BY THE ORCHESTRATOR (names + values). The design agent may ADD tokens,
  * and owns every component that consumes them, but must not rename or drop
  * these — screens and canvas code reference them directly.
  *
- * Reference: grayscale ink on textured paper, one saturated yellow accent, a
+ * Reference: an architect's hand-drawn map — precise, straight-edged
+ * geometry rendered with ink, hatching, and paper grain. The "hand-made"
+ * read comes from stroke and texture, never from bent corners or per-instance
+ * rotation. Grayscale ink on textured paper, one saturated yellow accent, a
  * red-orange used only for urgency. Nothing else competes with the drawing.
  */
 
@@ -44,16 +47,18 @@
   --stroke-ink: 3px;
   --stroke-bold: 5px;
 
-  /* Hard offset shadows — drawn, never blurred */
-  --shadow-ink-sm: 2px 2px 0 var(--color-ink);
-  --shadow-ink: 4px 4px 0 var(--color-ink);
-  --shadow-ink-lg: 7px 7px 0 var(--color-ink);
+  /* Hard offset shadows — drawn, never blurred. Each pairs the cast shadow
+     with a hairline second pass just inside the border, reading like a
+     marker re-tracing its own outline slightly off-register: a straight
+     edge, drawn twice. */
+  --shadow-ink-sm: 2px 2px 0 var(--color-ink), inset 0 0 0 var(--stroke-hairline) var(--color-ink-soft);
+  --shadow-ink: 4px 4px 0 var(--color-ink), inset 0 0 0 var(--stroke-hairline) var(--color-ink-soft);
+  --shadow-ink-lg: 7px 7px 0 var(--color-ink), inset 0 0 0 var(--stroke-hairline) var(--color-ink-soft);
   --shadow-lift: 4px 4px 0 rgb(26 26 26 / 0.18);
 
-  /* Wobbly hand-drawn corners */
-  --radius-doodle: 255px 15px 225px 15px / 15px 225px 15px 255px;
-  --radius-doodle-alt: 15px 225px 15px 255px / 225px 15px 255px 15px;
-  --radius-blob: 42% 58% 62% 38% / 45% 40% 60% 55%;
+  /* Corners — square geometry. Just enough rounding that ink corners don't
+     fray under anti-aliasing; nothing here should read as "rounded". */
+  --radius-ink: 3px;
 
   /* Motion — every value must be neutralised under prefers-reduced-motion */
   --ease-snap: cubic-bezier(0.2, 0.9, 0.3, 1.4);
@@ -65,4 +70,38 @@
   --z-panel: 20;
   --z-modal: 40;
   --z-toast: 50;
+}
+
+/*
+ * Paint-fill: a flat tone block sits a hair off-register from its ink
+ * outline, as if brushed in by hand after the line was drawn — pulled in on
+ * two edges, overshooting on the other two, never perfectly aligned. Set
+ * `--paint-color` per use; the base color shows through the underfilled
+ * sliver so it must be set on the same element as the ink border.
+ */
+.paint-fill {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--color-paper-white);
+}
+.paint-fill::before {
+  content: '';
+  position: absolute;
+  inset: 2px -1.5px -1.5px 2px;
+  z-index: -1;
+  background-color: var(--paint-color, var(--color-accent-wash));
+}
+
+/*
+ * Marker-stroke emphasis for headings: a fixed, hand-inked double-pass
+ * underline. Not randomized per instance — a single drawn mark, reused.
+ */
+.marker-underline {
+  display: block;
+  width: 8rem;
+  max-width: 100%;
+  height: 0.7rem;
+  margin-top: 0.2rem;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
