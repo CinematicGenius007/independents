@@ -5,18 +5,16 @@
  * `SharedAction`s, deliver the private word, whisper, guess, and request/serve
  * state snapshots through this narrower API.
  *
- * Snapshot rule (per protocol.ts's {@link SNAPSHOT_INLINE_LIMIT}): a small
- * encoded ink log rides inline on the ctrl channel as a plain number array.
- * A large one is sent as `sync_state` with `ink: null`, immediately followed by
- * a snapshot-tagged byte packet on the ink channel; `onSyncState` correlates the two and hands
- * the caller a single `Uint8Array` either way. The ink bytes themselves are
+ * Snapshots use one tagged binary ink-channel packet containing their shared
+ * revision, state, and canvas. This keeps the baseline ordered before any live
+ * ink frames sent after it while the revision protects control state.
+ * The ink bytes themselves are
  * never inspected — only routed and, for the inline case, converted between
  * the wire's `number[]` and `Uint8Array`, which is just format normalization.
  */
 
 import type { Category, PlayerId, Unsubscribe } from '../shared/types'
 import type { CtrlMessage, Transport } from './protocol'
-import { SNAPSHOT_INLINE_LIMIT } from './protocol'
 import type { SharedAction, SyncableState } from '../engine/types'
 
 // Out-of-band snapshots share the transport's binary channel with live InkCodec
@@ -24,24 +22,41 @@ import type { SharedAction, SyncableState } from '../engine/types'
 // from being mistaken for the pending sync payload.
 const SNAPSHOT_PACKET_PREFIX = new Uint8Array([0x50, 0x49, 0x43, 0x53, 0x4e, 0x41, 0x50, 0x01])
 
-function snapshotPacket(ink: Uint8Array): Uint8Array {
-  const packet = new Uint8Array(SNAPSHOT_PACKET_PREFIX.byteLength + ink.byteLength)
+function snapshotPacket(revision: number, state: SyncableState, ink: Uint8Array): Uint8Array {
+  const stateBytes = new TextEncoder().encode(JSON.stringify(state))
+  const headerBytes = SNAPSHOT_PACKET_PREFIX.byteLength + 8
+  const packet = new Uint8Array(headerBytes + stateBytes.byteLength + ink.byteLength)
   packet.set(SNAPSHOT_PACKET_PREFIX)
-  packet.set(ink, SNAPSHOT_PACKET_PREFIX.byteLength)
+  const view = new DataView(packet.buffer)
+  view.setUint32(SNAPSHOT_PACKET_PREFIX.byteLength, revision)
+  view.setUint32(SNAPSHOT_PACKET_PREFIX.byteLength + 4, stateBytes.byteLength)
+  packet.set(stateBytes, headerBytes)
+  packet.set(ink, headerBytes + stateBytes.byteLength)
   return packet
 }
 
-function snapshotPayload(packet: Uint8Array): Uint8Array | null {
-  if (packet.byteLength < SNAPSHOT_PACKET_PREFIX.byteLength) return null
+function snapshotPayload(packet: Uint8Array): { revision: number; state: SyncableState; ink: Uint8Array } | null {
+  const headerBytes = SNAPSHOT_PACKET_PREFIX.byteLength + 8
+  if (packet.byteLength < headerBytes) return null
   for (let index = 0; index < SNAPSHOT_PACKET_PREFIX.byteLength; index++) {
     if (packet[index] !== SNAPSHOT_PACKET_PREFIX[index]) return null
   }
-  return packet.slice(SNAPSHOT_PACKET_PREFIX.byteLength)
+  const view = new DataView(packet.buffer, packet.byteOffset, packet.byteLength)
+  const revision = view.getUint32(SNAPSHOT_PACKET_PREFIX.byteLength)
+  const stateLength = view.getUint32(SNAPSHOT_PACKET_PREFIX.byteLength + 4)
+  const inkOffset = headerBytes + stateLength
+  if (inkOffset > packet.byteLength) return null
+  try {
+    const state = JSON.parse(new TextDecoder().decode(packet.slice(headerBytes, inkOffset))) as SyncableState
+    return { revision, state, ink: packet.slice(inkOffset) }
+  } catch {
+    return null
+  }
 }
 
 export interface Mesh {
-  broadcastAction(action: SharedAction): void
-  onAction(cb: (action: SharedAction, from: PlayerId) => void): Unsubscribe
+  broadcastAction(action: SharedAction, revision: number): void
+  onAction(cb: (action: SharedAction, revision: number, from: PlayerId) => void): Unsubscribe
 
   /** Host → drawer only. Callers are responsible for only ever targeting the drawer. */
   sendWord(to: PlayerId, word: string, category: Category | null, turnIndex: number): void
@@ -60,31 +75,27 @@ export interface Mesh {
   onSyncRequest(cb: (from: PlayerId) => void): Unsubscribe
 
   /** Implements the snapshot rule described above. */
-  serveSyncState(to: PlayerId, state: SyncableState, ink: Uint8Array): void
-  onSyncState(cb: (state: SyncableState, ink: Uint8Array, from: PlayerId) => void): Unsubscribe
+  serveSyncState(to: PlayerId, revision: number, state: SyncableState, ink: Uint8Array): void
+  onSyncState(cb: (revision: number, state: SyncableState, ink: Uint8Array, from: PlayerId) => void): Unsubscribe
 
   /** Removes every listener this mesh registered on the transport. */
   stop(): void
 }
 
 export function createMesh(transport: Transport): Mesh {
-  const actionListeners = new Set<(action: SharedAction, from: PlayerId) => void>()
+  const actionListeners = new Set<(action: SharedAction, revision: number, from: PlayerId) => void>()
   const wordListeners = new Set<
     (word: string, category: Category | null, turnIndex: number, from: PlayerId) => void
   >()
   const whisperListeners = new Set<(text: string, at: number, from: PlayerId) => void>()
   const guessListeners = new Set<(text: string, at: number, from: PlayerId) => void>()
   const syncRequestListeners = new Set<(from: PlayerId) => void>()
-  const syncStateListeners = new Set<(state: SyncableState, ink: Uint8Array, from: PlayerId) => void>()
-
-  // Peers whose next ink frame is the tail of an out-of-band sync_state snapshot
-  // rather than a live stroke. FIFO per peer in case more than one is ever queued.
-  const pendingSnapshots = new Map<PlayerId, SyncableState[]>()
+  const syncStateListeners = new Set<(revision: number, state: SyncableState, ink: Uint8Array, from: PlayerId) => void>()
 
   const unsubCtrl = transport.onCtrl((msg: CtrlMessage, from) => {
     switch (msg.t) {
       case 'action':
-        actionListeners.forEach(cb => cb(msg.action, from))
+        actionListeners.forEach(cb => cb(msg.action, msg.revision, from))
         return
       case 'word':
         wordListeners.forEach(cb => cb(msg.word, msg.category, msg.turnIndex, from))
@@ -99,13 +110,9 @@ export function createMesh(transport: Transport): Mesh {
         syncRequestListeners.forEach(cb => cb(from))
         return
       case 'sync_state':
-        if (msg.ink === null) {
-          const queue = pendingSnapshots.get(from) ?? []
-          queue.push(msg.state)
-          pendingSnapshots.set(from, queue)
-        } else {
+        if (msg.ink !== null) {
           const bytes = Uint8Array.from(msg.ink)
-          syncStateListeners.forEach(cb => cb(msg.state, bytes, from))
+          syncStateListeners.forEach(cb => cb(msg.revision, msg.state, bytes, from))
         }
         return
       case 'hello':
@@ -118,20 +125,15 @@ export function createMesh(transport: Transport): Mesh {
   })
 
   const unsubInk = transport.onInk((bytes, from) => {
-    const ink = snapshotPayload(bytes)
-    if (!ink) return
-    const queue = pendingSnapshots.get(from)
-    if (!queue || queue.length === 0) return
-    const state = queue.shift()
-    if (!state) return
-    if (queue.length === 0) pendingSnapshots.delete(from)
-    syncStateListeners.forEach(cb => cb(state, ink, from))
+    const snapshot = snapshotPayload(bytes)
+    if (!snapshot) return
+    syncStateListeners.forEach(cb => cb(snapshot.revision, snapshot.state, snapshot.ink, from))
   })
 
   let stopped = false
 
   return {
-    broadcastAction: action => transport.sendCtrl({ t: 'action', action }),
+    broadcastAction: (action, revision) => transport.sendCtrl({ t: 'action', action, revision }),
     onAction: cb => {
       actionListeners.add(cb)
       return () => actionListeners.delete(cb)
@@ -162,13 +164,8 @@ export function createMesh(transport: Transport): Mesh {
       return () => syncRequestListeners.delete(cb)
     },
 
-    serveSyncState: (to, state, ink) => {
-      if (ink.byteLength <= SNAPSHOT_INLINE_LIMIT) {
-        transport.sendCtrl({ t: 'sync_state', state, ink: Array.from(ink) }, to)
-      } else {
-        transport.sendCtrl({ t: 'sync_state', state, ink: null }, to)
-        transport.sendInk(snapshotPacket(ink), to)
-      }
+    serveSyncState: (to, revision, state, ink) => {
+      transport.sendInk(snapshotPacket(revision, state, ink), to)
     },
     onSyncState: cb => {
       syncStateListeners.add(cb)
@@ -186,7 +183,6 @@ export function createMesh(transport: Transport): Mesh {
       guessListeners.clear()
       syncRequestListeners.clear()
       syncStateListeners.clear()
-      pendingSnapshots.clear()
     },
   }
 }

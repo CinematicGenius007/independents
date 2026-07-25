@@ -18,7 +18,7 @@ export interface GameController {
   dispatchShared(action: SharedAction): void
   setSecretWord(word: string | null): void
   submitGuess(text: string): boolean
-  requestSync(to?: PlayerId): void
+  requestSync(to?: PlayerId): Promise<boolean>
   stop(): void
 }
 
@@ -35,6 +35,9 @@ export function createGameController(options: GameControllerOptions): GameContro
   let state = options.initialState
   let secretWord: string | null = null
   let expectedSyncFrom: PlayerId | null = null
+  let resolveSync: ((applied: boolean) => void) | null = null
+  let revision = 0
+  const pendingActions = new Map<number, SharedAction>()
   let stopped = false
   const listeners = new Set<(state: GameState) => void>()
 
@@ -50,8 +53,20 @@ export function createGameController(options: GameControllerOptions): GameContro
     // Queue on the wire before notifying local subscribers. A subscriber may
     // synchronously dispatch a follow-up (for example TURN_ENDED after the
     // final correct guess); every peer must observe the initiating action first.
-    options.mesh.broadcastAction(action)
+    revision += 1
+    options.mesh.broadcastAction(action, revision)
     apply(action)
+  }
+
+  const drainPendingActions = () => {
+    while (pendingActions.has(revision + 1)) {
+      const nextRevision = revision + 1
+      const action = pendingActions.get(nextRevision)
+      pendingActions.delete(nextRevision)
+      if (!action) break
+      revision = nextRevision
+      apply(action)
+    }
   }
 
   const adjudicateGuess = (text: string, playerId: PlayerId, at: number): boolean => {
@@ -77,8 +92,19 @@ export function createGameController(options: GameControllerOptions): GameContro
   }
 
   const unsubs: Unsubscribe[] = [
-    options.mesh.onAction((action, from) => {
-      if (from === state.hostId) apply(action)
+    options.mesh.onAction((action, incomingRevision, from) => {
+      if (from !== state.hostId || incomingRevision <= revision) return
+      if (incomingRevision === revision + 1) {
+        revision = incomingRevision
+        apply(action)
+        drainPendingActions()
+      } else {
+        pendingActions.set(incomingRevision, action)
+        if (expectedSyncFrom === null) {
+          expectedSyncFrom = from
+          options.mesh.requestSync(from)
+        }
+      }
     }),
     options.mesh.onWord((word, category, turnIndex, from) => {
       if (from === state.hostId && state.turn?.index === turnIndex && state.selfId === state.turn.drawerId) {
@@ -95,15 +121,25 @@ export function createGameController(options: GameControllerOptions): GameContro
       if (state.selfId !== state.hostId && from !== state.hostId) return
       options.mesh.serveSyncState(
         from,
+        revision,
         syncableState(state),
         options.getInkSnapshot?.() ?? new Uint8Array(),
       )
     }),
-    options.mesh.onSyncState((synced, ink, from) => {
+    options.mesh.onSyncState((syncedRevision, synced, ink, from) => {
       if (from !== state.hostId && from !== expectedSyncFrom) return
       expectedSyncFrom = null
-      apply({ type: 'STATE_SYNCED', state: synced })
+      const applied = syncedRevision >= revision
+      if (applied) {
+        revision = syncedRevision
+        apply({ type: 'STATE_SYNCED', state: { ...synced, players: state.players, hostId: state.hostId } })
+        drainPendingActions()
+      }
+      // Snapshot and subsequent live frames share one ordered ink channel, so
+      // this baseline is safe even if newer control actions arrived first.
       options.applyInkSnapshot?.(ink)
+      resolveSync?.(applied)
+      resolveSync = null
     }),
   ]
 
@@ -126,12 +162,19 @@ export function createGameController(options: GameControllerOptions): GameContro
       return true
     },
     requestSync: (to) => {
+      resolveSync?.(false)
       expectedSyncFrom = to ?? null
-      options.mesh.requestSync(to)
+      return new Promise<boolean>((resolve) => {
+        resolveSync = resolve
+        options.mesh.requestSync(to)
+      })
     },
     stop: () => {
       if (stopped) return
       stopped = true
+      resolveSync?.(false)
+      resolveSync = null
+      pendingActions.clear()
       unsubs.forEach((unsubscribe) => unsubscribe())
       listeners.clear()
     },

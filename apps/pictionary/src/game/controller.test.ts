@@ -102,4 +102,84 @@ describe('game controller', () => {
     promoted.stop()
     survivor.stop()
   })
+
+  it('does not roll back newer actions when a large snapshot arrives late', async () => {
+    const { transports } = createMemoryMesh(2)
+    const delayedInk: Array<() => void> = []
+    const sendInk = transports[0].sendInk.bind(transports[0])
+    transports[0].sendInk = (bytes, to) => delayedInk.push(() => sendInk(bytes, to))
+    const host = createGameController({
+      initialState: drawingState('peer-0'),
+      mesh: createMesh(transports[0]),
+      getInkSnapshot: () => new Uint8Array(50_000),
+    })
+    let appliedInk = false
+    const guest = createGameController({
+      initialState: drawingState('peer-1'),
+      mesh: createMesh(transports[1]),
+      applyInkSnapshot: () => { appliedInk = true },
+    })
+
+    const syncing = guest.requestSync('peer-0')
+    host.dispatchShared({ type: 'TURN_ENDED', word: 'zebra', reason: 'timeout', drawerPoints: 0, at: 82_000 })
+    host.dispatchShared({ type: 'INTERMISSION', nextTurnAt: 87_000 })
+    delayedInk.splice(0).forEach((send) => send())
+
+    expect(await syncing).toBe(false)
+    expect(guest.state().phase).toBe('turn_intro')
+    expect(guest.state().turn?.word).toBe('zebra')
+    expect(appliedInk).toBe(true)
+    host.stop()
+    guest.stop()
+  })
+
+  it('preserves newer guesses received while a drawing-phase snapshot is in flight', async () => {
+    const { transports } = createMemoryMesh(2)
+    const delayedInk: Array<() => void> = []
+    const sendInk = transports[0].sendInk.bind(transports[0])
+    transports[0].sendInk = (bytes, to) => delayedInk.push(() => sendInk(bytes, to))
+    const host = createGameController({
+      initialState: drawingState('peer-0'), mesh: createMesh(transports[0]), getInkSnapshot: () => new Uint8Array(50_000),
+    })
+    const guest = createGameController({ initialState: drawingState('peer-1'), mesh: createMesh(transports[1]) })
+
+    const syncing = guest.requestSync('peer-0')
+    host.dispatchShared({ type: 'GUESS_POSTED', playerId: 'peer-1', text: 'zebra', at: 7_000 })
+    host.dispatchShared({ type: 'GUESS_CORRECT', playerId: 'peer-1', elapsedMs: 5_000, points: 90, place: 1, at: 7_000 })
+    delayedInk.splice(0).forEach((send) => send())
+
+    expect(await syncing).toBe(false)
+    expect(guest.state().turn?.correct['peer-1']?.points).toBe(90)
+    expect(guest.state().scores['peer-1']).toBe(90)
+    host.stop()
+    guest.stop()
+  })
+
+  it('buffers a revision gap until the missing snapshot arrives', async () => {
+    const { transports } = createMemoryMesh(2)
+    const delayedInk: Array<() => void> = []
+    const sendInk = transports[0].sendInk.bind(transports[0])
+    transports[0].sendInk = (bytes, to) => delayedInk.push(() => sendInk(bytes, to))
+    const host = createGameController({
+      initialState: drawingState('peer-0'), mesh: createMesh(transports[0]), getInkSnapshot: () => new Uint8Array(50_000),
+    })
+    for (let index = 0; index < 10; index++) {
+      host.dispatchShared({ type: 'SYSTEM_MESSAGE', text: `before-${index}`, at: index, audience: 'all' })
+    }
+    const guest = createGameController({ initialState: drawingState('peer-1'), mesh: createMesh(transports[1]) })
+
+    const syncing = guest.requestSync('peer-0')
+    host.dispatchShared({ type: 'SYSTEM_MESSAGE', text: 'after-snapshot', at: 20, audience: 'all' })
+    expect(guest.state().chat).toHaveLength(0)
+    delayedInk.splice(0).forEach((send) => send())
+
+    expect(await syncing).toBe(true)
+    expect(guest.state().chat.map((entry) => entry.text)).toEqual([
+      ...Array.from({ length: 10 }, (_, index) => `before-${index}`),
+      'after-snapshot',
+    ])
+    host.stop()
+    guest.stop()
+  })
+
 })

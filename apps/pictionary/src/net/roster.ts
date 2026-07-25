@@ -18,6 +18,7 @@ export function createRoomRoster(
   const players = new Map<PlayerId, Player>([[self.id, self]])
   const listeners = new Set<(players: Player[], hostId: PlayerId) => void>()
   let hostId = self.id
+  let hasEstablishedRoster = false
   let stopped = false
 
   const snapshot = () => [...players.values()].sort((a, b) => a.joinedAt - b.joinedAt || a.id.localeCompare(b.id))
@@ -37,9 +38,22 @@ export function createRoomRoster(
     if (message.t === 'hello') {
       if (hostId !== self.id) return
       const lastJoinedAt = Math.max(...snapshot().map((player) => player.joinedAt))
-      // The established host stamps join order. A newcomer cannot seize host
-      // authority by claiming an earlier local clock value.
-      players.set(from, { ...message.profile, id: from, joinedAt: Math.max(Date.now(), lastJoinedAt + 1), connection: 'connected' })
+      // During the first two-peer handshake both sides begin as a singleton
+      // host. Assign deterministic synthetic ranks by peer id so clock skew or
+      // a forged hello cannot split authority. Once a roster exists, its host
+      // stamps every later newcomer after the established players.
+      const bootstrap = !hasEstablishedRoster && players.size === 1
+      if (bootstrap) {
+        const [firstId] = [self.id, from].sort()
+        players.set(self.id, { ...self, joinedAt: self.id === firstId ? 0 : 1 })
+      }
+      players.set(from, {
+        ...message.profile,
+        id: from,
+        joinedAt: bootstrap ? (from < self.id ? 0 : 1) : Math.max(Date.now(), lastJoinedAt + 1),
+        connection: 'connected',
+      })
+      hasEstablishedRoster = true
       recomputeHost()
       emit()
       broadcastRoster()
@@ -53,6 +67,7 @@ export function createRoomRoster(
       if (!bootstrapping && from !== hostId) return
       players.clear()
       proposed.forEach((player) => players.set(player.id, player))
+      if (proposed.length > 1) hasEstablishedRoster = true
       hostId = elected
       emit()
     }

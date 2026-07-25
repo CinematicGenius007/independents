@@ -15,12 +15,12 @@ import {
 } from '../canvas'
 import type { Database } from '../db/types'
 import { initialState, reduce, sortedScores, visibleChat, type GameState } from '../engine'
-import { createGameController, createHostSequencer, localTurnRecord, type GameController, type HostSequencer } from '../game'
+import { createGameController, createHostSequencer, createLocalStatsTracker, type GameController, type HostSequencer } from '../game'
 import { createMesh, type Mesh } from '../net/mesh'
 import type { RelayStatus } from '../net/protocol'
 import { joinRoom } from '../net/room'
 import { createRoomRoster } from '../net/roster'
-import { DEFAULT_CONFIG, type PlayerProfile } from '../shared/types'
+import { DEFAULT_CONFIG, type GameConfig, type PlayerProfile } from '../shared/types'
 import { GameScreen, LobbyScreen, ResultsScreen, RoundSummaryScreen } from '../screens'
 
 export interface RoomViewProps {
@@ -32,10 +32,23 @@ export interface RoomViewProps {
 
 const DEFAULT_TOOLS: ToolSettings = { tool: 'pencil', color: '#1A1A1A', size: BRUSH_SIZES.default }
 
+async function multiplayerWords(database: Database, config: GameConfig) {
+  const custom = config.customWords.map((word) => ({ word, category: null }))
+  if (config.customWordsOnly) return custom
+  const [rows, packs] = await Promise.all([
+    database.words.byCategories(config.categories),
+    database.words.packs(),
+  ])
+  const builtinPackIds = new Set(packs.filter((pack) => pack.isBuiltin).map((pack) => pack.packId))
+  const builtin = rows
+    .filter((row) => builtinPackIds.has(row.packId))
+    .map((row) => ({ word: row.word, category: row.category }))
+  return [...builtin, ...custom]
+}
+
 export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) {
   const [game, setGame] = useState<GameState | null>(null)
   const [inviteUrl, setInviteUrl] = useState('')
-  const [customWords, setCustomWords] = useState('')
   const [history, setHistory] = useState<CanvasHistory>(() => createCanvasHistory())
   const [tools, setTools] = useState<ToolSettings>(DEFAULT_TOOLS)
   const [guess, setGuess] = useState('')
@@ -52,10 +65,6 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
   const turnIndexRef = useRef<number | null>(null)
   const partialStrokesRef = useRef(new Map<string, Extract<CanvasOp, { t: 'stroke' }>>())
   const resumedHostRef = useRef<string | null>(null)
-  const activeTurnsRef = useRef(new Set<string>())
-  const persistedTurnsRef = useRef(new Set<string>())
-  const persistedGamesRef = useRef(new Set<string>())
-  const streakRef = useRef(0)
 
   const updateHistory = (update: SetStateAction<CanvasHistory>) => {
     setHistory((current) => {
@@ -81,31 +90,12 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
   }, [game?.turn?.index])
 
   useEffect(() => {
-    if (!game?.gameNonce) return
-    const turnKey = game.turn ? `${game.gameNonce}:${game.turn.index}` : null
-    if (game.phase === 'drawing' && turnKey) activeTurnsRef.current.add(turnKey)
-    if (game.phase === 'turn_review' && turnKey && activeTurnsRef.current.has(turnKey) && !persistedTurnsRef.current.has(turnKey)) {
-      persistedTurnsRef.current.add(turnKey)
-      const record = localTurnRecord(game, profile.nickname)
-      if (record) {
-        streakRef.current = record.guessed ? streakRef.current + 1 : 0
-        void Promise.all([
-          database.stats.bump({ ...record.delta, bestStreak: streakRef.current }),
-          database.stats.recordGame([record.entry]),
-        ])
-      }
-    }
-    if (game.phase === 'game_over' && !persistedGamesRef.current.has(game.gameNonce)) {
-      persistedGamesRef.current.add(game.gameNonce)
-      void database.stats.bump({ gamesPlayed: 1 })
-    }
-  }, [database, game, profile.nickname])
-
-  useEffect(() => {
+    let disposed = false
     const room = joinRoom(roomId)
     const transport = room.transport
     const mesh = createMesh(transport)
     const roster = createRoomRoster(transport, profile)
+    const trackStats = createLocalStatsTracker(profile.nickname)
     const self = roster.players().find((player) => player.id === transport.selfId)
     const initialGame = self
       ? reduce(initialState(roomId, transport.selfId, DEFAULT_CONFIG), { type: 'PLAYER_JOINED', player: self })
@@ -127,6 +117,18 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
     setRelayStatus(room.status())
     setGame(controller.state())
     const unsubStatus = room.onStatus(setRelayStatus)
+    let syncRequests = 0
+    const bufferedInk: Array<{ bytes: Uint8Array; from: string }> = []
+    let applyInkFrame: (bytes: Uint8Array, from: string) => void = () => undefined
+    const requestStateSync = async (to: string) => {
+      syncRequests += 1
+      try {
+        return await controller.requestSync(to)
+      } finally {
+        syncRequests -= 1
+        if (syncRequests === 0) bufferedInk.splice(0).forEach(({ bytes, from }) => applyInkFrame(bytes, from))
+      }
+    }
 
     const reconcileRoster = (players: ReturnType<typeof roster.players>, hostId: string) => {
       const state = controller.state()
@@ -138,30 +140,39 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
       controller.dispatchLocal({ type: 'HOST_CHANGED', hostId })
       if (hostId !== transport.selfId && syncedHostRef.current !== hostId) {
         syncedHostRef.current = hostId
-        controller.requestSync(hostId)
+        void requestStateSync(hostId)
       }
       if (hostId === transport.selfId && state.hostId !== hostId && state.phase !== 'lobby' && resumedHostRef.current !== state.gameNonce) {
         resumedHostRef.current = state.gameNonce
         const survivor = players.find((player) => player.id !== transport.selfId)
-        if (survivor) controller.requestSync(survivor.id)
-        void database.words.byCategories(state.config.categories).then((rows) => {
+        const recovered = survivor
+          ? requestStateSync(survivor.id)
+          : Promise.resolve(false)
+        void recovered.then(() => multiplayerWords(database, controller.state().config)).then((words) => {
+          if (disposed) return
           sequencerRef.current?.stop()
           sequencerRef.current = createHostSequencer({
             controller,
             mesh,
-            words: rows.map((row) => ({ word: row.word, category: row.category })),
+            words,
           })
           sequencerRef.current.resumeGame()
         })
       }
     }
-    const unsubState = controller.subscribe(setGame)
-    reconcileRoster(roster.players(), roster.hostId())
-    // React batches the setup updates. Read back the reconciled controller
-    // state so the lobby never briefly settles on the empty initial roster.
-    setGame(controller.state())
-    const unsubRoster = roster.onChange(reconcileRoster)
-    const unsubInk = transport.onInk((bytes, from) => {
+    const unsubState = controller.subscribe((state) => {
+      const progress = trackStats(state)
+      if (progress?.turn) {
+        void Promise.all([
+          database.stats.bump({ ...progress.turn.record.delta, bestStreak: progress.turn.bestStreak }),
+          database.stats.recordGame([progress.turn.record.entry]),
+        ])
+      }
+      if (progress?.completedGame) void database.stats.bump({ gamesPlayed: 1 })
+      setGame(state)
+    })
+    let unsubRoster: () => void = () => undefined
+    applyInkFrame = (bytes, from) => {
       try {
         const frame = inkCodec.decodeFrame(bytes)
         const current = controller.state()
@@ -190,10 +201,23 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
       } catch {
         // Ignore malformed peer ink frames; control state remains usable.
       }
+    }
+    const unsubInk = transport.onInk((bytes, from) => {
+      if (syncRequests > 0) {
+        bufferedInk.push({ bytes: bytes.slice(), from })
+        return
+      }
+      applyInkFrame(bytes, from)
     })
+    reconcileRoster(roster.players(), roster.hostId())
+    // React batches the setup updates. Read back the reconciled controller
+    // state so the lobby never briefly settles on the empty initial roster.
+    setGame(controller.state())
+    unsubRoster = roster.onChange(reconcileRoster)
     const ticker = window.setInterval(() => setNow(Date.now()), 250)
 
     return () => {
+      disposed = true
       window.clearInterval(ticker)
       sequencerRef.current?.stop()
       unsubInk()
@@ -231,18 +255,21 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
       selfId={game.selfId}
       hostId={game.hostId}
       config={game.config}
-      customWordsText={customWords}
+      customWordsText={game.config.customWords.join('\n')}
       starting={starting}
       relayStatus={relayStatus}
       onCopyInvite={() => void navigator.clipboard.writeText(inviteUrl)}
       onConfigChange={(config) => controller?.dispatchShared({ type: 'CONFIG_CHANGED', config })}
-      onCustomWordsTextChange={setCustomWords}
+      onCustomWordsTextChange={(text) => {
+        controller?.dispatchShared({
+          type: 'CONFIG_CHANGED',
+          config: { ...game.config, customWords: text.split('\n').map((word) => word.trim()).filter(Boolean) },
+        })
+      }}
       onStart={() => {
         if (starting || game.phase !== 'lobby') return
         setStarting(true)
-        void database.words.byCategories(game.config.categories).then((rows) => {
-          const custom = customWords.split('\n').map((word) => word.trim()).filter(Boolean).map((word) => ({ word, category: null }))
-          const words = game.config.customWordsOnly ? custom : [...rows.map((row) => ({ word: row.word, category: row.category })), ...custom]
+        void multiplayerWords(database, game.config).then((words) => {
           sequencerRef.current?.stop()
           sequencerRef.current = createHostSequencer({ controller: controller!, mesh: meshRef.current!, words })
           sequencerRef.current.startGame()

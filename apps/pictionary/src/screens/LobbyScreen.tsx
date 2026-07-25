@@ -33,7 +33,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
       subtitle={isHost ? 'You are the host. Tune the rules while everyone finds a seat.' : 'The host is setting up the next game.'}
       actions={<SketchButton variant="danger" size="sm" onClick={props.onLeave}>Leave room</SketchButton>}
     >
-      {props.relayStatus !== 'connected' && (
+      {props.relayStatus && props.relayStatus !== 'connected' && (
         <div
           className={`mb-5 border-2 border-ink px-4 py-3 text-sm shadow-ink-sm ${props.relayStatus === 'failed' ? 'bg-alert-wash' : 'bg-accent-wash'}`}
           role="status"

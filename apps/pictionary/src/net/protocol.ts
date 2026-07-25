@@ -31,7 +31,7 @@ export type CtrlMessage =
   /** Host's authoritative roster; recipients reconcile against it. */
   | { t: 'roster'; players: Player[]; hostId: PlayerId }
   /** A replicated engine action. The only path by which game state changes. */
-  | { t: 'action'; action: SharedAction }
+  | { t: 'action'; revision: number; action: SharedAction }
   /** Host → drawer only. Never broadcast. */
   | { t: 'word'; word: string; category: Category | null; turnIndex: number }
   /** Host → one player. Close-guess whisper and similar private notices. */
@@ -41,11 +41,10 @@ export type CtrlMessage =
   /** Late joiner or freshly promoted host asking to be caught up. */
   | { t: 'sync_request' }
   /**
-   * Full catch-up payload. `ink` is an {@link InkCodec}-encoded op log, sent as
-   * a plain number array because the ctrl channel is JSON-framed; large logs
-   * are sent as an `ink` channel snapshot instead (see {@link SNAPSHOT_INLINE_LIMIT}).
+   * Legacy inline catch-up payload. Current peers send revisioned state and
+   * canvas together as one tagged binary ink-channel packet so ordering is atomic.
    */
-  | { t: 'sync_state'; state: SyncableState; ink: number[] | null }
+  | { t: 'sync_state'; revision: number; state: SyncableState; ink: number[] | null }
   /** Latency probe. */
   | { t: 'ping'; nonce: number; at: number }
   | { t: 'pong'; nonce: number; at: number }
@@ -90,9 +89,9 @@ export interface RoomHandle {
 }
 
 /**
- * Host election is deterministic on every peer: earliest `joinedAt` wins, ties
- * broken by lexicographic id. Implemented by the net agent, used by the engine
- * and controller so nobody invents a second rule.
+ * Host election is deterministic on every peer: earliest established join
+ * order wins, ties broken by lexicographic id. The first pair establishes that
+ * order from peer ids; the elected host stamps later arrivals.
  */
 export type ElectHost = (players: Player[]) => PlayerId
 

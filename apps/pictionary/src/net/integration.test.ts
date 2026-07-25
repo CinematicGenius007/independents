@@ -81,7 +81,7 @@ describe('net layer integration: join, host election, migration, late-join sync'
 
     let deliveredState: SyncableState | null = null
     let deliveredInk: Uint8Array | null = null
-    meshLate.onSyncState((state, ink) => {
+    meshLate.onSyncState((_revision, state, ink) => {
       deliveredState = state
       deliveredInk = ink
     })
@@ -91,7 +91,7 @@ describe('net layer integration: join, host election, migration, late-join sync'
 
     const state = fakeSyncableState({ hostId: 'p1', order: ['p1', 'p2'] })
     const ink = new Uint8Array([9, 8, 7, 6])
-    meshHost.serveSyncState('p3', state, ink)
+    meshHost.serveSyncState('p3', 4, state, ink)
 
     expect(deliveredState).toEqual(state)
     expect(deliveredInk).toBeInstanceOf(Uint8Array)

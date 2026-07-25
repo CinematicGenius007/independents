@@ -9,6 +9,7 @@
 
 import type { SqlJsStatic } from 'sql.js'
 import initSqlJs from 'sql.js/dist/sql-wasm.js'
+import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
 
 let sqlJsPromise: Promise<SqlJsStatic> | null = null
 
@@ -17,9 +18,9 @@ let sqlJsPromise: Promise<SqlJsStatic> | null = null
  * site root. Under Vitest (Node), there is no HTTP server, so we resolve the
  * same file straight off disk from within the sql.js package instead.
  */
-function locateFile(file: string): string {
+function locateFile(_file: string): string {
   if (typeof window !== 'undefined') {
-    return `/${file}`
+    return wasmUrl
   }
   // Tests only initialize the WASM build. Keep this URL fully static so Vite
   // does not turn the dist-directory template into a glob of every sql.js

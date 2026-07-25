@@ -35,14 +35,14 @@ describe('CtrlMessage round trip', () => {
       ],
       hostId: 'peer-0',
     },
-    { t: 'action', action: { type: 'PLAYER_LEFT', playerId: 'peer-1' } },
+    { t: 'action', revision: 1, action: { type: 'PLAYER_LEFT', playerId: 'peer-1' } },
     { t: 'word', word: 'ICE CREAM', category: 'food', turnIndex: 2 },
     { t: 'word', word: 'ANYTHING', category: null, turnIndex: 0 },
     { t: 'whisper', text: "You're very close!", at: 12345 },
     { t: 'guess', text: 'zebra', at: 6789 },
     { t: 'sync_request' },
-    { t: 'sync_state', state: fakeSyncableState(), ink: [1, 2, 3, 254, 255] },
-    { t: 'sync_state', state: fakeSyncableState({ hostId: 'peer-1' }), ink: null },
+    { t: 'sync_state', revision: 2, state: fakeSyncableState(), ink: [1, 2, 3, 254, 255] },
+    { t: 'sync_state', revision: 3, state: fakeSyncableState({ hostId: 'peer-1' }), ink: null },
     { t: 'ping', nonce: 7, at: 42 },
     { t: 'pong', nonce: 7, at: 43 },
   ]
@@ -70,7 +70,7 @@ describe('CtrlMessage round trip', () => {
     transports[1].onCtrl(m => receivedBy1.push(m))
     transports[2].onCtrl(m => receivedBy2.push(m))
 
-    const action: CtrlMessage = { t: 'action', action: { type: 'GAME_ENDED', at: 999 } }
+    const action: CtrlMessage = { t: 'action', revision: 1, action: { type: 'GAME_ENDED', at: 999 } }
     transports[0].sendCtrl(action)
 
     expect(receivedBy1).toEqual([action])
@@ -79,7 +79,7 @@ describe('CtrlMessage round trip', () => {
 })
 
 describe('mesh.ts sync_state snapshot rule', () => {
-  it('sends small ink logs inline on the ctrl channel as Uint8Array via onSyncState', () => {
+  it('sends small snapshots atomically on the ordered ink channel', () => {
     const { transports, ids } = createMesh(2)
     const meshA = createMeshLayer(transports[0])
     const meshB = createMeshLayer(transports[1])
@@ -93,25 +93,27 @@ describe('mesh.ts sync_state snapshot rule', () => {
     transports[1].onInk(() => {
       inkChannelHits++
     })
-    meshB.onSyncState((state, ink) => {
+    let receivedRevision = -1
+    meshB.onSyncState((revision, state, ink) => {
+      receivedRevision = revision
       receivedState = state
       receivedInk = ink
     })
 
     const state = fakeSyncableState({ hostId: ids[0] })
-    meshA.serveSyncState(ids[1], state, inkBytes)
+    meshA.serveSyncState(ids[1], 7, state, inkBytes)
 
     expect(receivedState).toEqual(state)
     expect(receivedInk).toBeInstanceOf(Uint8Array)
     expect(Array.from(receivedInk as unknown as Uint8Array)).toEqual([10, 20, 30])
-    // Inline path never touches the ink channel.
-    expect(inkChannelHits).toBe(0)
+    expect(receivedRevision).toBe(7)
+    expect(inkChannelHits).toBe(1)
 
     meshA.stop()
     meshB.stop()
   })
 
-  it('sends large ink logs as sync_state{ink:null} followed by the ink channel, correlated by onSyncState', () => {
+  it('sends large state and ink in one binary snapshot packet', () => {
     const { transports, ids } = createMesh(2)
     const meshA = createMeshLayer(transports[0])
     const meshB = createMeshLayer(transports[1])
@@ -124,17 +126,15 @@ describe('mesh.ts sync_state snapshot rule', () => {
 
     let receivedState: SyncableState | null = null
     let receivedInk: Uint8Array | null = null
-    meshB.onSyncState((state, ink) => {
+    meshB.onSyncState((_revision, state, ink) => {
       receivedState = state
       receivedInk = ink
     })
 
     const state = fakeSyncableState({ hostId: ids[0] })
-    meshA.serveSyncState(ids[1], state, bigInk)
+    meshA.serveSyncState(ids[1], 8, state, bigInk)
 
-    // The ctrl channel carried an ink:null placeholder ahead of the ink-channel payload.
-    expect(ctrlMessages).toHaveLength(1)
-    expect(ctrlMessages[0]).toMatchObject({ t: 'sync_state', ink: null })
+    expect(ctrlMessages).toHaveLength(0)
 
     expect(receivedState).toEqual(state)
     expect(receivedInk).toBeInstanceOf(Uint8Array)
@@ -156,11 +156,11 @@ describe('mesh.ts sync_state snapshot rule', () => {
     const meshB = createMeshLayer(transports[1])
     const snapshots: Uint8Array[] = []
     const liveFrames: Uint8Array[] = []
-    meshB.onSyncState((_state, ink) => snapshots.push(ink))
+    meshB.onSyncState((_revision, _state, ink) => snapshots.push(ink))
     transports[1].onInk((bytes) => liveFrames.push(bytes))
 
     const snapshot = new Uint8Array(SNAPSHOT_INLINE_LIMIT + 1).fill(7)
-    meshA.serveSyncState(ids[1], fakeSyncableState({ hostId: ids[0] }), snapshot)
+    meshA.serveSyncState(ids[1], 9, fakeSyncableState({ hostId: ids[0] }), snapshot)
     expect(delayedPackets).toHaveLength(1)
 
     const live = new Uint8Array([1, 2, 3, 4])

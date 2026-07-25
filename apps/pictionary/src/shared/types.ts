@@ -27,7 +27,7 @@ export type ConnectionState = 'connected' | 'unstable' | 'disconnected'
 /** A profile plus its live session status inside a room. */
 export interface Player extends PlayerProfile {
   connection: ConnectionState
-  /** Host-stamped epoch ms of first join. Ties broken by `id`. Used for host election ordering. */
+  /** Host-stamped join order; the initial two-peer bootstrap uses deterministic peer-id ranks. */
   joinedAt: number
 }
 

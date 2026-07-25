@@ -38,4 +38,44 @@ describe('room roster', () => {
     first.stop()
     second.stop()
   })
+
+  it('converges when both singleton peers exchange hello before either roster', () => {
+    const { transports } = createMesh(2)
+    const queued: Array<() => void> = []
+    let released = false
+    for (const transport of transports) {
+      const sendCtrl = transport.sendCtrl.bind(transport)
+      transport.sendCtrl = (message, to) => {
+        if (released) sendCtrl(message, to)
+        else queued.push(() => sendCtrl(message, to))
+      }
+    }
+
+    const first = createRoomRoster(transports[0], { id: 'x', nickname: 'Ada', color: '#F5D311', avatar: 0 }, 20)
+    const second = createRoomRoster(transports[1], { id: 'y', nickname: 'Bo', color: '#F2603C', avatar: 1 }, 10)
+    released = true
+    queued.splice(0).forEach((send) => send())
+
+    expect(first.hostId()).toBe('peer-0')
+    expect(second.hostId()).toBe('peer-0')
+    expect(first.players()).toEqual(second.players())
+    first.stop()
+    second.stop()
+  })
+
+  it('does not re-enter bootstrap after a room shrinks to one survivor', () => {
+    const { mesh, transports } = createMesh(2)
+    const first = createRoomRoster(transports[0], { id: 'x', nickname: 'Ada', color: '#F5D311', avatar: 0 }, 10)
+    const survivor = createRoomRoster(transports[1], { id: 'y', nickname: 'Bo', color: '#F2603C', avatar: 1 }, 20)
+    mesh.leave('peer-0')
+
+    const newcomerTransport = mesh.join('aaa')
+    const newcomer = createRoomRoster(newcomerTransport, { id: 'z', nickname: 'Cy', color: '#3C7DF2', avatar: 2 }, 0)
+    expect(survivor.hostId()).toBe('peer-1')
+    expect(newcomer.hostId()).toBe('peer-1')
+
+    first.stop()
+    survivor.stop()
+    newcomer.stop()
+  })
 })
