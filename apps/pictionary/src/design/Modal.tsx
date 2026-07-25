@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { IconButton } from './IconButton'
+import { bevelClass, FOCUS_RING } from './utils'
 
 export interface ModalProps {
   open: boolean
@@ -14,9 +14,10 @@ const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 /**
- * Centered ink panel over a paper-tinted backdrop. Traps focus while open,
- * restores it to whatever triggered the modal on close, and closes on Esc
- * or backdrop click.
+ * A window-frame panel over a dimmed backdrop: segmented title bar with a
+ * gold end-cap and the reference's red close box, chrome body. Traps focus
+ * while open, restores it to whatever triggered the modal on close, and
+ * closes on Esc or backdrop click.
  */
 export function Modal({ open, onClose, title, children, className = '' }: ModalProps) {
   const titleId = useId()
@@ -73,7 +74,7 @@ export function Modal({ open, onClose, title, children, className = '' }: ModalP
 
   return createPortal(
     <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
-      <div aria-hidden className="absolute inset-0 bg-ink/55" onClick={onClose} />
+      <div aria-hidden className="absolute inset-0 bg-chrome-deep/80" onClick={onClose} />
       <div
         ref={panelRef}
         role="dialog"
@@ -81,23 +82,30 @@ export function Modal({ open, onClose, title, children, className = '' }: ModalP
         aria-labelledby={title ? titleId : undefined}
         aria-label={title ? undefined : 'Dialog'}
         tabIndex={-1}
-        className={`relative max-h-[90vh] w-full max-w-lg overflow-auto rounded-doodle border-[3px] border-ink bg-paper-white p-6 shadow-ink-lg outline-none ${className}`}
+        className={`relative max-h-[90vh] w-full max-w-lg overflow-auto bg-chrome-panel outline-none ${bevelClass({ tone: 'chrome', size: 'lg' })} ${className}`}
+        style={{ boxShadow: 'var(--shadow-pixel-lg)' }}
       >
-        <div className="mb-3 flex items-start justify-between gap-4">
-          {title && <h2 id={titleId} className="font-[family-name:var(--font-display)] text-xl text-ink">{title}</h2>}
-          <IconButton
-            label="Close"
-            className="ml-auto"
-            size="sm"
+        <header className="flex items-center gap-2 bg-chrome px-3 py-2" style={{ borderBottom: '3px solid var(--color-chrome-lo)' }}>
+          <span aria-hidden className={`h-3 w-3 shrink-0 ${bevelClass({ tone: 'gold', size: 'sm' })}`} />
+          {title ? (
+            <h2 id={titleId} className="pixel-heading min-w-0 flex-1 truncate text-[16px] leading-[16px] text-text">
+              {title}
+            </h2>
+          ) : (
+            <span className="flex-1" />
+          )}
+          <button
+            type="button"
+            aria-label="Close"
             onClick={onClose}
-            icon={
-              <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden>
-                <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" />
-              </svg>
-            }
-          />
-        </div>
-        {children}
+            className={`flex h-6 w-6 shrink-0 items-center justify-center bg-red text-text ${bevelClass({ tone: 'red', size: 'sm' })} ${FOCUS_RING}`}
+          >
+            <svg viewBox="0 0 24 24" width={12} height={12} aria-hidden shapeRendering="crispEdges">
+              <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" strokeWidth={3} strokeLinecap="square" />
+            </svg>
+          </button>
+        </header>
+        <div className="p-6">{children}</div>
       </div>
     </div>,
     document.body,

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { PanelTone } from './Panel'
-import { doodleRadius, FOCUS_RING } from './utils'
+import { bevelClass, FOCUS_RING } from './utils'
 
 export interface ToastData {
   id: string
@@ -15,30 +15,43 @@ export interface ToastProps {
   onDismiss: (id: string) => void
 }
 
-const TONE_CLASSES: Record<PanelTone, string> = {
-  paper: 'bg-paper-white',
-  accent: 'bg-accent-wash',
-  alert: 'bg-alert-wash',
+const TONE_BG: Record<PanelTone, string> = {
+  paper: 'bg-parchment',
+  accent: 'bg-gold-hi',
+  alert: 'bg-red-hi',
 }
 
-/** A single transient ink note. Presentational — `ToastHost` owns the timer. */
+/** A single transient parchment scroll note, complete with bevelled wooden dowel ends. Presentational — `ToastHost` owns the timer. */
 export function Toast({ toast, onDismiss }: ToastProps) {
+  const bg = TONE_BG[toast.tone ?? 'paper']
   return (
     <div
-      className={`pointer-events-auto flex max-w-sm items-start gap-2 border-[3px] border-ink px-3.5 py-2.5 shadow-ink-sm ${TONE_CLASSES[toast.tone ?? 'paper']}`}
-      style={{ borderRadius: doodleRadius(toast.id) }}
+      className={`pointer-events-auto relative flex max-w-sm items-stretch ${bevelClass({ tone: 'parchment' })}`}
+      style={{ boxShadow: 'var(--shadow-pixel)' }}
     >
-      <p className="min-w-0 flex-1 text-sm leading-snug text-ink">{toast.message}</p>
-      <button
-        type="button"
-        aria-label="Dismiss"
-        onClick={() => onDismiss(toast.id)}
-        className={`shrink-0 rounded-full p-1 text-ink-faint hover:text-ink ${FOCUS_RING}`}
-      >
-        <svg viewBox="0 0 24 24" width={14} height={14} aria-hidden>
-          <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" />
-        </svg>
-      </button>
+      <span
+        aria-hidden
+        className="w-2.5 shrink-0 bg-wood"
+        style={{ boxShadow: 'inset -2px 0 0 0 var(--color-wood-lo), inset 2px 0 0 0 var(--color-wood-hi)' }}
+      />
+      <div className={`flex min-w-0 flex-1 items-start gap-2 px-3 py-2.5 ${bg}`}>
+        <p className="min-w-0 flex-1 text-sm leading-snug text-ink">{toast.message}</p>
+        <button
+          type="button"
+          aria-label="Dismiss"
+          onClick={() => onDismiss(toast.id)}
+          className={`shrink-0 p-0.5 text-ink-faint hover:text-ink ${FOCUS_RING}`}
+        >
+          <svg viewBox="0 0 24 24" width={14} height={14} aria-hidden shapeRendering="crispEdges">
+            <path d="M5 5 L19 19 M19 5 L5 19" stroke="currentColor" strokeWidth={3} strokeLinecap="square" />
+          </svg>
+        </button>
+      </div>
+      <span
+        aria-hidden
+        className="w-2.5 shrink-0 bg-wood"
+        style={{ boxShadow: 'inset 2px 0 0 0 var(--color-wood-lo), inset -2px 0 0 0 var(--color-wood-hi)' }}
+      />
     </div>
   )
 }

@@ -51,14 +51,5 @@ export type { ProgressBarProps } from './ProgressBar'
 export { Spinner } from './Spinner'
 export type { SpinnerProps } from './Spinner'
 
-export {
-  hashString,
-  wobbleFromKey,
-  pickFromKey,
-  doodleRadius,
-  doodleRotation,
-  tornBottomClipPath,
-  fallbackKey,
-  FOCUS_RING,
-  DOODLE_RADII,
-} from './utils'
+export { bevelClass, ditherStyle, FOCUS_RING } from './utils'
+export type { BevelTone, BevelSize, BevelOptions, DitherOptions } from './utils'

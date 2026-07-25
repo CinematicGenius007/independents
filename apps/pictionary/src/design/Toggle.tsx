@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { FOCUS_RING } from './utils'
+import { bevelClass, FOCUS_RING } from './utils'
 
 export interface ToggleProps {
   checked: boolean
@@ -11,9 +11,9 @@ export interface ToggleProps {
 }
 
 /**
- * Hand-drawn checkbox: a real `<input type="checkbox">` (visually hidden but
- * still focusable/operable) driving a wobbly ink box with a hand-sketched
- * checkmark stroke that draws in on check.
+ * Pixel checkbox: a real `<input type="checkbox">` (visually hidden but
+ * still focusable/operable) driving a square bevelled box. Checked inverts
+ * the bevel (reads as "pressed in") and reveals a blocky pixel checkmark.
  */
 export function Toggle({ checked, onChange, label, disabled = false, className = '', id }: ToggleProps) {
   const reactId = useId()
@@ -24,7 +24,9 @@ export function Toggle({ checked, onChange, label, disabled = false, className =
       htmlFor={inputId}
       className={`inline-flex cursor-pointer items-center gap-2.5 ${disabled ? 'cursor-not-allowed opacity-50' : ''} ${className}`}
     >
-      <span className="relative inline-flex h-6 w-6 shrink-0 items-center justify-center">
+      <span
+        className={`relative inline-flex h-6 w-6 shrink-0 items-center justify-center bg-chrome-panel ${bevelClass({ tone: 'gold', pressed: checked })}`}
+      >
         <input
           id={inputId}
           type="checkbox"
@@ -35,36 +37,21 @@ export function Toggle({ checked, onChange, label, disabled = false, className =
         />
         <svg
           aria-hidden
-          viewBox="0 0 24 24"
-          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 8 8"
+          shapeRendering="crispEdges"
+          className="pointer-events-none h-3.5 w-3.5"
+          style={{ opacity: checked ? 1 : 0, transition: 'opacity var(--dur-fast) linear' }}
         >
-          <rect
-            x="2.5"
-            y="2.5"
-            width="19"
-            height="19"
-            rx="4"
-            fill="var(--color-paper-white)"
-            stroke="var(--color-ink)"
-            strokeWidth={2.5}
-          />
-          <path
-            d="M5.5 12.5 L10 17 L19 6"
-            fill="none"
-            stroke="var(--color-accent-deep)"
-            strokeWidth={3}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            pathLength={1}
-            className="transition-[stroke-dashoffset] duration-200 ease-out"
-            style={{
-              strokeDasharray: 1,
-              strokeDashoffset: checked ? 0 : 1,
-            }}
-          />
+          <rect x={1} y={4} width={1} height={1} fill="var(--color-gold-hi)" />
+          <rect x={2} y={5} width={1} height={1} fill="var(--color-gold-hi)" />
+          <rect x={3} y={6} width={1} height={1} fill="var(--color-gold-hi)" />
+          <rect x={4} y={5} width={1} height={1} fill="var(--color-gold-hi)" />
+          <rect x={5} y={4} width={1} height={1} fill="var(--color-gold-hi)" />
+          <rect x={6} y={3} width={1} height={1} fill="var(--color-gold-hi)" />
+          <rect x={7} y={2} width={1} height={1} fill="var(--color-gold-hi)" />
         </svg>
       </span>
-      {label && <span className="select-none text-sm text-ink">{label}</span>}
+      {label && <span className="select-none text-sm text-text">{label}</span>}
     </label>
   )
 }

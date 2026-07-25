@@ -1,6 +1,7 @@
 import type { RelayStatus } from '../net/protocol'
 import { CATEGORY_LABELS, CATEGORIES, LIMITS, type GameConfig, type Player } from '../shared/types'
 import { Panel, PlayerChip, SketchButton, Slider, Toggle } from '../design'
+import { bevelClass } from '../design/utils'
 import { ScreenFrame, inputClassName } from './ScreenFrame'
 
 export interface LobbyScreenProps {
@@ -35,7 +36,9 @@ export function LobbyScreen(props: LobbyScreenProps) {
     >
       {props.relayStatus && props.relayStatus !== 'connected' && (
         <div
-          className={`mb-5 border-2 border-ink px-4 py-3 text-sm shadow-ink-sm ${props.relayStatus === 'failed' ? 'bg-alert-wash' : 'bg-accent-wash'}`}
+          className={`mb-5 px-4 py-3 text-sm ${bevelClass({ tone: props.relayStatus === 'failed' ? 'red' : 'gold', size: 'sm' })} ${
+            props.relayStatus === 'failed' ? 'bg-red-lo text-red-hi' : 'bg-gold-lo text-gold-hi'
+          }`}
           role="status"
         >
           {props.relayStatus === 'failed'
@@ -45,7 +48,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
       )}
       <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.7fr)_minmax(0,1.3fr)]">
         <div className="flex flex-col gap-6">
-          <Panel title={`Players · ${props.players.length}/${LIMITS.maxPlayers}`} wobbleKey="lobby-players">
+          <Panel title={`Players · ${props.players.length}/${LIMITS.maxPlayers}`}>
             <div className="flex flex-col gap-3">
               {props.players.map((player) => (
                 <PlayerChip
@@ -57,13 +60,13 @@ export function LobbyScreen(props: LobbyScreenProps) {
               ))}
             </div>
           </Panel>
-          <Panel tone="accent" title="Invite link" wobbleKey="lobby-invite">
-            <p className="mb-3 break-all font-mono text-xs text-ink-soft">{props.inviteUrl}</p>
+          <Panel tone="accent" title="Invite link">
+            <p className="mb-3 break-all font-mono text-xs text-text-muted">{props.inviteUrl}</p>
             <SketchButton size="sm" onClick={props.onCopyInvite}>{props.copied ? 'Copied!' : 'Copy invite'}</SketchButton>
           </Panel>
         </div>
 
-        <Panel title="House rules" wobbleKey="lobby-rules" className={!isHost ? 'opacity-80' : ''}>
+        <Panel title="House rules" className={!isHost ? 'opacity-80' : ''}>
           <fieldset disabled={!isHost} className="grid gap-6 sm:grid-cols-2 disabled:opacity-65">
             <Slider
               label="Drawing time"
@@ -83,7 +86,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
               onChange={(rounds) => update({ rounds })}
             />
             <div className="sm:col-span-2">
-              <p className="mb-2 text-sm font-medium">Word categories</p>
+              <p className="mb-2 text-sm font-medium text-text">Word categories</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {CATEGORIES.map((category) => (
                   <Toggle
@@ -104,7 +107,7 @@ export function LobbyScreen(props: LobbyScreenProps) {
             <Toggle checked={props.config.hintsEnabled} onChange={(hintsEnabled) => update({ hintsEnabled })} label="Reveal letter hints" />
             <Toggle checked={props.config.customWordsOnly} onChange={(customWordsOnly) => update({ customWordsOnly })} label="Use custom words only" />
             <label className="sm:col-span-2">
-              <span className="mb-2 block text-sm font-medium">Custom words <span className="font-normal text-ink-faint">(one per line)</span></span>
+              <span className="mb-2 block text-sm font-medium text-text">Custom words <span className="font-normal text-text-muted">(one per line)</span></span>
               <textarea
                 className={`${inputClassName} min-h-28 resize-y`}
                 value={props.customWordsText}
@@ -115,8 +118,8 @@ export function LobbyScreen(props: LobbyScreenProps) {
           </fieldset>
 
           <div className="mt-7 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
-            {!isHost && <p className="mr-auto text-sm text-ink-faint">Only the host can change these.</p>}
-            {isHost && props.players.length < LIMITS.minPlayers && <p className="mr-auto text-sm text-ink-faint">Waiting for one more player…</p>}
+            {!isHost && <p className="mr-auto text-sm text-text-muted">Only the host can change these.</p>}
+            {isHost && props.players.length < LIMITS.minPlayers && <p className="mr-auto text-sm text-text-muted">Waiting for one more player…</p>}
             <SketchButton size="lg" disabled={!canStart} loading={props.starting} onClick={props.onStart}>Start drawing</SketchButton>
           </div>
         </Panel>

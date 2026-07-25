@@ -201,12 +201,15 @@ export function CanvasSurface({
       aria-label="Shared drawing canvas"
       aria-disabled={disabled || undefined}
       role="img"
-      className={`block aspect-[8/5] w-full rounded-[var(--radius-doodle)] border-[3px] border-ink bg-white shadow-ink ${disabled ? 'cursor-not-allowed' : 'cursor-crosshair'} ${className}`}
+      className={`block aspect-[8/5] w-full border-[3px] bg-canvas ${disabled ? 'cursor-not-allowed' : 'cursor-crosshair'} ${className}`}
+      style={{
+        touchAction: 'none',
+        borderColor: 'var(--color-canvas-hi) var(--color-canvas-lo) var(--color-canvas-lo) var(--color-canvas-hi)',
+      }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={finishStroke}
       onPointerCancel={finishStroke}
-      style={{ touchAction: 'none' }}
     />
   )
 }

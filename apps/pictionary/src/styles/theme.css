@@ -1,69 +1,102 @@
 /**
- * Design tokens — hand-drawn isometric ink map.
+ * Design tokens — cozy pixel-art RPG HUD.
  *
  * OWNED BY THE ORCHESTRATOR (names + values). The design agent may ADD tokens,
  * and owns every component that consumes them, but must not rename or drop
  * these — screens and canvas code reference them directly.
  *
- * Reference: an architect's hand-drawn map — precise, straight-edged
- * geometry rendered with ink, hatching, and paper grain. The "hand-made"
- * read comes from stroke and texture, never from bent corners or per-instance
- * rotation. Grayscale ink on textured paper, one saturated yellow accent, a
- * red-orange used only for urgency. Nothing else competes with the drawing.
+ * Reference: an isometric pixel strategy game's UI chrome (segmented title
+ * bars, bevelled icon tiles, parchment alert scrolls) synthesised with a
+ * cozy top-down pixel RPG's warm, lush palette. Hard-edged everywhere — 2-4px
+ * bevels, light top-left / dark bottom-right, no antialiasing, no soft
+ * shadows or gradients except deliberate ordered dithering. The play area
+ * (the drawing canvas) stays bright; everything around it is dark chrome.
  */
 
 @theme {
-  /* Surfaces */
-  --color-paper: #f2f1ed;
-  --color-paper-deep: #e6e4dd;
-  --color-paper-dark: #d8d5cb;
-  --color-paper-white: #fbfaf7;
+  /* Chrome — deep desaturated navy-teal. Panels, toolbars, window frames. */
+  --color-chrome-deep: #0d1a20;
+  --color-chrome: #17272e;
+  --color-chrome-panel: #1f3038;
+  --color-chrome-hi: #3c5a62;
+  --color-chrome-lo: #060c0f;
 
-  /* Ink */
-  --color-ink: #1a1a1a;
-  --color-ink-soft: #4a4a4a;
-  --color-ink-faint: #65635e;
-  --color-ink-ghost: #c4c1b8;
+  /* Parchment — scroll panels, alert notices, the canvas mat. */
+  --color-parchment: #e8d5a8;
+  --color-parchment-deep: #d6be86;
+  --color-parchment-hi: #f8efd6;
+  --color-parchment-lo: #b08f52;
 
-  /* Accents — used sparingly */
-  --color-accent: #f5d311;
-  --color-accent-deep: #d9b800;
-  --color-accent-wash: #fdf3b8;
-  --color-alert: #f2603c;
-  --color-alert-deep: #c1392b;
-  --color-alert-wash: #fbdccf;
-  --color-ok: #3cb371;
+  /* Canvas — the one bright surface in the whole HUD. Drawings must stay legible. */
+  --color-canvas: #fbf8f0;
+  --color-canvas-hi: #ffffff;
+  --color-canvas-lo: #cfc6ae;
 
-  /* Focus ring — solid, offset, high-contrast against both paper and ink surfaces. */
-  --color-focus: #3c7df2;
+  /* Moss / grass greens — decorative, "guessed"/ok states. */
+  --color-moss: #5b8a46;
+  --color-moss-deep: #3a5b2c;
+  --color-moss-hi: #8fc26c;
+  --color-moss-lo: #253b18;
 
-  /* Type. No external CDN: system-first handwriting stack, offline-safe. */
-  --font-display: 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', 'Chalkboard SE', cursive;
+  /* Warm wood brown — decorative accents, avatar props. */
+  --color-wood: #8a5a32;
+  --color-wood-deep: #5c3a1e;
+  --color-wood-hi: #b98a54;
+  --color-wood-lo: #4a2e15;
+
+  /* Weathered stone grey — disabled/neutral chrome. */
+  --color-stone: #7c8478;
+  --color-stone-deep: #565d52;
+  --color-stone-hi: #a7af9b;
+  --color-stone-lo: #454b3e;
+
+  /* Gold — primary emphasis, the one saturated "hero" color. */
+  --color-gold: #e8c447;
+  --color-gold-deep: #b9912a;
+  --color-gold-hi: #fbe79a;
+  --color-gold-lo: #8f6e1c;
+
+  /* Red — urgency, danger, close boxes. Used sparingly. */
+  --color-red: #d6503c;
+  --color-red-deep: #9e2e1f;
+  --color-red-hi: #f0917e;
+  --color-red-lo: #6e1d12;
+
+  /* Text */
+  --color-text: #ece6d3;
+  --color-text-muted: #97a6a0;
+  --color-ink: #2a2118;
+  --color-ink-soft: #5c4e38;
+  --color-ink-faint: #8c7b58;
+  --color-ok: #7cc26a;
+
+  /* Focus ring — gold, offset, reads on both chrome and parchment. */
+  --color-focus: var(--color-gold);
+
+  /* Type. No external CDN, no downloaded bitmap font: a monospace-first
+     system stack carries the pixel-chrome read (uppercase + letter-spacing,
+     see .pixel-heading below); a plain sans stack keeps body/chat legible. */
+  --font-display: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
   --font-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Ink linework */
-  --stroke-hairline: 1.5px;
-  --stroke-ink: 3px;
-  --stroke-bold: 5px;
+  /* Bevel widths — hard-edged, 2-4px. */
+  --bevel-width-sm: 2px;
+  --bevel-width: 3px;
+  --bevel-width-lg: 4px;
 
-  /* Hard offset shadows — drawn, never blurred. Each pairs the cast shadow
-     with a hairline second pass just inside the border, reading like a
-     marker re-tracing its own outline slightly off-register: a straight
-     edge, drawn twice. */
-  --shadow-ink-sm: 2px 2px 0 var(--color-ink), inset 0 0 0 var(--stroke-hairline) var(--color-ink-soft);
-  --shadow-ink: 4px 4px 0 var(--color-ink), inset 0 0 0 var(--stroke-hairline) var(--color-ink-soft);
-  --shadow-ink-lg: 7px 7px 0 var(--color-ink), inset 0 0 0 var(--stroke-hairline) var(--color-ink-soft);
-  --shadow-lift: 4px 4px 0 rgb(26 26 26 / 0.18);
+  /* Square corners, always. */
+  --radius-none: 0px;
 
-  /* Corners — square geometry. Just enough rounding that ink corners don't
-     fray under anti-aliasing; nothing here should read as "rounded". */
-  --radius-ink: 3px;
+  /* Hard, unblurred offset shadows for floating chrome (modal/toast over a
+     backdrop). Bevels — not shadows — carry weight everywhere else. */
+  --shadow-pixel: 4px 4px 0 0 rgb(6 10 8 / 0.5);
+  --shadow-pixel-lg: 6px 6px 0 0 rgb(6 10 8 / 0.55);
 
   /* Motion — every value must be neutralised under prefers-reduced-motion */
   --ease-snap: cubic-bezier(0.2, 0.9, 0.3, 1.4);
-  --dur-fast: 120ms;
-  --dur-base: 220ms;
+  --dur-fast: 90ms;
+  --dur-base: 160ms;
 
   /* Layout */
   --z-canvas: 10;
@@ -73,35 +106,85 @@
 }
 
 /*
- * Paint-fill: a flat tone block sits a hair off-register from its ink
- * outline, as if brushed in by hand after the line was drawn — pulled in on
- * two edges, overshooting on the other two, never perfectly aligned. Set
- * `--paint-color` per use; the base color shows through the underfilled
- * sliver so it must be set on the same element as the ink border.
+ * Pixel bevel — the hard outset border every panel/button/tile in the kit is
+ * built from: light top+left, dark bottom+right, 0 blur, 0 radius. Compose a
+ * base class with one `.pixel-bevel-<tone>` modifier to set the two colors.
+ * `.pixel-bevel-pressed` (or a native `:active` on a non-disabled `<button>`)
+ * inverts the pair so the shape reads as physically pushed in.
  */
-.paint-fill {
-  position: relative;
-  isolation: isolate;
-  background-color: var(--color-paper-white);
+.pixel-bevel {
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: var(--bevel-width);
+  border-radius: 0;
+  border-color: var(--bevel-hi) var(--bevel-lo) var(--bevel-lo) var(--bevel-hi);
 }
-.paint-fill::before {
-  content: '';
-  position: absolute;
-  inset: 2px -1.5px -1.5px 2px;
-  z-index: -1;
-  background-color: var(--paint-color, var(--color-accent-wash));
+.pixel-bevel-sm {
+  border-width: var(--bevel-width-sm);
+}
+.pixel-bevel-lg {
+  border-width: var(--bevel-width-lg);
+}
+.pixel-bevel-pressed,
+button.pixel-bevel:not(:disabled):active,
+button .pixel-bevel:not(:disabled):active {
+  border-color: var(--bevel-lo) var(--bevel-hi) var(--bevel-hi) var(--bevel-lo);
+}
+
+.pixel-bevel-chrome {
+  --bevel-hi: var(--color-chrome-hi);
+  --bevel-lo: var(--color-chrome-lo);
+}
+.pixel-bevel-parchment {
+  --bevel-hi: var(--color-parchment-hi);
+  --bevel-lo: var(--color-parchment-lo);
+}
+.pixel-bevel-gold {
+  --bevel-hi: var(--color-gold-hi);
+  --bevel-lo: var(--color-gold-lo);
+}
+.pixel-bevel-red {
+  --bevel-hi: var(--color-red-hi);
+  --bevel-lo: var(--color-red-lo);
+}
+.pixel-bevel-wood {
+  --bevel-hi: var(--color-wood-hi);
+  --bevel-lo: var(--color-wood-lo);
+}
+.pixel-bevel-stone {
+  --bevel-hi: var(--color-stone-hi);
+  --bevel-lo: var(--color-stone-lo);
+}
+.pixel-bevel-canvas {
+  --bevel-hi: var(--color-canvas-hi);
+  --bevel-lo: var(--color-canvas-lo);
+}
+.pixel-bevel-moss {
+  --bevel-hi: var(--color-moss-hi);
+  --bevel-lo: var(--color-moss-lo);
 }
 
 /*
- * Marker-stroke emphasis for headings: a fixed, hand-inked double-pass
- * underline. Not randomized per instance — a single drawn mark, reused.
+ * Chrome-label typography: the uppercase, letter-spaced, monospace read that
+ * stands in for a bitmap pixel font (see theme header — no external fonts).
+ * Used for titles, buttons, tiles, stat values — never for chat/nicknames.
  */
-.marker-underline {
-  display: block;
-  width: 8rem;
-  max-width: 100%;
-  height: 0.7rem;
-  margin-top: 0.2rem;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+.pixel-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Ordered dither texture: a tiny 2x2 checkerboard SVG data URI, tiled. Stands
+ * in for gradient shading — deliberately visible pixels, never blurred.
+ * Colors are set per-use via `--dither-a`/`--dither-b` (see utils.ts
+ * `ditherStyle`, which sets these as inline custom properties).
+ */
+.pixel-dither {
+  background-image: var(--dither-image);
+  background-repeat: repeat;
+  image-rendering: pixelated;
 }

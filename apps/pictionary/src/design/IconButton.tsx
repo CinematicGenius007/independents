@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import { FOCUS_RING } from './utils'
+import { bevelClass, FOCUS_RING } from './utils'
 
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
   icon: ReactNode
@@ -11,15 +11,15 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
 }
 
 const SIZE_PX: Record<NonNullable<IconButtonProps['size']>, string> = {
-  sm: 'h-8 w-8 text-base',
-  md: 'h-10 w-10 text-lg',
-  lg: 'h-14 w-14 text-2xl',
+  sm: 'h-8 w-8 text-sm',
+  md: 'h-10 w-10 text-base',
+  lg: 'h-14 w-14 text-xl',
 }
 
 /**
- * Square icon-only button for the drawing toolbar. `active` swaps the solid
- * ink border for a dashed accent outline, matching the reference's
- * dashed-diamond "selected target" language.
+ * A single bevelled chrome tile — the undecorated version of the reference's
+ * icon-tile toolbar buttons (see `CanvasTools` for the captioned variant).
+ * `active` swaps to a pressed-in bevel plus a gold outline ring.
  */
 export function IconButton({ icon, label, active = false, size = 'md', className = '', disabled, ...rest }: IconButtonProps) {
   return (
@@ -30,13 +30,10 @@ export function IconButton({ icon, label, active = false, size = 'md', className
       title={label}
       disabled={disabled}
       className={[
-        'inline-flex items-center justify-center rounded-[10px] border-[3px] bg-paper-white text-ink',
-        'transition-[transform,box-shadow] duration-100 ease-out',
-        disabled
-          ? 'cursor-not-allowed border-ink-ghost text-ink-faint opacity-60'
-          : active
-            ? 'border-dashed border-accent-deep bg-accent-wash shadow-ink-sm'
-            : 'border-ink shadow-ink-sm hover:-translate-y-0.5 hover:shadow-ink active:translate-y-0.5 active:shadow-none',
+        'inline-flex items-center justify-center bg-chrome-panel text-text',
+        bevelClass({ tone: 'chrome', pressed: active }),
+        disabled ? 'cursor-not-allowed opacity-45' : 'cursor-pointer',
+        active ? 'outline outline-[2px] outline-offset-2 outline-[color:var(--color-gold)]' : '',
         SIZE_PX[size],
         FOCUS_RING,
         className,

@@ -1,8 +1,10 @@
 @import 'tailwindcss';
 @import './styles/theme.css';
+/* After the theme: overrides `--font-display` with the vendored pixel face. */
+@import './styles/fonts.css';
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html,
@@ -13,8 +15,8 @@ body,
 
 body {
   margin: 0;
-  background-color: var(--color-paper);
-  color: var(--color-ink);
+  background-color: var(--color-chrome-deep);
+  color: var(--color-text);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;

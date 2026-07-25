@@ -16,9 +16,9 @@ export interface StatsScreenProps {
 
 function StatCard({ label, value, note }: { label: string; value: string | number; note?: string }) {
   return (
-    <TornCard wobbleKey={`stat-${label}`}>
-      <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">{label}</p>
-      <p className="mt-1 font-[family-name:var(--font-display)] text-3xl">{value}</p>
+    <TornCard>
+      <p className="pixel-heading text-[8px] leading-[16px] text-ink-faint">{label}</p>
+      <p className="pixel-heading mt-1 text-[24px] leading-[24px] text-ink">{value}</p>
       {note && <p className="mt-1 text-xs text-ink-soft">{note}</p>}
     </TornCard>
   )
@@ -36,10 +36,10 @@ export function StatsScreen(props: StatsScreenProps) {
       actions={<SketchButton variant="ghost" onClick={props.onBack}>Back</SketchButton>}
     >
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-        <Panel tone="accent" wobbleKey="stats-profile" className="h-fit text-center">
+        <Panel tone="accent" className="h-fit text-center">
           <Avatar avatar={props.profile.avatar} color={props.profile.color} size={104} label={props.profile.nickname} />
-          <p className="mt-2 font-[family-name:var(--font-display)] text-2xl">{props.profile.nickname}</p>
-          <p className="font-mono text-sm text-ink-soft">Rating {props.stats.rating}</p>
+          <p className="mt-2 text-xl font-semibold text-text">{props.profile.nickname}</p>
+          <p className="font-mono text-sm text-text-muted">Rating {props.stats.rating}</p>
           <ProgressBar className="mt-5 text-left" label="Guess ratio" value={guessRate} tone="ok" />
         </Panel>
 
@@ -53,27 +53,27 @@ export function StatsScreen(props: StatsScreenProps) {
             <StatCard label="Favorite" value={props.stats.favoriteCategory ? CATEGORY_LABELS[props.stats.favoriteCategory] : '—'} />
           </div>
 
-          <Panel title="Recent pages" wobbleKey="stats-history" className="mt-7">
+          <Panel title="Recent pages" className="mt-7">
             {props.history.length ? (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left text-sm">
+                <table className="w-full min-w-[520px] text-left text-sm text-text">
                   <caption className="sr-only">Recent game history</caption>
-                  <thead className="border-b-2 border-ink text-xs uppercase tracking-wide text-ink-faint">
+                  <thead className="border-b-2 border-[color:var(--color-chrome-hi)] text-xs uppercase tracking-wide text-text-muted">
                     <tr><th scope="col" className="pb-2">Word</th><th scope="col" className="pb-2">Role</th><th scope="col" className="pb-2">Score</th><th scope="col" className="pb-2">Played</th></tr>
                   </thead>
                   <tbody>
                     {props.history.map((entry) => (
-                      <tr key={`${entry.gameId}-${entry.timestamp}-${entry.word}`} className="border-b border-dashed border-ink-ghost last:border-0">
+                      <tr key={`${entry.gameId}-${entry.timestamp}-${entry.word}`} className="border-b border-dashed border-[color:var(--color-stone)] last:border-0">
                         <td className="py-2 font-semibold">{entry.word}</td>
                         <td className="py-2 capitalize">{entry.role}</td>
                         <td className="py-2 font-mono">{entry.score}</td>
-                        <td className="py-2 text-ink-soft">{new Date(entry.timestamp).toLocaleDateString()}</td>
+                        <td className="py-2 text-text-muted">{new Date(entry.timestamp).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            ) : <p className="py-6 text-center text-sm italic text-ink-faint">Your first finished game will appear here.</p>}
+            ) : <p className="py-6 text-center text-sm italic text-text-muted">Your first finished game will appear here.</p>}
           </Panel>
 
           {(props.onExport || props.onImport || props.onReset) && (
