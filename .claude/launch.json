@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fogwalk",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "apps/fogwalk", "dev", "--port", "5181", "--strictPort"],
+      "port": 5181
+    }
+  ]
+}
