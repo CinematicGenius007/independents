@@ -4,8 +4,28 @@
     {
       "name": "fogwalk",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--dir", "apps/fogwalk", "dev", "--port", "5181", "--strictPort"],
+      "runtimeArgs": [
+        "--dir",
+        "apps/fogwalk",
+        "dev",
+        "--port",
+        "5181",
+        "--strictPort"
+      ],
       "port": 5181
+    },
+    {
+      "name": "bloomwright",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/bloomwright",
+        "dev",
+        "--port",
+        "5182",
+        "--strictPort"
+      ],
+      "port": 5182
     }
   ]
 }
