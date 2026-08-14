@@ -1,4 +1,4 @@
-import type { Grammar } from './lsystem'
+import { descriptionLength, type Grammar } from './lsystem'
 
 export interface Level {
   readonly id: string
@@ -11,6 +11,16 @@ export interface Level {
   readonly start: Grammar
   /** Match score needed to clear it. */
   readonly threshold: number
+}
+
+/**
+ * The symbol budget for a level: the length of the grammar that drew it.
+ *
+ * Beating the score is one thing; saying it as briefly as the specimen was said
+ * is another, and it is the part that rewards understanding rather than fiddling.
+ */
+export function parSymbols(level: Level): number {
+  return descriptionLength(level.hidden)
 }
 
 /**

@@ -4,6 +4,8 @@ import { ALPHABET, SYMBOL_HELP, bracketsBalance, sanitize, type Grammar } from '
 interface Props {
   grammar: Grammar
   onChange: (grammar: Grammar) => void
+  onAddBud?: () => void
+  addableBud?: string | null
 }
 
 /**
@@ -11,7 +13,7 @@ interface Props {
  * alphabet stays discoverable without a manual. Typing is filtered rather than
  * validated: an unknown character simply never lands.
  */
-export function RuleEditor({ grammar, onChange }: Props) {
+export function RuleEditor({ grammar, onChange, onAddBud, addableBud }: Props) {
   const lastFocused = useRef<string>('axiom')
 
   const setRule = (symbol: string, value: string) => {
@@ -58,6 +60,12 @@ export function RuleEditor({ grammar, onChange }: Props) {
           </label>
         )
       })}
+
+      {onAddBud && addableBud && (
+        <button className="add-bud" onClick={onAddBud}>
+          + give {addableBud} a rule
+        </button>
+      )}
 
       <div className="palette">
         {ALPHABET.map((symbol) => (

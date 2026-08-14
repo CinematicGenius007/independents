@@ -65,6 +65,65 @@ function coverage(subject: Mask, near: Mask): number {
   return total === 0 ? 0 : covered / total
 }
 
+/**
+ * Box-counting dimension.
+ *
+ * A branching plant is not a line and not a region; it fills space at some rate
+ * between the two, and that rate is a number you can measure. Count how many
+ * boxes of side s the drawing touches at several scales, and the slope of
+ * log N against log 1/s is the dimension. It gives the player a second, entirely
+ * different way to be close: you can match a specimen's density before you match
+ * its shape.
+ */
+export function boxDimension(segments: readonly Segment[]): number {
+  const scales = [8, 16, 32, 64]
+  const points: { x: number; y: number }[] = []
+
+  for (const grid of scales) {
+    const mask = rasterize(segments, grid)
+    let filled = 0
+    for (const cell of mask) filled += cell
+    if (filled === 0) return 0
+    points.push({ x: Math.log(grid), y: Math.log(filled) })
+  }
+
+  const meanX = points.reduce((total, point) => total + point.x, 0) / points.length
+  const meanY = points.reduce((total, point) => total + point.y, 0) / points.length
+  let top = 0
+  let bottom = 0
+  for (const point of points) {
+    top += (point.x - meanX) * (point.y - meanY)
+    bottom += (point.x - meanX) ** 2
+  }
+  return bottom === 0 ? 0 : top / bottom
+}
+
+/**
+ * Where the two drawings disagree, as a coarse map.
+ *
+ * `missing` is specimen the player has not covered, `extra` is ink with nothing
+ * under it. Showing this was the single biggest usability gap: without it a
+ * score of 61% tells you that you are wrong but not where.
+ */
+export function difference(
+  mine: readonly Segment[],
+  target: readonly Segment[],
+  grid = GRID,
+): { missing: Mask; extra: Mask } {
+  const mineMask = rasterize(mine, grid)
+  const targetMask = rasterize(target, grid)
+  const mineNear = dilate(mineMask, TOLERANCE, grid)
+  const targetNear = dilate(targetMask, TOLERANCE, grid)
+
+  const missing = new Uint8Array(mineMask.length)
+  const extra = new Uint8Array(mineMask.length)
+  for (let i = 0; i < mineMask.length; i += 1) {
+    if (targetMask[i] && !mineNear[i]) missing[i] = 1
+    if (mineMask[i] && !targetNear[i]) extra[i] = 1
+  }
+  return { missing, extra }
+}
+
 export interface Score {
   /** Share of the player's ink that lands on the target. */
   readonly precision: number

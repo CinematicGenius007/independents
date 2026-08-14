@@ -15,7 +15,7 @@ export interface Grammar {
 }
 
 /** Symbols the turtle understands, plus the two variables that only expand. */
-export const ALPHABET = ['F', 'G', '+', '-', '[', ']', 'A', 'B'] as const
+export const ALPHABET = ['F', 'G', '+', '-', '|', '>', '<', '[', ']', 'A', 'B'] as const
 export type Symbol = (typeof ALPHABET)[number]
 
 export const SYMBOL_HELP: Record<string, string> = {
@@ -23,6 +23,9 @@ export const SYMBOL_HELP: Record<string, string> = {
   G: 'move forward without drawing',
   '+': 'turn left by the angle',
   '-': 'turn right by the angle',
+  '|': 'turn right around',
+  '>': 'shorten every step after this',
+  '<': 'lengthen every step after this',
   '[': 'remember this spot',
   ']': 'jump back to it',
   A: 'a bud — becomes its rule',
@@ -50,6 +53,23 @@ export function expand(grammar: Grammar): { text: string; truncated: boolean } {
   }
 
   return { text: current, truncated }
+}
+
+/**
+ * How long is the description?
+ *
+ * The interesting question about a shape is not only whether you can draw it but
+ * how briefly you can say it, so every level carries a symbol budget taken from
+ * the grammar that made the specimen. Rules that rewrite a symbol to itself cost
+ * nothing — they are not saying anything.
+ */
+export function descriptionLength(grammar: Grammar): number {
+  let total = grammar.axiom.length
+  for (const [symbol, value] of Object.entries(grammar.rules)) {
+    if (value === symbol) continue
+    total += 1 + value.length
+  }
+  return total
 }
 
 export function isValidGrammarText(text: string): boolean {

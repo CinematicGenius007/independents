@@ -24,20 +24,21 @@ export const MAX_SEGMENTS = 20_000
 export function walk(text: string, angleDegrees: number): Drawing {
   const turn = (angleDegrees * Math.PI) / 180
   const segments: Segment[] = []
-  const stack: { x: number; y: number; heading: number; depth: number }[] = []
+  const stack: { x: number; y: number; heading: number; depth: number; stride: number }[] = []
 
   let x = 0
   let y = 0
   let heading = -Math.PI / 2 // start pointing up
   let depth = 0
+  let stride = 1
   let truncated = false
 
   for (const symbol of text) {
     switch (symbol) {
       case 'F':
       case 'G': {
-        const nx = x + Math.cos(heading)
-        const ny = y + Math.sin(heading)
+        const nx = x + Math.cos(heading) * stride
+        const ny = y + Math.sin(heading) * stride
         if (symbol === 'F') {
           if (segments.length >= MAX_SEGMENTS) {
             truncated = true
@@ -55,8 +56,17 @@ export function walk(text: string, angleDegrees: number): Drawing {
       case '-':
         heading += turn
         break
+      case '|':
+        heading += Math.PI
+        break
+      case '>':
+        stride *= 0.78
+        break
+      case '<':
+        stride *= 1.28
+        break
       case '[':
-        stack.push({ x, y, heading, depth })
+        stack.push({ x, y, heading, depth, stride })
         depth += 1
         break
       case ']': {
@@ -66,6 +76,7 @@ export function walk(text: string, angleDegrees: number): Drawing {
           y = saved.y
           heading = saved.heading
           depth = saved.depth
+          stride = saved.stride
         }
         break
       }
