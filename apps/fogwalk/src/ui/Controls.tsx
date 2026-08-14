@@ -32,13 +32,13 @@ export function Controls({ onMove, onUndo, onReset, onHint, canUndo, hintBusy }:
         ))}
       </div>
       <div className="side-buttons">
-        <button className="chip" onClick={onUndo} disabled={!canUndo}>
+        <button className="ghost-button" onClick={onUndo} disabled={!canUndo}>
           Undo
         </button>
-        <button className="chip" onClick={onReset}>
+        <button className="ghost-button" onClick={onReset}>
           Restart
         </button>
-        <button className="chip" onClick={onHint} disabled={hintBusy}>
+        <button className="ghost-button" onClick={onHint} disabled={hintBusy}>
           {hintBusy ? 'Thinking' : 'Hint'}
         </button>
       </div>

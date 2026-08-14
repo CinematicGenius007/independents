@@ -1,9 +1,22 @@
-export type Cell = 'wall' | 'floor' | 'mud' | 'hazard'
+export type Cell =
+  | 'wall'
+  | 'floor'
+  | 'mud'
+  | 'hazard'
+  /** A ratchet only lets a walker through in the direction it points. */
+  | 'ratchet-up'
+  | 'ratchet-down'
+  | 'ratchet-left'
+  | 'ratchet-right'
+  /** A gate swallows a walker and spits it out at its twin, stopping it there. */
+  | 'gate'
 
 export interface Board {
   readonly width: number
   readonly height: number
   readonly cells: readonly Cell[]
+  /** Gate cell -> the gate it opens onto. Always symmetric. */
+  readonly gates: Readonly<Record<number, number>>
   /** Index of the cell every possible position has to end up on. */
   readonly goal: number
 }
@@ -17,6 +30,17 @@ const STEPS: Record<Direction, { dx: number; dy: number }> = {
   down: { dx: 0, dy: 1 },
   left: { dx: -1, dy: 0 },
   right: { dx: 1, dy: 0 },
+}
+
+const RATCHETS: Record<string, Direction> = {
+  'ratchet-up': 'up',
+  'ratchet-down': 'down',
+  'ratchet-left': 'left',
+  'ratchet-right': 'right',
+}
+
+export function ratchetDirection(cell: Cell): Direction | null {
+  return RATCHETS[cell] ?? null
 }
 
 export function indexOf(board: Board, x: number, y: number): number {
@@ -44,15 +68,20 @@ export function standableCells(board: Board): number[] {
 /**
  * Slide a single walker until something stops it.
  *
- * Floors are frictionless, mud grabs the walker on contact, walls block, and a
- * hazard anywhere along the path is fatal. The fatal case is what gives the game
- * its pressure: a plan is only legal if it is safe in every world at once, so one
- * unlucky starting cell invalidates the whole move.
+ * Floors are frictionless, mud grabs on contact, walls block, hazards kill, a
+ * ratchet only opens for a walker travelling its way, and a gate throws the
+ * walker to its twin and lets go of it there.
+ *
+ * The last two matter mathematically as much as physically. Sliding alone gives
+ * a transition function whose merges are all local; ratchets make it asymmetric
+ * (a move is no longer undoable by its opposite) and gates make merges non-local,
+ * which is what lets a board fold distant possibilities together.
  */
 export function slide(board: Board, from: number, direction: Direction): number | 'dead' {
   const { dx, dy } = STEPS[direction]
   let { x, y } = coordsOf(board, from)
   let current = from
+  let hops = 0
 
   for (;;) {
     const nx = x + dx
@@ -64,9 +93,21 @@ export function slide(board: Board, from: number, direction: Direction): number 
     if (cell === 'wall') return current
     if (cell === 'hazard') return 'dead'
 
+    const ratchet = ratchetDirection(cell)
+    if (ratchet && ratchet !== direction) return current
+
+    if (cell === 'gate') {
+      const exit = board.gates[next]
+      return exit === undefined ? next : exit
+    }
+
     x = nx
     y = ny
     current = next
     if (cell === 'mud') return current
+
+    // A ring of ratchets could otherwise be entered but never left.
+    hops += 1
+    if (hops > board.width * board.height) return current
   }
 }

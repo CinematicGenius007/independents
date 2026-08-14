@@ -11,8 +11,24 @@ export function beliefKey(belief: Belief): string {
   return belief.join(',')
 }
 
-export function isSolved(board: Board, belief: Belief): boolean {
-  return belief.length === 1 && belief[0] === board.goal
+/**
+ * Two ways to win.
+ *
+ * `mark` is the ordinary one: one world left, standing on the mark. `reset` asks
+ * only that the fog collapse at all, anywhere — which is the synchronizing-word
+ * problem in its bare form, and a different kind of thinking, because you are no
+ * longer steering toward a place, only toward agreement.
+ */
+export type Objective = 'mark' | 'reset'
+
+export function isSolved(board: Board, belief: Belief, objective: Objective = 'mark'): boolean {
+  if (belief.length !== 1) return false
+  return objective === 'reset' || belief[0] === board.goal
+}
+
+/** How much you still do not know, in bits. */
+export function uncertainty(belief: Belief): number {
+  return Math.log2(Math.max(1, belief.length))
 }
 
 /**

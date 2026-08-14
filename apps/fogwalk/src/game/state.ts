@@ -1,4 +1,4 @@
-import { initialBelief, isSolved, step, type Belief } from '../engine/belief'
+import { initialBelief, isSolved, step, uncertainty, type Belief } from '../engine/belief'
 import type { Direction } from '../engine/board'
 import type { Level } from '../engine/generate'
 
@@ -22,6 +22,8 @@ export interface GameState {
   readonly status: Status
   /** Set when the last input was refused, to explain why. */
   readonly refusal: { direction: Direction; doomedWorlds: number } | null
+  /** How many worlds the last accepted move folded together. */
+  readonly merged: number
 }
 
 export type GameAction =
@@ -38,6 +40,7 @@ export function startGame(level: Level): GameState {
     moves: [],
     status: 'playing',
     refusal: null,
+    merged: 0,
   }
 }
 
@@ -90,6 +93,7 @@ export function reduce(state: GameState, action: GameAction): GameState {
           ...state,
           history: [...state.history, state.belief],
           moves: [...state.moves, action.direction],
+          merged: 0,
           refusal: { direction: action.direction, doomedWorlds: countDoomed(state, action.direction) },
         }
         return { ...spent, status: movesLeft(spent) <= 0 ? 'stranded' : 'playing' }
@@ -97,19 +101,25 @@ export function reduce(state: GameState, action: GameAction): GameState {
 
       const advanced: GameState = {
         ...state,
+        merged: state.belief.length - next.length,
         belief: next,
         history: [...state.history, state.belief],
         moves: [...state.moves, action.direction],
         refusal: null,
       }
 
-      if (isSolved(state.level.board, next)) return { ...advanced, status: 'won' }
+      if (isSolved(state.level.board, next, state.level.objective)) return { ...advanced, status: 'won' }
       return { ...advanced, status: movesLeft(advanced) <= 0 ? 'stranded' : 'playing' }
     }
 
     default:
       return state
   }
+}
+
+/** What the player still does not know, in bits. */
+export function bitsLeft(state: GameState): number {
+  return uncertainty(state.belief)
 }
 
 /** Solved without spending a move more than the certified shortest plan. */

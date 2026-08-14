@@ -1,9 +1,18 @@
-import { beliefKey, initialBelief, isNoop, isSolved, step, type Belief } from './belief'
+import {
+  beliefKey,
+  initialBelief,
+  isNoop,
+  isSolved,
+  step,
+  type Belief,
+  type Objective,
+} from './belief'
 import { DIRECTIONS, type Board, type Direction } from './board'
 
 export interface SolveOptions {
   /** Safety valve so a pathological board cannot hang the tab. */
   maxStates?: number
+  objective?: Objective
 }
 
 export interface SolveResult {
@@ -21,8 +30,9 @@ export interface SolveResult {
  */
 export function solveFrom(board: Board, start: Belief, options: SolveOptions = {}): SolveResult {
   const maxStates = options.maxStates ?? 200_000
+  const objective = options.objective ?? 'mark'
 
-  if (isSolved(board, start)) return { plan: [], statesExplored: 0, exhausted: false }
+  if (isSolved(board, start, objective)) return { plan: [], statesExplored: 0, exhausted: false }
 
   const seen = new Map<string, { belief: Belief; from: string | null; move: Direction | null }>()
   const startKey = beliefKey(start)
@@ -47,7 +57,7 @@ export function solveFrom(board: Board, start: Belief, options: SolveOptions = {
         if (seen.has(movedKey)) continue
         seen.set(movedKey, { belief: moved, from: key, move })
 
-        if (isSolved(board, moved)) {
+        if (isSolved(board, moved, objective)) {
           return { plan: reconstruct(seen, movedKey), statesExplored: explored, exhausted: false }
         }
         next.push(movedKey)
@@ -64,8 +74,8 @@ export function solve(board: Board, options: SolveOptions = {}): SolveResult {
 }
 
 /** The move an optimal player would make next, or null when the position is lost. */
-export function hintFrom(board: Board, belief: Belief): Direction | null {
-  const result = solveFrom(board, belief, { maxStates: 60_000 })
+export function hintFrom(board: Board, belief: Belief, objective: Objective = 'mark'): Direction | null {
+  const result = solveFrom(board, belief, { maxStates: 60_000, objective })
   if (!result.plan || result.plan.length === 0) return null
   return result.plan[0]
 }

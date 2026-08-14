@@ -4,11 +4,31 @@ import { generateLevel, type Level } from '../engine/generate'
 import { budgetFor, isCleanWin, movesLeft, reduce, startGame } from './state'
 
 function levelFrom(board: Board, solution: Level['solution']): Level {
-  return { board, solution, seed: 'TEST', tier: 'calm', startingWorlds: board.cells.length }
+  return {
+    board,
+    solution,
+    seed: 'TEST',
+    tier: 'calm',
+    objective: 'mark',
+    startingWorlds: board.cells.length,
+    cernyBound: (board.cells.length - 1) ** 2,
+  }
 }
 
-const openRow: Board = { width: 4, height: 1, cells: ['floor', 'floor', 'floor', 'floor'], goal: 3 }
-const withPit: Board = { width: 4, height: 1, cells: ['floor', 'hazard', 'floor', 'floor'], goal: 3 }
+const openRow: Board = {
+  width: 4,
+  height: 1,
+  cells: ['floor', 'floor', 'floor', 'floor'],
+  gates: {},
+  goal: 3,
+}
+const withPit: Board = {
+  width: 4,
+  height: 1,
+  cells: ['floor', 'hazard', 'floor', 'floor'],
+  gates: {},
+  goal: 3,
+}
 
 describe('game state', () => {
   it('collapses to a win when every world lands on the goal', () => {

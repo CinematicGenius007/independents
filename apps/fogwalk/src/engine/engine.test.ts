@@ -11,6 +11,8 @@ import { hintFrom, solve } from './solver'
 function parse(rows: string[]): Board {
   const width = rows[0].length
   const cells: Cell[] = []
+  const gates: Record<number, number> = {}
+  const gateCells: number[] = []
   let goal = -1
   rows.forEach((row, y) => {
     ;[...row].forEach((char, x) => {
@@ -18,11 +20,22 @@ function parse(rows: string[]): Board {
       if (char === '#') cells.push('wall')
       else if (char === '~') cells.push('mud')
       else if (char === 'x') cells.push('hazard')
-      else cells.push('floor')
+      else if (char === '>') cells.push('ratchet-right')
+      else if (char === '<') cells.push('ratchet-left')
+      else if (char === 'v') cells.push('ratchet-down')
+      else if (char === '^') cells.push('ratchet-up')
+      else if (char === 'O') {
+        cells.push('gate')
+        gateCells.push(index)
+      } else cells.push('floor')
       if (char === 'G') goal = index
     })
   })
-  return { width, height: rows.length, cells, goal: goal === -1 ? 0 : goal }
+  if (gateCells.length === 2) {
+    gates[gateCells[0]] = gateCells[1]
+    gates[gateCells[1]] = gateCells[0]
+  }
+  return { width, height: rows.length, cells, gates, goal: goal === -1 ? 0 : goal }
 }
 
 describe('slide', () => {
@@ -44,6 +57,22 @@ describe('slide', () => {
   it('reports death when a hazard lies anywhere on the path', () => {
     const deadly = parse(['..x..'])
     expect(slide(deadly, 0, 'right')).toBe('dead')
+  })
+
+  it('opens a ratchet only for a walker going its way', () => {
+    const ratchet = parse(['.>...'])
+    expect(slide(ratchet, 0, 'right')).toBe(4)
+    expect(slide(ratchet, 4, 'left')).toBe(2)
+  })
+
+  it('throws a walker through a gate and lets go at the far side', () => {
+    const gated = parse(['.O..', '....', '..O.'])
+    expect(slide(gated, 0, 'right')).toBe(10)
+  })
+
+  it('never loops forever inside a ring of ratchets', () => {
+    const ring = parse(['>>>>'])
+    expect(() => slide(ring, 0, 'right')).not.toThrow()
   })
 })
 
@@ -103,7 +132,7 @@ describe('solver', () => {
 })
 
 describe('generator', () => {
-  const tiers: Tier[] = ['calm', 'brisk', 'severe']
+  const tiers: Tier[] = ['calm', 'brisk', 'severe', 'reset']
 
   for (const tier of tiers) {
     it(`ships certified ${tier} levels`, () => {
@@ -113,10 +142,23 @@ describe('generator', () => {
         expect(level.solution.length).toBeGreaterThanOrEqual(3)
         const outcome = runPlan(level.board, level.solution)
         expect(outcome.died).toBe(false)
-        expect(isSolved(level.board, outcome.belief)).toBe(true)
+        expect(isSolved(level.board, outcome.belief, level.objective)).toBe(true)
       }
     })
   }
+
+  it('makes a reset level winnable anywhere, not only on the mark', () => {
+    const level = generateLevel('RESET-1', 'reset')
+    const outcome = runPlan(level.board, level.solution)
+    expect(outcome.belief).toHaveLength(1)
+    expect(isSolved(level.board, outcome.belief, 'reset')).toBe(true)
+  })
+
+  it('quotes the Cerny bound for the board it generated', () => {
+    const level = generateLevel('BOUND-1', 'brisk')
+    expect(level.cernyBound).toBe((level.startingWorlds - 1) ** 2)
+    expect(level.solution.length).toBeLessThanOrEqual(level.cernyBound)
+  })
 
   it('is deterministic for a given seed and tier', () => {
     const first = generateLevel('SMOKE-42', 'brisk')
