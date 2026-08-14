@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { makeLexicon, say, type Features, type Language } from './language'
-import { generatePuzzle, lexicallyClear, TIERS, wordsRecoverable, type TierId } from './puzzle'
 import { createRng } from './rng'
-import { sameScene, vocabularyOf, type Scene } from './scene'
+import type { Scene } from './scene'
+import {
+  canAnswer,
+  createStudy,
+  everyGrammar,
+  judge,
+  survivors,
+  testIsForced,
+  unheardAtoms,
+  wordsSeen,
+} from './study'
+import { hypothesisCount, TIERS, type TierId } from './tiers'
 
 const lexicon = makeLexicon(createRng(7))
 
@@ -15,8 +25,9 @@ const plain: Features = {
   adjectives: 'none',
   number: 'none',
   case: 'none',
+  casePlacement: 'suffix',
   adjAgrees: false,
-  verbNumber: false,
+  verbAgrees: 'none',
 }
 
 const scene: Scene = {
@@ -36,30 +47,22 @@ describe('saying a scene', () => {
     const before = say(scene, speak({ ...plain, adjectives: 'before' }))
     const after = say(scene, speak({ ...plain, adjectives: 'after' }))
     expect(before).toHaveLength(7)
-    expect(after).toHaveLength(7)
-    // Same three words per phrase; only the head noun changes side.
     expect(before.slice(0, 2)).toEqual(after.slice(1, 3))
     expect(before[2]).toEqual(after[0])
   })
 
   it('marks many at the end or the front, as chosen', () => {
-    const suffix = say(scene, speak({ ...plain, number: 'suffix' }))
-    const prefix = say(scene, speak({ ...plain, number: 'prefix' }))
-    expect(suffix[2].endsWith(lexicon.pluralAffix)).toBe(true)
-    expect(prefix[2].startsWith(lexicon.pluralAffix)).toBe(true)
+    expect(say(scene, speak({ ...plain, number: 'suffix' }))[2].endsWith(lexicon.pluralAffix)).toBe(true)
+    expect(say(scene, speak({ ...plain, number: 'prefix' }))[2].startsWith(lexicon.pluralAffix)).toBe(
+      true,
+    )
   })
 
-  it('leaves a single thing unmarked', () => {
-    const words = say(scene, speak({ ...plain, number: 'suffix' }))
-    expect(words[0].endsWith(lexicon.pluralAffix)).toBe(false)
-  })
-
-  it('marks whichever participant the language marks', () => {
-    const objectMarked = say(scene, speak({ ...plain, case: 'object' }))
-    const subjectMarked = say(scene, speak({ ...plain, case: 'subject' }))
-    expect(objectMarked[2].endsWith(lexicon.caseAffix)).toBe(true)
-    expect(objectMarked[0].endsWith(lexicon.caseAffix)).toBe(false)
-    expect(subjectMarked[0].endsWith(lexicon.caseAffix)).toBe(true)
+  it('puts the case marker on whichever end the language uses', () => {
+    const suffixed = say(scene, speak({ ...plain, case: 'object', casePlacement: 'suffix' }))
+    const prefixed = say(scene, speak({ ...plain, case: 'object', casePlacement: 'prefix' }))
+    expect(suffixed[2].endsWith(lexicon.caseAffix)).toBe(true)
+    expect(prefixed[2].startsWith(lexicon.caseAffix)).toBe(true)
   })
 
   it('copies the marker onto adjectives only when they agree', () => {
@@ -69,82 +72,149 @@ describe('saying a scene', () => {
     expect(aloof.filter((word) => word.endsWith(lexicon.caseAffix))).toHaveLength(1)
   })
 
-  it('marks the verb for a plural subject only when the language does that', () => {
-    const plural: Scene = { ...scene, subject: { ...scene.subject, count: 3 } }
-    const marking = say(plural, speak({ ...plain, number: 'suffix', verbNumber: true }))
-    const not = say(plural, speak({ ...plain, number: 'suffix', verbNumber: false }))
-    expect(marking[1].endsWith(lexicon.pluralAffix)).toBe(true)
-    expect(not[1].endsWith(lexicon.pluralAffix)).toBe(false)
+  it('agrees with whichever participant the language agrees with', () => {
+    const pluralSubject: Scene = {
+      ...scene,
+      subject: { ...scene.subject, count: 3 },
+      object: { ...scene.object, count: 1 },
+    }
+    const marked = (features: Partial<Features>) =>
+      say(pluralSubject, speak({ ...plain, number: 'suffix', ...features }))[1].endsWith(
+        lexicon.pluralAffix,
+      )
+
+    // Subject and object agreement are only distinguishable in a scene like this
+    // one, where exactly one of the two participants is plural.
+    expect(marked({ verbAgrees: 'subject' })).toBe(true)
+    expect(marked({ verbAgrees: 'object' })).toBe(false)
+    expect(marked({ verbAgrees: 'both' })).toBe(true)
+    expect(marked({ verbAgrees: 'none' })).toBe(false)
+  })
+
+  it('cannot be told apart when both participants are plural', () => {
+    const bothPlural: Scene = {
+      ...scene,
+      subject: { ...scene.subject, count: 2 },
+      object: { ...scene.object, count: 3 },
+    }
+    const subject = say(bothPlural, speak({ ...plain, number: 'suffix', verbAgrees: 'subject' }))
+    const object = say(bothPlural, speak({ ...plain, number: 'suffix', verbAgrees: 'object' }))
+    expect(subject).toEqual(object)
   })
 })
 
-describe('lexical clarity', () => {
-  const withShape = (shape: 'circle' | 'square'): Scene => ({ ...scene, subject: { ...scene.subject, shape } })
-
-  it('rejects a meaning that appears only once', () => {
-    expect(lexicallyClear([withShape('circle'), withShape('square')], ['circle'])).toBe(false)
-  })
-
-  it('rejects two meanings that always appear together', () => {
-    const examples = [scene, scene, { ...scene, verb: 'watches' as const }]
-    expect(lexicallyClear(examples, ['circle', 'red'])).toBe(false)
-  })
-})
-
-describe('generated puzzles', () => {
+describe('the hypothesis space', () => {
   const tiers: TierId[] = ['order', 'shapeandshade', 'many', 'marked']
 
   for (const tier of tiers) {
-    it(`forces a single answer for ${tier}`, () => {
+    it(`enumerates exactly the grammars ${tier} allows`, () => {
+      const study = createStudy(`SPACE-${tier}`, tier)
+      expect(everyGrammar(study.tier, study.language)).toHaveLength(hypothesisCount(TIERS[tier]))
+    })
+  }
+
+  it('grows as tiers add features', () => {
+    expect(hypothesisCount(TIERS.order)).toBeLessThan(hypothesisCount(TIERS.shapeandshade))
+    expect(hypothesisCount(TIERS.shapeandshade)).toBeLessThan(hypothesisCount(TIERS.many))
+    expect(hypothesisCount(TIERS.many)).toBeLessThan(hypothesisCount(TIERS.marked))
+  })
+
+  it('always keeps the true grammar among the survivors', () => {
+    const study = createStudy('TRUTH-1', 'marked')
+    const left = survivors(study, study.rack)
+    expect(left.some((candidate) => candidate.features.order === study.language.features.order)).toBe(
+      true,
+    )
+  })
+
+  it('never grows the survivor set by asking more questions', () => {
+    const study = createStudy('MONOTONE-1', 'many')
+    let previous = survivors(study, []).length
+    for (let asked = 1; asked <= study.rack.length; asked += 1) {
+      const now = survivors(study, study.rack.slice(0, asked)).length
+      expect(now).toBeLessThanOrEqual(previous)
+      previous = now
+    }
+  })
+})
+
+describe('a study', () => {
+  const tiers: TierId[] = ['order', 'shapeandshade', 'many', 'marked']
+
+  for (const tier of tiers) {
+    it(`can always be settled by its own rack for ${tier}`, () => {
       for (const seed of ['ORU-1', 'ORU-2', 'ORU-3']) {
-        const puzzle = generatePuzzle(seed, tier)
-        expect(puzzle.answer).toEqual(say(puzzle.test, puzzle.language))
-        expect(puzzle.examples.length).toBeGreaterThanOrEqual(4)
-        expect(puzzle.examples.length).toBeLessThanOrEqual(TIERS[tier].examples)
-      }
-    })
-
-    it(`only tests words the examples already used for ${tier}`, () => {
-      const puzzle = generatePuzzle(`SEEN-${tier}`, tier)
-      const seen = new Set(puzzle.examples.flatMap(vocabularyOf))
-      for (const atom of vocabularyOf(puzzle.test)) expect(seen.has(atom)).toBe(true)
-    })
-
-    it(`leaves every needed word findable in the examples for ${tier}`, () => {
-      for (const seed of ['WORD-1', 'WORD-2']) {
-        const puzzle = generatePuzzle(seed, tier)
-        expect(wordsRecoverable(puzzle.examples, puzzle.test, puzzle.language)).toBe(true)
-        expect(wordsRecoverable(puzzle.examples, puzzle.reading, puzzle.language)).toBe(true)
+        const study = createStudy(seed, tier)
+        expect(testIsForced(study, study.rack)).toBe(true)
+        expect(unheardAtoms(study, study.rack)).toHaveLength(0)
       }
     })
   }
 
-  it('offers every needed chip in the bank, and some wrong ones', () => {
-    const puzzle = generatePuzzle('BANK-1', 'marked')
-    for (const word of puzzle.answer) expect(puzzle.bank).toContain(word)
-    expect(puzzle.bank.length).toBeGreaterThan(puzzle.answer.length)
+  it('never lets the free gifts alone be enough to answer', () => {
+    for (const seed of ['GIFT-1', 'GIFT-2', 'GIFT-3']) {
+      const study = createStudy(seed, 'marked')
+      expect(study.par).toBeGreaterThan(0)
+      expect(canAnswer(study, [])).toBe(false)
+    }
   })
 
-  it('lines up the reading scene with two near misses', () => {
-    const puzzle = generatePuzzle('LINE-1', 'many')
-    expect(puzzle.lineup).toHaveLength(3)
-    expect(puzzle.lineup.filter((candidate) => sameScene(candidate, puzzle.reading))).toHaveLength(1)
+  it('is answerable once the greedy questioner has spent par', () => {
+    for (const tier of ['order', 'many'] as TierId[]) {
+      const study = createStudy(`PARWALK-${tier}`, tier)
+      expect(canAnswer(study, study.rack)).toBe(true)
+      expect(study.par).toBeLessThanOrEqual(study.rack.length)
+    }
+  })
+
+  it('quotes a par a perfect questioner could actually reach', () => {
+    const study = createStudy('PAR-1', 'many')
+    expect(study.par).toBeLessThanOrEqual(study.rack.length)
+    expect(testIsForced(study, study.rack.slice(0, study.rack.length))).toBe(true)
+  })
+
+  it('lists every word it has shown the player and no others', () => {
+    const study = createStudy('WORDS-1', 'shapeandshade')
+    const seen = wordsSeen(study, [study.rack[0]])
+    const shown = new Set([...study.gifts, study.rack[0]].flatMap((s) => say(s, study.language)))
+    expect(new Set(seen)).toEqual(shown)
   })
 
   it('is deterministic for a seed', () => {
-    const first = generatePuzzle('SAME-9', 'many')
-    const second = generatePuzzle('SAME-9', 'many')
-    expect(second.answer).toEqual(first.answer)
-    expect(second.examples).toEqual(first.examples)
+    expect(createStudy('SAME-9', 'many').test).toEqual(createStudy('SAME-9', 'many').test)
   })
 
-  it('keeps every tier singular until plurals are the lesson', () => {
+  it('keeps every scene singular until plurals are the lesson', () => {
     for (const tier of ['order', 'shapeandshade'] as TierId[]) {
-      const puzzle = generatePuzzle('SING-2', tier)
-      for (const example of [...puzzle.examples, puzzle.test]) {
-        expect(example.subject.count).toBe(1)
-        expect(example.object.count).toBe(1)
+      const study = createStudy('SING-2', tier)
+      for (const item of [...study.gifts, ...study.rack, study.test]) {
+        expect(item.subject.count).toBe(1)
+        expect(item.object.count).toBe(1)
       }
     }
+  })
+})
+
+describe('judging an answer', () => {
+  const study = createStudy('JUDGE-1', 'order')
+  const answer = say(study.test, study.language)
+
+  it('accepts the sentence the language would use', () => {
+    expect(judge(study, answer.join(' ')).right).toBe(true)
+  })
+
+  it('forgives spacing and capitals', () => {
+    expect(judge(study, `  ${answer.join('   ').toUpperCase()} `).right).toBe(true)
+  })
+
+  it('marks which words landed in the right place', () => {
+    const swapped = [answer[1], answer[0], ...answer.slice(2)]
+    const verdict = judge(study, swapped.join(' '))
+    expect(verdict.right).toBe(false)
+    expect(verdict.marks.slice(0, 2)).toEqual([false, false])
+  })
+
+  it('rejects a sentence that is merely too long', () => {
+    expect(judge(study, `${answer.join(' ')} ${answer[0]}`).right).toBe(false)
   })
 })

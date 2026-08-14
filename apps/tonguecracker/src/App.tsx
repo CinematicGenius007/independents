@@ -1,32 +1,49 @@
 import { useEffect, useMemo, useState } from 'react'
 import { say, type Features } from './engine/language'
-import { generatePuzzle, TIERS, type TierId } from './engine/puzzle'
 import { randomSeedText } from './engine/rng'
-import { sameScene } from './engine/scene'
+import type { Scene } from './engine/scene'
+import {
+  canAnswer,
+  createStudy,
+  judge,
+  survivors,
+  unheardAtoms,
+  wordsSeen,
+} from './engine/study'
+import { hypothesisCount, TIERS, type TierId } from './engine/tiers'
 import { SceneView } from './ui/SceneView'
 
 const TIER_ORDER: TierId[] = ['order', 'shapeandshade', 'many', 'marked']
 
-/** The grammar, in plain words, shown only once the player is done guessing. */
+/** The grammar in plain words, shown only once the player is done guessing. */
 function explain(features: Features): string[] {
-  const lines: string[] = []
-  lines.push(
+  const lines: string[] = [
     {
       SVO: 'The doer comes first, then the action, then the thing acted on.',
       SOV: 'Both participants come first, and the action closes the sentence.',
       VSO: 'The action opens the sentence, then the doer, then the thing acted on.',
     }[features.order],
-  )
+  ]
 
   if (features.adjectives !== 'none') {
     lines.push(`Colour and size words go ${features.adjectives} the word for the shape.`)
   }
-  if (features.number === 'suffix') lines.push('More than one is marked by an ending on the word.')
-  if (features.number === 'prefix') lines.push('More than one is marked by a piece stuck on the front.')
-  if (features.case === 'object') lines.push('The thing being acted on wears an extra marker.')
-  if (features.case === 'subject') lines.push('The doer wears an extra marker.')
+  if (features.number !== 'none') {
+    lines.push(`More than one is marked as a ${features.number}.`)
+  }
+  if (features.case !== 'none') {
+    lines.push(`The ${features.case === 'object' ? 'thing acted on' : 'doer'} wears an extra marker, as a ${features.casePlacement}.`)
+  }
   if (features.adjAgrees) lines.push('Adjectives copy that marker from the noun they describe.')
-  if (features.verbNumber) lines.push('The action word also takes the many-marker when its doer is many.')
+  if (features.verbAgrees !== 'none') {
+    lines.push(
+      features.verbAgrees === 'both'
+        ? 'The action word takes the many-marker if either participant is many.'
+        : `The action word agrees in number with the ${
+            features.verbAgrees === 'subject' ? 'doer' : 'thing acted on'
+          }.`,
+    )
+  }
 
   return lines
 }
@@ -34,34 +51,35 @@ function explain(features: Features): string[] {
 export default function App() {
   const [tier, setTier] = useState<TierId>('order')
   const [seed, setSeed] = useState('ORU-101')
-  const [phase, setPhase] = useState<'reading' | 'writing' | 'done'>('reading')
-  const [readingPick, setReadingPick] = useState<number | null>(null)
-  const [draft, setDraft] = useState<string[]>([])
-  const [verdict, setVerdict] = useState<boolean[] | null>(null)
-  const [attempts, setAttempts] = useState(0)
+  const [asked, setAsked] = useState<Scene[]>([])
+  const [typed, setTyped] = useState('')
+  const [verdict, setVerdict] = useState<ReturnType<typeof judge> | null>(null)
+  const [done, setDone] = useState(false)
 
-  const puzzle = useMemo(() => generatePuzzle(seed, tier), [seed, tier])
+  const study = useMemo(() => createStudy(seed, tier), [seed, tier])
 
   useEffect(() => {
-    setPhase('reading')
-    setReadingPick(null)
-    setDraft([])
+    setAsked([])
+    setTyped('')
     setVerdict(null)
-    setAttempts(0)
-  }, [puzzle])
+    setDone(false)
+  }, [study])
 
-  const readingSentence = say(puzzle.reading, puzzle.language).join(' ')
-  const readingRight = readingPick !== null && sameScene(puzzle.lineup[readingPick], puzzle.reading)
+  const left = useMemo(() => survivors(study, asked).length, [study, asked])
+  const ready = useMemo(() => canAnswer(study, asked), [study, asked])
+  const missingWords = useMemo(() => unheardAtoms(study, asked).length, [study, asked])
+  const vocabulary = useMemo(() => wordsSeen(study, asked), [study, asked])
+  const total = hypothesisCount(study.tier)
 
-  const used = new Map<string, number>()
-  for (const word of draft) used.set(word, (used.get(word) ?? 0) + 1)
+  const ask = (scene: Scene) => {
+    if (asked.includes(scene) || done) return
+    setAsked([...asked, scene])
+  }
 
   const submit = () => {
-    const marks = puzzle.answer.map((word, index) => draft[index] === word)
-    const right = marks.every(Boolean) && draft.length === puzzle.answer.length
-    setVerdict(marks)
-    setAttempts((count) => count + 1)
-    if (right) setPhase('done')
+    const result = judge(study, typed)
+    setVerdict(result)
+    if (result.right) setDone(true)
   }
 
   const newLanguage = () => setSeed(randomSeedText())
@@ -69,188 +87,185 @@ export default function App() {
   return (
     <main className="app">
       <header className="masthead">
-        <h1 className="wordmark">Tonguecracker</h1>
-        <p className="tagline">
-          Nobody will explain the language to you. Watch it being used, then use it.
-        </p>
+        <div className="brand">
+          <h1 className="wordmark">Tonguecracker</h1>
+          <p className="tagline">
+            Nobody explains the language. You choose what to have translated, then you speak it.
+          </p>
+        </div>
+        <div className="chipset">
+          {TIER_ORDER.map((option) => (
+            <button
+              key={option}
+              className="chip"
+              aria-pressed={option === tier}
+              onClick={() => setTier(option)}
+            >
+              {TIERS[option].label}
+            </button>
+          ))}
+          <button className="chip ghost" onClick={newLanguage}>
+            New language ↻
+          </button>
+        </div>
       </header>
 
-      <div className="rack">
-        {TIER_ORDER.map((option) => (
-          <button
-            key={option}
-            className="chip"
-            aria-pressed={option === tier}
-            onClick={() => setTier(option)}
-          >
-            {TIERS[option].label}
-          </button>
-        ))}
-        <button className="chip ghost" onClick={newLanguage}>
-          New language
-        </button>
-        <span className="seed">{puzzle.language.name} · {puzzle.seed}</span>
-      </div>
+      <section className="gauges">
+        <div className="gauge">
+          <span className="label">Grammars left</span>
+          <span className="value">{left}</span>
+          <span className="aside">of {total} this tier allows</span>
+          <span className="track">
+            <i style={{ width: `${(Math.log2(left) / Math.log2(total)) * 100}%` }} />
+          </span>
+        </div>
+        <div className="gauge">
+          <span className="label">Questions</span>
+          <span className={`value${asked.length > study.par ? ' over' : ''}`}>{asked.length}</span>
+          <span className="aside">par {study.par}</span>
+        </div>
+        <div className={`gauge verdict ${ready ? 'ready' : 'guessing'}`}>
+          <span className="label">{ready ? 'You can answer' : 'Still guessing'}</span>
+          <span className="reason">
+            {ready
+              ? 'Every grammar that fits your evidence says the same thing.'
+              : missingWords > 0
+                ? `${missingWords} word${missingWords === 1 ? '' : 's'} in it you have never heard.`
+                : `${left} grammars fit your evidence and they disagree.`}
+          </span>
+        </div>
+      </section>
 
-      <p className="brief">{puzzle.tier.blurb}</p>
-
-      <section className="corpus">
-        <h2 className="section-label">What you have been shown</h2>
-        <ul className="examples">
-          {puzzle.examples.map((example, index) => (
-            <li key={index}>
-              <SceneView scene={example} />
-              <p className="sentence">{say(example, puzzle.language).join(' ')}</p>
+      <section className="block">
+        <h2 className="heading">Given free</h2>
+        <ul className="cards">
+          {study.gifts.map((scene, index) => (
+            <li key={index} className="card">
+              <SceneView scene={scene} />
+              <p className="caption">{say(scene, study.language).join(' ')}</p>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="task">
-        <h2 className="section-label">Which picture is this sentence about?</h2>
-        <p className="sentence big">{readingSentence}</p>
-        <ul className="lineup">
-          {puzzle.lineup.map((candidate, index) => (
-            <li key={index}>
-              <button
-                className={`choice${readingPick === index ? (readingRight ? ' right' : ' wrong') : ''}`}
-                onClick={() => setReadingPick(index)}
-                disabled={readingRight}
-              >
-                <SceneView scene={candidate} muted={readingPick !== null && readingPick !== index} />
-              </button>
-            </li>
-          ))}
+      <section className="block">
+        <h2 className="heading">
+          Ask about one <em>{study.language.name} answers anything — but each answer costs a question</em>
+        </h2>
+        <ul className="cards rack">
+          {study.rack.map((scene, index) => {
+            const answered = asked.includes(scene)
+            return (
+              <li key={index} className={`card askable${answered ? ' answered' : ''}`}>
+                <SceneView scene={scene} />
+                {answered ? (
+                  <p className="caption">{say(scene, study.language).join(' ')}</p>
+                ) : (
+                  <button className="ask" onClick={() => ask(scene)} disabled={done}>
+                    How do you say this?
+                  </button>
+                )}
+              </li>
+            )
+          })}
         </ul>
-        {readingPick !== null && (
-          <p className={`verdict${readingRight ? ' good' : ' bad'}`}>
-            {readingRight ? (
-              <>Right. Now say something yourself.</>
-            ) : (
-              <>Not that one. Something in the sentence marks who is doing what — look again.</>
-            )}
-          </p>
-        )}
-        {readingRight && phase === 'reading' && (
-          <button className="chip solid" onClick={() => setPhase('writing')}>
-            Continue
-          </button>
-        )}
       </section>
 
-      {(phase === 'writing' || phase === 'done') && (
-        <section className="task">
-          <h2 className="section-label">Now describe this one</h2>
-          <div className="target">
-            <SceneView scene={puzzle.test} size={260} />
+      <section className="block answer">
+        <h2 className="heading">Now say this one</h2>
+        <div className="answer-row">
+          <div className="card test">
+            <SceneView scene={study.test} size={260} />
           </div>
-
-          <div className="answer-line" aria-label="your sentence">
-            {draft.length === 0 && <span className="hint">tap words below to build a sentence</span>}
-            {draft.map((word, index) => (
-              <button
-                key={`${word}-${index}`}
-                className={`word${verdict ? (verdict[index] ? ' right' : ' wrong') : ''}`}
-                onClick={() => {
-                  setDraft(draft.filter((_, at) => at !== index))
+          <div className="answer-form">
+            <label>
+              <span className="label">Type it in {study.language.name}</span>
+              <input
+                value={typed}
+                onChange={(event) => {
+                  setTyped(event.target.value)
                   setVerdict(null)
                 }}
-                disabled={phase === 'done'}
-              >
-                {word}
-              </button>
-            ))}
-          </div>
-
-          <div className="bank">
-            {puzzle.bank.map((word) => (
-              <button
-                key={word}
-                className="word"
-                onClick={() => {
-                  setDraft([...draft, word])
-                  setVerdict(null)
-                }}
-                disabled={phase === 'done'}
-              >
-                {word}
-              </button>
-            ))}
-          </div>
-
-          {phase === 'writing' && (
-            <div className="rack">
-              <button className="chip solid" onClick={submit} disabled={draft.length === 0}>
+                onKeyDown={(event) => event.key === 'Enter' && submit()}
+                placeholder="…"
+                spellCheck={false}
+                disabled={done}
+              />
+            </label>
+            <div className="chipset">
+              <button className="chip solid" onClick={submit} disabled={done || typed.trim() === ''}>
                 Say it
               </button>
-              <button className="chip" onClick={() => { setDraft([]); setVerdict(null) }}>
-                Clear
+              {!ready && !done && <span className="warning">You are not ready — this is a guess.</span>}
+            </div>
+
+            {verdict && !verdict.right && (
+              <p className="marks">
+                {verdict.answer.map((_, index) => (
+                  <b key={index} className={verdict.marks[index] ? 'right' : 'wrong'}>
+                    {verdict.marks[index] ? 'word right' : 'word wrong'}
+                  </b>
+                ))}
+              </p>
+            )}
+
+            <div className="vocab">
+              <span className="label">Words you have heard</span>
+              <p>{vocabulary.join('  ·  ') || 'nothing yet'}</p>
+            </div>
+          </div>
+        </div>
+
+        {done && (
+          <div className="finish">
+            <h3>
+              {study.language.name} cracked in {asked.length} question{asked.length === 1 ? '' : 's'}
+              {asked.length <= study.par ? ' — at par' : ` (par ${study.par})`}
+            </h3>
+            <ul>
+              {explain(study.language.features).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            <div className="chipset">
+              <button className="chip solid" onClick={newLanguage}>
+                Another language
               </button>
-              {attempts >= 2 && (
-                <button className="chip ghost" onClick={() => setPhase('done')}>
-                  Give up and see it
+              {TIER_ORDER.indexOf(tier) < TIER_ORDER.length - 1 && (
+                <button
+                  className="chip"
+                  onClick={() => {
+                    setTier(TIER_ORDER[TIER_ORDER.indexOf(tier) + 1])
+                    setSeed(randomSeedText())
+                  }}
+                >
+                  Harder language →
                 </button>
               )}
             </div>
-          )}
-
-          {verdict && phase === 'writing' && (
-            <p className="verdict bad">
-              Not yet. {verdict.filter(Boolean).length} of {puzzle.answer.length} words are in the right
-              place.
-              {attempts >= 2 && ' The examples do settle this — every one of them is evidence.'}
-            </p>
-          )}
-        </section>
-      )}
-
-      {phase === 'done' && (
-        <section className="finish">
-          <h2>{puzzle.language.name}, cracked open</h2>
-          <p className="sentence big">{puzzle.answer.join(' ')}</p>
-          <ul className="rules">
-            {explain(puzzle.language.features).map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-          <div className="rack">
-            <button className="chip solid" onClick={newLanguage}>
-              Another language
-            </button>
-            {TIER_ORDER.indexOf(tier) < TIER_ORDER.length - 1 && (
-              <button
-                className="chip"
-                onClick={() => {
-                  setTier(TIER_ORDER[TIER_ORDER.indexOf(tier) + 1])
-                  setSeed(randomSeedText())
-                }}
-              >
-                Harder language
-              </button>
-            )}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <footer className="legend">
         <span>
-          <svg viewBox="0 0 40 12" className="glyph">
-            <line x1="2" y1="6" x2="30" y2="6" stroke="currentColor" strokeWidth="2" />
-            <polygon points="38,6 28,1 28,11" fill="currentColor" />
+          <svg viewBox="0 0 44 14" className="glyph">
+            <line x1="3" y1="7" x2="32" y2="7" stroke="#101010" strokeWidth="2.6" strokeLinecap="round" />
+            <polygon points="41,7 30,1 30,13" fill="#101010" />
           </svg>
           chases
         </span>
         <span>
-          <svg viewBox="0 0 40 12" className="glyph">
-            <line x1="2" y1="6" x2="38" y2="6" stroke="currentColor" strokeWidth="1.6" strokeDasharray="4 4" />
-            <circle cx="20" cy="6" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <svg viewBox="0 0 44 14" className="glyph">
+            <line x1="3" y1="7" x2="41" y2="7" stroke="#101010" strokeWidth="2.4" strokeDasharray="1 7" strokeLinecap="round" />
+            <path d="M 11 7 q 11 -9 22 0 q -11 9 -22 0" fill="none" stroke="#101010" strokeWidth="2.4" />
           </svg>
           watches
         </span>
         <span>
-          <svg viewBox="0 0 40 16" className="glyph">
-            <line x1="2" y1="6" x2="38" y2="6" stroke="currentColor" strokeWidth="2" />
-            <path d="M 26 6 q 6 9 12 0" fill="none" stroke="currentColor" strokeWidth="2" />
+          <svg viewBox="0 0 44 18" className="glyph">
+            <line x1="3" y1="7" x2="31" y2="7" stroke="#101010" strokeWidth="2.6" strokeLinecap="round" />
+            <path d="M 27 2 q 7 14 14 0" fill="none" stroke="#101010" strokeWidth="2.6" />
           </svg>
           carries
         </span>

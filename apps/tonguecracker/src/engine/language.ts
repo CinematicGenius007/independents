@@ -14,16 +14,26 @@ export type Order = 'SVO' | 'SOV' | 'VSO'
 export type AdjectivePlacement = 'none' | 'before' | 'after'
 export type NumberMarking = 'none' | 'suffix' | 'prefix'
 export type CaseMarking = 'none' | 'object' | 'subject'
+export type AffixPlacement = 'prefix' | 'suffix'
+export type VerbAgreement = 'none' | 'subject' | 'object' | 'both'
 
 export interface Features {
   readonly order: Order
   readonly adjectives: AdjectivePlacement
   readonly number: NumberMarking
   readonly case: CaseMarking
+  /** Which end of the word the case marker sits on. */
+  readonly casePlacement: AffixPlacement
   /** Adjectives repeat the case marker of the noun they describe. */
   readonly adjAgrees: boolean
-  /** The verb takes the plural marker when its subject is many. */
-  readonly verbNumber: boolean
+  /**
+   * Which participant the verb agrees with in number.
+   *
+   * Subject and object agreement look identical in a scene where both are
+   * plural, so telling them apart needs a scene where exactly one is — which is
+   * the kind of question this game is now about asking.
+   */
+  readonly verbAgrees: VerbAgreement
 }
 
 export interface Lexicon {
@@ -88,7 +98,7 @@ export function makeLexicon(rng: Rng): Lexicon {
   }
 }
 
-function affixed(root: string, affix: string, placement: NumberMarking): string {
+function affixed(root: string, affix: string, placement: NumberMarking | AffixPlacement): string {
   if (placement === 'prefix') return affix + root
   if (placement === 'suffix') return root + affix
   return root
@@ -100,16 +110,18 @@ function nounPhrase(thing: Thing, role: 'subject' | 'object', language: Language
     (features.case === 'object' && role === 'object') ||
     (features.case === 'subject' && role === 'subject')
 
+  const wearCase = (word: string) => affixed(word, lexicon.caseAffix, features.casePlacement)
+
   let head = lexicon.shapes[thing.shape]
   if (features.number !== 'none' && isPlural(thing)) {
     head = affixed(head, lexicon.pluralAffix, features.number)
   }
-  if (marked) head += lexicon.caseAffix
+  if (marked) head = wearCase(head)
 
   if (features.adjectives === 'none') return [head]
 
   const adjectives = [lexicon.colors[thing.color], lexicon.sizes[thing.size]].map((word) =>
-    marked && features.adjAgrees ? word + lexicon.caseAffix : word,
+    marked && features.adjAgrees ? wearCase(word) : word,
   )
 
   return features.adjectives === 'before' ? [...adjectives, head] : [head, ...adjectives]
@@ -121,8 +133,15 @@ export function say(scene: Scene, language: Language): string[] {
   const object = nounPhrase(scene.object, 'object', language)
 
   let verb = language.lexicon.verbs[scene.verb]
-  if (language.features.verbNumber && isPlural(scene.subject)) {
-    verb = affixed(verb, language.lexicon.pluralAffix, language.features.number === 'prefix' ? 'prefix' : 'suffix')
+  const agrees = language.features.verbAgrees
+  const withSubject = (agrees === 'subject' || agrees === 'both') && isPlural(scene.subject)
+  const withObject = (agrees === 'object' || agrees === 'both') && isPlural(scene.object)
+  if (withSubject || withObject) {
+    verb = affixed(
+      verb,
+      language.lexicon.pluralAffix,
+      language.features.number === 'prefix' ? 'prefix' : 'suffix',
+    )
   }
 
   switch (language.features.order) {
