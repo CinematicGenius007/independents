@@ -39,6 +39,19 @@
         "--strictPort"
       ],
       "port": 5183
+    },
+    {
+      "name": "sealed-orders",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/sealed-orders",
+        "dev",
+        "--port",
+        "5184",
+        "--strictPort"
+      ],
+      "port": 5184
     }
   ]
 }
