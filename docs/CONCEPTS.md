@@ -124,11 +124,28 @@ broke two of them:
   arrival timing deciding claims — before a bot that reads its opponent could beat one
   that just charges.
 
+## Design direction
+
+The first build of all four shared one look — dark panels, rounded cards, a stat row —
+which is exactly the generic interface any of these could have had. They now take their
+direction from four separate references, applied one to an app and never blended:
+
+| App | Reference | What it gave |
+| --- | --- | --- |
+| Fogwalk | a dark acrylic space painting | No cards at all. An aurora ground, hairline rules, chrome slabs, and possibilities drawn as luminous spheres that fade rather than slide. |
+| Bloomwright | a sepia pencil sketch of a man reading a broadsheet | A printed page: nameplate, printer's rules, columns, small caps, and figures set like a stock table. |
+| Tonguecracker | a flat two-colour line-art illustration set | One black line weight, a pale blue field, and exactly two accents used for state and nothing else. |
+| Sealed Orders | a loose ink-and-marker cartoon | White paper, one flat cyan block with a scalloped cloud edge, heavy outlines, hard offset shadows, speech bubbles. |
+
+A fifth reference — a flash-lit photograph — was left unused. It has a palette and a
+mood but no interface vocabulary to borrow, and inventing one from it would have meant
+mixing it with something else.
+
 ## What shipped
 
 | App | What you do | Certified by |
 | --- | --- | --- |
-| [Fogwalk](../apps/fogwalk) | Herd a cloud of possible positions into one cell | Belief-state BFS solves every level before it ships |
-| [Bloomwright](../apps/bloomwright) | Write rewrite rules until the plant matches the specimen | Two-way shape scoring, with a gradient check per level |
-| [Tonguecracker](../apps/tonguecracker) | Infer a generated grammar, then speak it | Every rival grammar enumerated; vocabulary proved findable |
-| [Sealed Orders](../apps/sealed-orders) | Program three secret steps and pass a link | Commit-reveal seals audited; bot tournament for balance |
+| [Fogwalk](../apps/fogwalk) | Herd a cloud of possible positions into one cell, past ratchets and gates | Belief-state BFS solves every level before it ships; par sits beside the Černý bound |
+| [Bloomwright](../apps/bloomwright) | Write rewrite rules until the plant matches the specimen — briefly | Two-way shape score, a symbol budget, and a box-counting dimension |
+| [Tonguecracker](../apps/tonguecracker) | Buy evidence one question at a time, then speak the language | Every rival grammar enumerated live; par is a greedy questioner's count |
+| [Sealed Orders](../apps/sealed-orders) | Program three secret steps and pass a link | Commit-reveal seals audited; each turn priced against its own equilibrium |

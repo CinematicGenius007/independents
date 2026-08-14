@@ -34,6 +34,8 @@ pnpm tsx scripts/playtest.ts # gradient and hill-climber report for every level
 | `G`     | move forward without drawing                   |
 | `+` `-` | turn left / right by the angle                 |
 | `[` `]` | remember this spot / jump back to it — a branch |
+| `\|`    | turn right around                              |
+| `>` `<` | shorten / lengthen every step after this       |
 | `A` `B` | buds: they draw nothing, they become their rule |
 
 A rule replaces every occurrence of its symbol, all at once, once per generation. Buds
@@ -50,6 +52,23 @@ The two are combined as a harmonic mean.
 That symmetry matters. A single overlap number rewards a scribble that covers
 everything, and a coverage number rewards drawing one correct twig. Requiring both is
 what makes the percentage worth chasing.
+
+## Three ways to be close
+
+**Shape.** The two-way match score described above.
+
+**Brevity.** Every level carries a symbol budget: the length of the grammar that drew
+the specimen. Matching a plate is one thing; saying it as briefly as it was said is
+another, and it is the half that rewards understanding rather than fiddling. Rules that
+rewrite a symbol to itself cost nothing, because they are not saying anything.
+
+**Density.** A branching plant is not a line and not a region — it fills space at a rate
+between the two, and box counting measures that rate. The plate reports your drawing's
+dimension beside the specimen's, which gives you a way to be close before you are right.
+
+And when you are wrong, the **difference view** says where: uncovered specimen in red,
+stray ink in blue. That was the single biggest usability gap — a score of 46% tells you
+that you are wrong without telling you anything you can act on.
 
 ## What the playtests changed
 

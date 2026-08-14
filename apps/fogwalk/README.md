@@ -37,9 +37,19 @@ Arrow keys, `WASD`, `HJKL`, the on-screen pad, or a swipe slides the fog. `Z` un
 - **Floor** is frictionless. You keep going until something stops you.
 - **Mud** grabs you the moment you touch it, which makes it the sharpest merging tool
   on the board.
+- **Ratchets** open in one direction only. They are what stop a move from being undone
+  by its opposite, and they make the board's transition function asymmetric.
+- **Gates** throw you to their twin and let go of you there. Every other merge on the
+  board is local; a gate is the one that folds together two possibilities on opposite
+  sides of the map.
 - **Pits** are fatal. A move that would drop you into one *in any single world* is
   refused rather than lost — but the attempt still costs a step, so probing is not free.
 - **Par** is the length of a certified shortest solution. You get par + 3 moves.
+
+There are four tiers. The last one, **Reset**, removes the mark entirely: collapse the
+fog anywhere at all. That is the synchronizing-word problem in its bare form, and it is
+a different kind of thinking, because you are no longer steering toward a place — only
+toward agreement.
 
 Seeds are shareable: the URL carries `#play=SEED:tier`, and everybody gets the same
 `DAILY-…` seed on a given day.
@@ -60,6 +70,11 @@ Because of that framing, everything the game claims is computed rather than asse
 - `src/engine/generate.ts` never ships a board it has not solved, so a typed seed
   cannot land on an impossible puzzle.
 - The hint button re-solves from your *current* fog, so it stays useful after a mistake.
+- The rail shows your remaining uncertainty in bits alongside Černý's (n−1)² bound for
+  the board you are on, so par has something to be measured against.
+
+A tier that advertises a mechanic has to need it, so the generator rejects any gated
+board whose certified solution never actually falls through a gate.
 
 ## What the playtests changed
 
