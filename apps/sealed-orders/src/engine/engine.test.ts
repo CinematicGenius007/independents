@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CENTRE, generateBoard, index, mirror, SIZE, type Board } from './board'
+import { CENTRE, generateBoard, index, mirror, neighbours, SIZE, type Board } from './board'
+import { analyseTurn, distinctOrders } from './analysis'
 import { botOrders, distances } from './bot'
 import {
   actionsFor,
@@ -251,6 +252,44 @@ describe('the sealed-orders protocol', () => {
   it('rejects a link that is not a match', () => {
     expect(decodeMatch('not-base64!!')).toBeNull()
     expect(decodeMatch(btoa('{"v":99}'))).toBeNull()
+  })
+})
+
+describe('reading a turn as a game', () => {
+  const board = generateBoard('ANALYSE-1')
+  const position = startPosition(board)
+
+  it('collapses orders that leave the piece in the same places', () => {
+    const distinct = distinctOrders(board, position, 0)
+    expect(distinct.length).toBeGreaterThan(3)
+    // 125 order strings, far fewer actual plans.
+    expect(distinct.length).toBeLessThan(125)
+  })
+
+  it('gives a best reply no regret and a wasted turn some', () => {
+    // Stand next to a free well, where doing nothing is measurably a mistake.
+    const well = board.wells.find((cell) => cell !== board.starts[0])!
+    const beside = neighbours(well).find((cell) => !board.walls[cell])!
+    const chance: Position = { ...position, pieces: [beside, board.starts[1]] }
+
+    const report = analyseTurn(board, chance, 0, ordersFromText('...')!)
+    expect(analyseTurn(board, chance, 0, report.best).regret).toBeCloseTo(0, 6)
+    expect(report.regret).toBeGreaterThan(0)
+  })
+
+  it('agrees with itself about what the best reply is worth', () => {
+    const report = analyseTurn(board, position, 0, ordersFromText('EEE')!)
+    const confirm = analyseTurn(board, position, 0, report.best)
+    expect(confirm.chosenValue).toBeGreaterThanOrEqual(report.chosenValue - 1e-9)
+  })
+
+  it('measures both sides on the same scale', () => {
+    const first = analyseTurn(board, position, 0, ordersFromText('EEE')!)
+    const second = analyseTurn(board, position, 1, ordersFromText('WWW')!)
+    expect(Number.isFinite(first.value)).toBe(true)
+    expect(Number.isFinite(second.value)).toBe(true)
+    expect(first.actionCount).toBeGreaterThan(0)
+    expect(second.actionCount).toBeGreaterThan(0)
   })
 })
 

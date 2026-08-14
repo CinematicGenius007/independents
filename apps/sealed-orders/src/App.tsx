@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { analyseTurn } from './engine/analysis'
 import { generateBoard } from './engine/board'
 import { botOrders } from './engine/bot'
 import {
@@ -119,6 +120,23 @@ export default function App() {
       committer === 0 ? [sealedOrders, openOrders] : [openOrders, sealedOrders]
     return { turn, mine: pair[you], theirs: pair[1 - you], result: resolveTurn(board, position, pair) }
   }, [match, board, you])
+
+  /**
+   * What last turn was worth, measured against the equilibrium of that turn.
+   *
+   * A turn is a one-shot simultaneous game, so it has a value, and the order you
+   * gave can be scored against the mix a rational opponent plays. "You lost the
+   * well" is a story; "that order gave up 1.3 against their best mix" is a fact
+   * the player can act on next turn.
+   */
+  const report = useMemo(() => {
+    if (!lastTurn) return null
+    let before = startPosition(board)
+    for (let at = 1; at < lastTurn.turn; at += 1) {
+      before = replayTurn(match, board, before, at) ?? before
+    }
+    return analyseTurn(board, before, you, lastTurn.mine)
+  }, [lastTurn, board, match, you])
 
   const state = useMemo(() => replay(match), [match])
   const stage = useMemo(() => stageOf(match), [match])
@@ -357,6 +375,30 @@ export default function App() {
                   </button>
                 )}
               </div>
+
+              {report && lastTurn && (
+                <div className="verdict-card">
+                  <span
+                    className={`headline${report.regret < 0.25 ? ' clean' : report.regret > 1.5 ? ' costly' : ''}`}
+                  >
+                    {report.regret < 0.25
+                      ? 'That was a best reply.'
+                      : `That order gave up ${report.regret.toFixed(1)}.`}
+                  </span>
+                  <span>
+                    Against the mix a rational opponent plays, <code>{lastTurn.mine.join('')}</code> was
+                    worth {report.chosenValue.toFixed(1)}
+                    {report.regret >= 0.25 && (
+                      <>
+                        {' '}
+                        and <code>{report.best.join('')}</code> was worth{' '}
+                        {(report.chosenValue + report.regret).toFixed(1)}
+                      </>
+                    )}
+                    . The turn had {report.actionCount} genuinely different plans in it.
+                  </span>
+                </div>
+              )}
 
               {lastTurn && (
                 <p className="recap">

@@ -9,79 +9,104 @@ interface Props {
   preview?: readonly number[]
 }
 
-const CELL = 44
-const PAD = 6
+const CELL = 46
+const PAD = 10
 
+/**
+ * The field, inked.
+ *
+ * The reference is a loose pen drawing over flat colour: one heavy black line
+ * for everything that matters, flat fills with no shading, and edges that wobble
+ * because a hand drew them. The wobble here is a displacement filter over the
+ * whole board, which is enough to stop it reading as a spreadsheet.
+ */
 export function BoardView({ board, position, you, preview = [] }: Props) {
   const span = SIZE * CELL + PAD * 2
 
   return (
     <svg viewBox={`0 0 ${span} ${span}`} className="board" role="img" aria-label="the well field">
-      {board.walls.map((wall, cell) => {
-        const { x, y } = coords(cell)
-        return (
-          <rect
-            key={cell}
-            x={PAD + x * CELL}
-            y={PAD + y * CELL}
-            width={CELL - 2}
-            height={CELL - 2}
-            rx={4}
-            className={wall ? 'cell wall' : 'cell'}
-          />
-        )
-      })}
+      <defs>
+        <filter id="wobble">
+          <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="7" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1" />
+        </filter>
+      </defs>
 
-      {board.wells.map((well) => {
-        const { x, y } = coords(well)
-        const owner = position.claims[well]
-        const deep = well === CENTRE
-        return (
-          <g key={well} className={`well${owner === undefined ? '' : owner === you ? ' mine' : ' theirs'}`}>
-            <circle
-              cx={PAD + x * CELL + CELL / 2 - 1}
-              cy={PAD + y * CELL + CELL / 2 - 1}
-              r={deep ? 15 : 12}
-            />
-            {deep && (
-              <circle
-                cx={PAD + x * CELL + CELL / 2 - 1}
-                cy={PAD + y * CELL + CELL / 2 - 1}
-                r={8}
-                className="deep"
-              />
-            )}
-          </g>
-        )
-      })}
+      <g filter="url(#wobble)">
+        <rect x={PAD - 4} y={PAD - 4} width={span - PAD * 2 + 8} height={span - PAD * 2 + 8} className="ground" />
 
-      {preview.map((cell, step) => {
-        const { x, y } = coords(cell)
-        return (
-          <circle
-            key={`${cell}-${step}`}
-            cx={PAD + x * CELL + CELL / 2 - 1}
-            cy={PAD + y * CELL + CELL / 2 - 1}
-            r={4}
-            className="ghost-step"
-          />
-        )
-      })}
-
-      {([0, 1] as Side[]).map((side) => {
-        const { x, y } = coords(position.pieces[side])
-        return (
-          <g key={side} className={`piece${side === you ? ' mine' : ' theirs'}`}>
+        {board.walls.map((wall, cell) => {
+          if (!wall) return null
+          const { x, y } = coords(cell)
+          return (
             <rect
-              x={PAD + x * CELL + 9}
-              y={PAD + y * CELL + 9}
-              width={CELL - 20}
-              height={CELL - 20}
-              rx={side === you ? 3 : 11}
+              key={cell}
+              x={PAD + x * CELL + 3}
+              y={PAD + y * CELL + 3}
+              width={CELL - 6}
+              height={CELL - 6}
+              className="rock"
             />
+          )
+        })}
+
+        {Array.from({ length: SIZE + 1 }, (_, i) => (
+          <g key={i} className="rule">
+            <line x1={PAD} y1={PAD + i * CELL} x2={PAD + SIZE * CELL} y2={PAD + i * CELL} />
+            <line x1={PAD + i * CELL} y1={PAD} x2={PAD + i * CELL} y2={PAD + SIZE * CELL} />
           </g>
-        )
-      })}
+        ))}
+
+        {board.wells.map((well) => {
+          const { x, y } = coords(well)
+          const owner = position.claims[well]
+          const deep = well === CENTRE
+          const cx = PAD + x * CELL + CELL / 2
+          const cy = PAD + y * CELL + CELL / 2
+          return (
+            <g
+              key={well}
+              className={`well${owner === undefined ? '' : owner === you ? ' mine' : ' theirs'}${deep ? ' deep' : ''}`}
+            >
+              <circle cx={cx} cy={cy} r={deep ? 17 : 14} />
+              {deep && <circle cx={cx} cy={cy} r={9} className="deep-eye" />}
+              {owner === undefined && <circle cx={cx} cy={cy} r={3} className="well-dot" />}
+            </g>
+          )
+        })}
+
+        {preview.map((cell, step) => {
+          const { x, y } = coords(cell)
+          return (
+            <text
+              key={`${cell}-${step}`}
+              x={PAD + x * CELL + CELL / 2}
+              y={PAD + y * CELL + CELL / 2 + 5}
+              className="pip"
+            >
+              {step + 1}
+            </text>
+          )
+        })}
+
+        {([0, 1] as Side[]).map((side) => {
+          const { x, y } = coords(position.pieces[side])
+          const cx = PAD + x * CELL + CELL / 2
+          const cy = PAD + y * CELL + CELL / 2
+          return (
+            <g key={side} className={`piece${side === you ? ' mine' : ' theirs'}`}>
+              <rect
+                x={cx - 11}
+                y={cy - 11}
+                width={22}
+                height={22}
+                rx={4}
+                transform={side === you ? undefined : `rotate(45 ${cx} ${cy})`}
+              />
+            </g>
+          )
+        })}
+      </g>
     </svg>
   )
 }

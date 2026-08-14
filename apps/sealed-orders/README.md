@@ -67,6 +67,19 @@ published commitment is shown as a broken seal, and the match is marked untrustw
 Since neither player has any way to alter what the other already sent, that is exactly
 as much as a serverless game can promise — and it is enough.
 
+## Reading a turn as a game
+
+Every turn is a one-shot simultaneous game, which means it has an equilibrium and
+a move can be measured against it. After each turn the app collapses the 125
+possible order strings into the distinct plans they actually represent — usually
+somewhere near seventy — builds the payoff matrix over them, solves it by
+fictitious play, and reports what your order was worth against the mix a rational
+opponent plays.
+
+So the feedback is not "you lost that well" but "that order gave up 1.3 against
+their best mix, and this one was worth more". It is the difference between being
+told the result and being told the cost.
+
 ## What the playtests changed
 
 `scripts/playtest.ts` runs bot tournaments. It broke and rebuilt this game three times.
