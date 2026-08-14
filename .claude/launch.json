@@ -26,6 +26,19 @@
         "--strictPort"
       ],
       "port": 5182
+    },
+    {
+      "name": "tonguecracker",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/tonguecracker",
+        "dev",
+        "--port",
+        "5183",
+        "--strictPort"
+      ],
+      "port": 5183
     }
   ]
 }
