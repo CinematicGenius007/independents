@@ -84,9 +84,10 @@ whole payload, and being wrong tells you exactly which feature you mis-modelled.
 ## 4. Sealed Orders — a two-player duel with no server in the middle
 
 **The move.** Two players, one small board, simultaneous hidden turns. Each turn you
-program a short sequence of moves for your piece, the app seals it behind a hash, and
-you send your opponent a link. Their link carries their sealed orders and the reveal
-of the previous turn. The entire match lives in the URLs; nothing is stored anywhere.
+program three steps for your piece, the app seals them behind a hash, and you send your
+opponent a link. The whole match lives in those links; nothing is stored anywhere. A
+well goes to whoever sits down on it first, and settling on the same well at the same
+moment means neither of you takes it.
 
 **Why it is new.** Programmed movement is old, and asynchronous play by link is old,
 but the missing piece has always been trust: without a server, whoever moves second
@@ -100,7 +101,34 @@ any chat app, at any pace.
 
 ## Process
 
-Each app is built engine-first: the rules, generator, and solver land as plain
-TypeScript with tests, and the mechanic is played against itself headlessly before a
-single pixel is drawn. Findings from those self-play runs are recorded in each app's
-README under "What the playtests changed".
+Each app was built engine-first: the rules, generator, and solver landed as plain
+TypeScript with tests, and every mechanic was played against itself headlessly before a
+pixel was drawn. Findings from those runs are recorded in each app's README under "What
+the playtests changed".
+
+That order paid for itself. The harnesses did not merely confirm the designs — they
+broke two of them:
+
+- **Fogwalk** had no move budget. Random flailing solved 95% of easy boards, because
+  sliding thins the fog whether or not you meant it to. The budget exists because of
+  that number.
+- **Bloomwright** shipped two levels whose starting grammars sat close enough to the
+  answer that a hill climber found them by accident, and one whose hidden grammar scored
+  0.96 from a *wrong* start — a level that could not tell right from wrong at all.
+- **Tonguecracker** was demanding that players learn colour words in a tier whose
+  languages never say them, and occasionally shipped puzzles where the grammar was
+  determined but two meanings shared a spelling. Both are now generation-time rejections.
+- **Sealed Orders** was a stalemate machine on its first rules: pieces blocked each
+  other, seven in ten matches drew, and the contested-well rule never fired once in two
+  hundred matches. It took two rewrites — pieces passing through each other, then
+  arrival timing deciding claims — before a bot that reads its opponent could beat one
+  that just charges.
+
+## What shipped
+
+| App | What you do | Certified by |
+| --- | --- | --- |
+| [Fogwalk](../apps/fogwalk) | Herd a cloud of possible positions into one cell | Belief-state BFS solves every level before it ships |
+| [Bloomwright](../apps/bloomwright) | Write rewrite rules until the plant matches the specimen | Two-way shape scoring, with a gradient check per level |
+| [Tonguecracker](../apps/tonguecracker) | Infer a generated grammar, then speak it | Every rival grammar enumerated; vocabulary proved findable |
+| [Sealed Orders](../apps/sealed-orders) | Program three secret steps and pass a link | Commit-reveal seals audited; bot tournament for balance |
