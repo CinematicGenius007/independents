@@ -27,7 +27,21 @@ import type {
   Transport,
   Unsubscribe,
 } from './protocol'
-import { DEFAULT_CONFIG, MAX_SEATS, MIN_SEATS } from './protocol'
+import { DEFAULT_CONFIG, MAX_SEATS, MIN_SEATS, scoringDurationMs } from './protocol'
+
+/**
+ * The move that produced the current position.
+ *
+ * The interface needs it to animate the tiles travelling: a state alone cannot
+ * say which display a handful came off, and a turn that simply appears on the
+ * board is a turn nobody watched happen.
+ */
+export interface LastMove {
+  seat: number
+  move: Move
+  /** Increments on every move, so a repeat of the same move still animates. */
+  serial: number
+}
 
 export interface SessionView {
   selfId: PeerId
@@ -41,6 +55,7 @@ export interface SessionView {
   config: RoomConfig
   /** Set when a move was refused, cleared on the next state change. */
   notice: string | null
+  lastMove: LastMove | null
 }
 
 export interface SessionOptions {
@@ -59,10 +74,7 @@ export interface SessionOptions {
 const ABSENT_GRACE_MS = 1200
 
 /** Pause between the last tile being taken and the walls being tiled. */
-const TILING_PAUSE_MS = 900
-
-/** Pause before the next round hits the table. */
-const DEAL_PAUSE_MS = 700
+const TILING_PAUSE_MS = 700
 
 export class Session {
   private transport: Transport
@@ -85,6 +97,8 @@ export class Session {
   /** Every peer's copy of the position. The host's mirrors `game.state`. */
   private state: GameState | null = null
   private seq = 0
+  private lastMove: LastMove | null = null
+  private moveSerial = 0
 
   constructor(options: SessionOptions) {
     this.transport = options.transport
@@ -120,7 +134,13 @@ export class Session {
       started: this.started,
       config: this.config,
       notice: this.notice,
+      lastMove: this.lastMove,
     }
+  }
+
+  /** Records a move for the interface to replay as motion. */
+  private noteMove(seat: number, move: Move): void {
+    this.lastMove = { seat, move, serial: ++this.moveSerial }
   }
 
   onChange(cb: (view: SessionView) => void): Unsubscribe {
@@ -224,6 +244,7 @@ export class Session {
     const seat = this.game.state.current
     this.game.play(move)
     this.state = this.game.state
+    this.noteMove(seat, move)
     this.broadcast({ t: 'move', seq: ++this.seq, seat, move })
     this.drive()
     this.emit()
@@ -246,7 +267,10 @@ export class Session {
     if (state.phase === 'over') return
 
     if (needsDeal(state)) {
-      this.after(DEAL_PAUSE_MS, () => {
+      // The next deal waits for the firing to be shown and counted, so nobody
+      // has tiles land on their board while they are still reading the wall.
+      const shown = Math.max(0, ...(state.lastRound ?? []).map(r => r.placements.length))
+      this.after(scoringDurationMs(shown), () => {
         if (!this.game) return
         const { factories } = this.game.deal()
         this.state = this.game.state
@@ -281,6 +305,7 @@ export class Session {
       if (!move) return
       this.game.play(move)
       this.state = this.game.state
+      this.noteMove(state.current, move)
       this.broadcast({ t: 'move', seq: ++this.seq, seat: state.current, move })
       this.drive()
       this.emit()
@@ -456,6 +481,7 @@ export class Session {
     if (moveError(this.game.state, move)) return
     this.game.play(move)
     this.state = this.game.state
+    this.noteMove(seat, move)
     this.broadcast({ t: 'move', seq: ++this.seq, seat, move })
     this.drive()
     this.emit()
@@ -486,9 +512,11 @@ export class Session {
     switch (msg.t) {
       case 'deal':
         this.state = startRound(this.state, msg.factories)
+        this.lastMove = null
         break
       case 'move':
         this.state = applyMove(this.state, msg.move).state
+        this.noteMove(msg.seat, msg.move)
         break
       case 'tile':
         this.state = tileWall(this.state).state
