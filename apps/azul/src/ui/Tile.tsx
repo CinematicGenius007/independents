@@ -102,9 +102,19 @@ export interface TileProps {
   className?: string
   style?: CSSProperties
   title?: string
+  /** Names this tile as a flight endpoint. See {@link flightId}. */
+  flight?: string
 }
 
-export function Tile({ color, pounce = false, fresh = false, className = '', style, title }: TileProps) {
+export function Tile({
+  color,
+  pounce = false,
+  fresh = false,
+  className = '',
+  style,
+  title,
+  flight,
+}: TileProps) {
   // A pounce mark is charcoal on whatever it is dusted onto, so it takes its
   // colour from the surface: dark on a tin panel, pale on the glazed ground.
   const stroke = pounce ? 'currentColor' : LINEWORK[color]
@@ -120,6 +130,7 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
         .filter(Boolean)
         .join(' ')}
       style={style}
+      data-flight={flight}
       role="img"
       aria-label={title ?? `${COLOR_NAMES[color]}${pounce ? ' space' : ' tile'}`}
     >
@@ -137,7 +148,13 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
           strokeWidth="0.9"
         />
       ) : (
-        <rect x="0" y="0" width="24" height="24" rx="1.5" fill={GLAZES[color]} />
+        <>
+          <rect x="0" y="0" width="24" height="24" rx="1.5" fill={GLAZES[color]} />
+          {/* Glaze pools thicker at the foot of a fired tile and catches the
+              light along its top edge. Two flat overlays, no gradient stack. */}
+          <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h21A1.5 1.5 0 0 1 24 1.5V8H0Z" fill="#fff" opacity="0.14" />
+          <path d="M0 17h24v5.5A1.5 1.5 0 0 1 22.5 24h-21A1.5 1.5 0 0 1 0 22.5Z" fill="#000" opacity="0.16" />
+        </>
       )}
       <g opacity={pounce ? 0.75 : 1}>
         {pounce ? (

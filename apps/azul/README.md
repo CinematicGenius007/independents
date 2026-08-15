@@ -17,6 +17,27 @@ outline a tile-setter dusts charcoal through — marking every space on the wall
 that belongs to it. Each of the five glazes carries its own motif, so the board is readable
 without depending on hue.
 
+## What the interface tells you
+
+A digital board can do three things a wooden one cannot, and this one does exactly those three.
+
+**It shows the reckoning.** A line you could play is marked with what it would earn if it fires
+this round and what the spillage would cost — `+4  −2` — before you commit to the click. Nobody
+should have to count runs in their head to know what a move is worth.
+
+**It counts the firing out loud.** The engine tiles every wall at once, because that is what the
+rules say. Watching it that way is a number changing, so the position is unwound and replayed:
+each tile arrives on its space in turn, ringed, with the points it just earned, and the scores
+climb behind it. The host holds the next deal back for exactly as long as that takes.
+
+**It shows the tiles travelling.** Every move — yours, a peer's, the house's — flies its handful
+from the pile it came off to the slots it lands in. Without that, an opponent's turn is a diff
+you did not see happen.
+
+Alongside those: the count of tiles nobody has seen yet, per colour, because that is something a
+player reads off a real table by looking; number keys to place and `Esc` to put a handful back;
+and a rules sheet, since the game deserves to be playable by someone who has never met it.
+
 Built with React 19, TypeScript, Vite and Trystero.
 
 ## Run locally

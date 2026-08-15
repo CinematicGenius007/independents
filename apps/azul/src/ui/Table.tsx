@@ -1,21 +1,31 @@
 /**
- * The table in play: the factory displays, the centre, and every board.
+ * The table in play: the displays, the centre, and every board.
  *
- * The turn is two clicks and the interface is built around making the second
- * one obvious. Picking a colour puts the player in a holding state — the
- * handful is named in the prompt, the lines that can take it are lit, the ones
- * that cannot say why on hover, and the pattern line shows the tiles it would
- * receive as pounce marks before they are committed.
+ * A turn is two clicks, and the whole interface exists to make the second one
+ * informed. Picking a colour names the handful in the prompt, lights the lines
+ * that can take it, marks each one with what it would earn and what it would
+ * cost, and shows the tiles it would receive as pounce marks before anything
+ * is committed. Escape puts them back.
+ *
+ * What happens away from your hands is shown too: every move — an opponent's,
+ * a bot's — flies its tiles from the pile they came off to the board they land
+ * on, and the wall-tiling is counted out one tile at a time instead of
+ * arriving as a new number.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Color, GameState, Move } from '../engine/types'
 import { CENTER, COLORS, FLOOR, WALL_SIZE } from '../engine/types'
 import { moveError } from '../engine/rules'
+import { previewFloor, previewLine, unseenTiles } from '../engine/preview'
+import type { LinePreview } from '../engine/preview'
 import type { Seat } from '../net/protocol'
+import type { LastMove } from '../net/session'
 import { Board } from './Board'
-import type { PendingPlacement } from './Board'
-import { COLOR_NAMES, FirstMarker, Tile } from './Tile'
+import type { PendingPlacement, ScoringView } from './Board'
+import { COLOR_NAMES, FirstMarker, GLAZES, Tile } from './Tile'
+import { useScoring } from './useScoring'
+import { flightId, useFlight } from './useFlight'
 
 interface Pick {
   source: number
@@ -28,11 +38,16 @@ export interface TableProps {
   seatIndex: number | null
   onPlay: (move: Move) => void
   notice: string | null
+  lastMove: LastMove | null
 }
 
-export function Table({ state, seats, seatIndex, onPlay, notice }: TableProps) {
+export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: TableProps) {
   const [pick, setPick] = useState<Pick | null>(null)
-  const myTurn = seatIndex !== null && state.current === seatIndex && state.phase === 'offer'
+  const root = useRef<HTMLDivElement>(null)
+  const previous = useRef<GameState | null>(null)
+  const scoring = useScoring(state)
+  const myTurn =
+    seatIndex !== null && state.current === seatIndex && state.phase === 'offer' && !scoring.running
 
   // A pick belongs to one position. Anything that changes the table — a turn
   // taken, a round dealt — drops it rather than letting it point at tiles that
@@ -41,27 +56,75 @@ export function Table({ state, seats, seatIndex, onPlay, notice }: TableProps) {
     setPick(null)
   }, [state.round, state.current, state.phase])
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setPick(null)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
   const pending = useMemo<PendingPlacement | undefined>(() => {
-    if (!pick || !myTurn) return undefined
+    if (!pick || !myTurn || seatIndex === null) return undefined
     const pile = pick.source === CENTER ? state.center : state.factories[pick.source]
     const count = pile.filter(t => t === pick.color).length
+    const player = state.players[seatIndex]
+    // Taking the marker costs a floor slot too, and the reckoning has to say so.
+    const marker = pick.source === CENTER && state.centerHasFirst ? 1 : 0
     const legal = new Set<number>()
     const refusals: Record<number, string> = {}
+    const previews: Record<number, LinePreview> = {}
     for (let line = 0; line < WALL_SIZE; line++) {
       const error = moveError(state, { source: pick.source, color: pick.color, line })
-      if (error) refusals[line] = error
-      else legal.add(line)
+      if (error) {
+        refusals[line] = error
+        continue
+      }
+      legal.add(line)
+      previews[line] = previewLine(player, line, pick.color, count, marker)
     }
-    return { color: pick.color, count, legal, refusals }
-  }, [pick, myTurn, state])
+    return {
+      color: pick.color,
+      count,
+      legal,
+      refusals,
+      previews,
+      floorPreview: previewFloor(player, count, marker),
+    }
+  }, [pick, myTurn, seatIndex, state])
+
+  // Fly the handful from the pile it came off to the slots it lands in. The
+  // position has already changed by now, so the arithmetic is done against the
+  // previous one, which is the only place the pile was still full.
+  useFlight(
+    lastMove,
+    move => {
+      const before = previous.current
+      if (!before) return null
+      const { seat, move: played } = move
+      const pile = played.source === CENTER ? before.center : before.factories[played.source]
+      if (!pile) return null
+      const taken = pile.filter(t => t === played.color).length
+      if (taken === 0) return null
+
+      const player = before.players[seat]
+      const capacity = played.line === FLOOR ? 0 : played.line + 1
+      const room = played.line === FLOOR ? 0 : capacity - player.lines[played.line].count
+      const placed = Math.min(room, taken)
+      const to: string[] = []
+      for (let i = 0; i < placed; i++) {
+        const slot = capacity - player.lines[played.line].count - 1 - i
+        to.push(`slot:${seat}:${played.line}:${slot}`)
+      }
+      const claimed = played.source === CENTER && before.centerHasFirst ? 1 : 0
+      let floorSlot = player.floor.length + claimed
+      for (let i = 0; i < taken - placed && floorSlot < 7; i++, floorSlot++) {
+        to.push(`floor:${seat}:${floorSlot}`)
+      }
+      if (to.length === 0) return null
+      return {
+        request: { color: played.color, from: `pile:${played.source}`, to },
+        tint: GLAZES[played.color],
+      }
+    },
+    root,
+  )
+
+  useEffect(() => {
+    previous.current = state
+  }, [state])
 
   const place = (line: number) => {
     if (!pick) return
@@ -69,17 +132,51 @@ export function Table({ state, seats, seatIndex, onPlay, notice }: TableProps) {
     setPick(null)
   }
 
+  // Number keys place, Escape puts the handful back — the two things a player
+  // repeats a hundred times in a game.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') return setPick(null)
+      if (!pending) return
+      if (event.key === '0') return place(FLOOR)
+      const line = Number(event.key) - 1
+      if (Number.isInteger(line) && pending.legal.has(line)) place(line)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   const mine = seatIndex === null ? null : state.players[seatIndex]
-  const others = state.players.filter((_, i) => i !== seatIndex)
+  const others = state.players.map((player, index) => ({ player, index })).filter(p => p.index !== seatIndex)
+
+  const scoringFor = (seat: number): ScoringView => ({
+    hidden: scoring.hidden,
+    revealed: scoring.revealed,
+    counting:
+      scoring.current && scoring.current.playerIndex === seat
+        ? { row: scoring.current.row, col: scoring.current.col, points: scoring.current.points }
+        : null,
+  })
 
   return (
-    <div className="table">
+    <div className="table" ref={root}>
       <div className="table__prompt" aria-live="polite">
-        <Prompt state={state} seats={seats} seatIndex={seatIndex} pick={pick} pending={pending} notice={notice} />
+        <Prompt
+          state={state}
+          seats={seats}
+          seatIndex={seatIndex}
+          pick={pick}
+          pending={pending}
+          notice={notice}
+          firing={scoring.running}
+        />
       </div>
 
       <section className="panel panel--dark table__supply" aria-label="The table">
-        <h2 className="panel__title">Displays</h2>
+        <div className="supply__head">
+          <h2 className="panel__title">Displays</h2>
+          <SupplyTrack state={state} />
+        </div>
         <div className="factories">
           {state.factories.map((display, index) => (
             <Plate
@@ -103,7 +200,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice }: TableProps) {
       </section>
 
       <div className="rail table__info">
-        <Seats state={state} seats={seats} seatIndex={seatIndex} />
+        <Seats state={state} seats={seats} seatIndex={seatIndex} scores={scoring.scores} />
         {state.phase === 'over' ? (
           <Result state={state} />
         ) : state.lastRound ? (
@@ -115,38 +212,55 @@ export function Table({ state, seats, seatIndex, onPlay, notice }: TableProps) {
         {mine ? (
           <Board
             player={mine}
+            seat={seatIndex!}
             mine
             active={state.current === seatIndex && state.phase === 'offer'}
             pending={pending}
-            fresh={freshFor(state, seatIndex!)}
+            scoring={scoringFor(seatIndex!)}
+            score={scoring.scores[seatIndex!]}
             onPlace={line => place(line === -1 ? FLOOR : line)}
           />
         ) : null}
       </div>
 
       <div className="rail table__others">
-        {others.map(player => {
-          const index = state.players.indexOf(player)
-          return (
-            <Board
-              key={player.id}
-              player={player}
-              mine={false}
-              active={state.current === index && state.phase === 'offer'}
-              fresh={freshFor(state, index)}
-              badge={seats[index]?.kind === 'bot' ? 'house' : seats[index]?.present ? undefined : 'away'}
-            />
-          )
-        })}
+        {others.map(({ player, index }) => (
+          <Board
+            key={player.id}
+            player={player}
+            seat={index}
+            mine={false}
+            compact
+            active={state.current === index && state.phase === 'offer'}
+            scoring={scoringFor(index)}
+            score={scoring.scores[index]}
+            badge={seats[index]?.kind === 'bot' ? 'house' : seats[index]?.present ? undefined : 'away'}
+          />
+        ))}
       </div>
     </div>
   )
 }
 
-/** Wall spaces filled by the most recent tiling, keyed `row-col`. */
-function freshFor(state: GameState, seat: number): Set<string> {
-  const report = state.lastRound?.find(r => r.playerIndex === seat)
-  return new Set(report?.placements.map(p => `${p.row}-${p.col}`) ?? [])
+/**
+ * How many tiles of each colour nobody has seen yet.
+ *
+ * At a table you read this off the bag and the discards without thinking about
+ * it; a screen has to be asked. It is the difference between guessing whether
+ * more crimson is coming and knowing.
+ */
+function SupplyTrack({ state }: { state: GameState }) {
+  const unseen = unseenTiles(state)
+  return (
+    <div className="supply__track" aria-label="Tiles not yet in play">
+      {COLORS.map(color => (
+        <span className="supply__item" key={color} title={`${unseen[color]} ${COLOR_NAMES[color]} still unseen`}>
+          <Tile color={color} className="supply__tile" />
+          <b>{unseen[color]}</b>
+        </span>
+      ))}
+    </div>
+  )
 }
 
 function Prompt({
@@ -156,6 +270,7 @@ function Prompt({
   pick,
   pending,
   notice,
+  firing,
 }: {
   state: GameState
   seats: Seat[]
@@ -163,19 +278,21 @@ function Prompt({
   pick: Pick | null
   pending?: PendingPlacement
   notice: string | null
+  firing: boolean
 }) {
   if (notice) return <p className="prompt prompt--warn">{notice}</p>
+  if (firing) return <p className="prompt prompt--quiet">Firing the walls, tile by tile…</p>
 
   if (state.phase === 'over') {
     const names = (state.winners ?? []).map(i => state.players[i].name)
     return (
-      <p className="prompt">
+      <p className="prompt prompt--win">
         {names.length > 1 ? `${names.join(' and ')} share the wall.` : `${names[0]} takes the wall.`}
       </p>
     )
   }
 
-  if (state.phase === 'tiling') return <p className="prompt prompt--quiet">Firing the walls…</p>
+  if (state.phase === 'tiling') return <p className="prompt prompt--quiet">The table is bare. Into the kiln.</p>
 
   const current = state.players[state.current]
   if (seatIndex === null) {
@@ -192,13 +309,17 @@ function Prompt({
   if (pick && pending) {
     return (
       <p className="prompt">
-        <Tile color={pick.color} style={{ ['--tile' as string]: '1.5rem' }} />
-        Holding {pending.count} × {COLOR_NAMES[pick.color]}. Pick a line, or drop them on the floor.
-        Press Escape to put them back.
+        <Tile color={pick.color} className="prompt__tile" />
+        Holding {pending.count} × {COLOR_NAMES[pick.color]}. Pick a line — number keys work — or
+        press <kbd>0</kbd> for the floor, <kbd>Esc</kbd> to put them back.
       </p>
     )
   }
-  return <p className="prompt">Your turn. Take every tile of one colour from a display, or from the centre.</p>
+  return (
+    <p className="prompt prompt--turn">
+      Your turn. Take every tile of one colour from a display, or from the centre.
+    </p>
+  )
 }
 
 function Plate({
@@ -215,10 +336,12 @@ function Plate({
   onPick: (color: Color) => void
 }) {
   if (tiles.length === 0) {
-    return <div className="plate plate--empty" aria-label={`Display ${index + 1}, empty`} />
+    return (
+      <div className="plate plate--empty" {...flightId(`pile:${index}`)} aria-label={`Display ${index + 1}, empty`} />
+    )
   }
   return (
-    <div className="plate" role="group" aria-label={`Display ${index + 1}`}>
+    <div className="plate" {...flightId(`pile:${index}`)} role="group" aria-label={`Display ${index + 1}`}>
       {tiles.map((color, slot) => {
         const picked = pick?.source === index && pick.color === color
         const count = tiles.filter(t => t === color).length
@@ -259,10 +382,18 @@ function Basin({
   )
 
   return (
-    <div className="basin">
-      {hasFirst ? <FirstMarker className="basin__tile" /> : null}
-      {counts.length === 0 && !hasFirst ? (
-        <span className="basin__empty">Nothing has slid into the centre yet.</span>
+    <div className="basin" {...flightId(`pile:${CENTER}`)}>
+      {hasFirst ? (
+        <span className="basin__marker" title="Whoever takes from the centre first takes this, and starts the next round">
+          <FirstMarker className="basin__tile" />
+        </span>
+      ) : null}
+      {counts.length === 0 ? (
+        <span className="basin__empty">
+          {hasFirst
+            ? 'Take from here first and this marker is yours — a point, and the next round.'
+            : 'Leftovers slide in here.'}
+        </span>
       ) : null}
       {counts.map(({ color, count }) =>
         Array.from({ length: count }, (_, i) => (
@@ -290,10 +421,12 @@ function Seats({
   state,
   seats,
   seatIndex,
+  scores,
 }: {
   state: GameState
   seats: Seat[]
   seatIndex: number | null
+  scores: number[]
 }) {
   return (
     <section className="panel panel--dark">
@@ -312,10 +445,10 @@ function Seats({
                   <span className="seat__meta">away</span>
                 ) : null}
                 {state.nextStarter === index && !state.centerHasFirst ? (
-                  <span className="seat__meta">starts next</span>
+                  <span className="seat__meta seat__meta--gold">starts next</span>
                 ) : null}
               </span>
-              <span className="seat__score">{player.score}</span>
+              <span className="seat__score">{scores[index] ?? player.score}</span>
             </div>
           )
         })}
@@ -368,10 +501,7 @@ export function Result({ state }: { state: GameState }) {
           const player = state.players[report.playerIndex]
           const won = state.winners?.includes(report.playerIndex)
           return (
-            <div
-              className={`result__row ${won ? 'result__row--winner' : ''}`}
-              key={report.playerIndex}
-            >
+            <div className={`result__row ${won ? 'result__row--winner' : ''}`} key={report.playerIndex}>
               <span className="result__name">{player.name}</span>
               <span>+{report.rows * 2}</span>
               <span>+{report.columns * 7}</span>

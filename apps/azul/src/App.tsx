@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Home } from './ui/Home'
 import { Lobby } from './ui/Lobby'
+import { Rules } from './ui/Rules'
 import { Table } from './ui/Table'
 import { useSession } from './useSession'
 import type { RoomKind } from './useSession'
@@ -27,6 +28,7 @@ function initialName(): string {
 export default function App() {
   const [name, setName] = useState(initialName)
   const [room, setRoom] = useState<RoomKind | null>(null)
+  const [rulesOpen, setRulesOpen] = useState(false)
   const session = useSession(room, name.trim() || 'Anonymous')
 
   useEffect(() => {
@@ -57,15 +59,30 @@ export default function App() {
             Azule<span>jo</span>
           </h1>
           <p className="tagline">
-            {playing ? `Round ${view!.state!.round}` : 'A wall, five glazes, and a bag of tiles'}
+            {!playing
+              ? 'A wall, five glazes, and a bag of tiles'
+              : view!.state!.phase === 'over'
+                ? 'The wall is finished'
+                : `Round ${view!.state!.round}`}
           </p>
         </div>
-        {session ? (
-          <span className="relay" data-status={session.status}>
-            {session.code ? `Room ${session.code}` : 'Solo'} · {session.status}
-          </span>
-        ) : null}
+        <div className="masthead__aside">
+          {session ? (
+            <span className="relay" data-status={session.status}>
+              {session.code ? `Room ${session.code}` : 'Solo'} · {session.status}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="button button--small button--ghost"
+            onClick={() => setRulesOpen(true)}
+          >
+            How to play
+          </button>
+        </div>
       </header>
+
+      {rulesOpen ? <Rules onClose={() => setRulesOpen(false)} /> : null}
 
       {room && !session ? (
         <p className="prompt prompt--quiet">Opening the room…</p>
@@ -97,6 +114,7 @@ export default function App() {
             seatIndex={view!.seatIndex}
             onPlay={session.play}
             notice={view!.notice}
+            lastMove={view!.lastMove}
           />
           {view!.state!.phase === 'over' ? (
             <div className="row">

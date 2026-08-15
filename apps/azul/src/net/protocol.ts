@@ -54,6 +54,22 @@ export interface RoomConfig {
 
 export const DEFAULT_CONFIG: RoomConfig = { botDelayMs: 850 }
 
+/**
+ * Pacing of the wall-tiling, shared by the host's clock and the interface's
+ * playback so the two cannot drift apart.
+ *
+ * Scoring is the part of Azul worth watching, and it is over in a single
+ * function call. The host therefore holds the next deal back long enough for
+ * every tile to be shown reaching the wall and being counted.
+ */
+export const SCORING_STEP_MS = 460
+export const SCORING_SETTLE_MS = 1100
+
+/** How long the table waits before the next round is dealt. */
+export function scoringDurationMs(placements: number): number {
+  return SCORING_SETTLE_MS + placements * SCORING_STEP_MS
+}
+
 export type CtrlMessage =
   /** Sent on connect and echoed back, so both ends learn each other's name. */
   | { t: 'hello'; name: string; joinedAt: number }
