@@ -26,6 +26,7 @@ import type { PendingPlacement, ScoringView } from './Board'
 import { COLOR_NAMES, FirstMarker, GLAZES, Tile } from './Tile'
 import { useScoring } from './useScoring'
 import { flightId, useFlight } from './useFlight'
+import { play, playScore } from './audio'
 
 interface Pick {
   source: number
@@ -126,6 +127,32 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
     previous.current = state
   }, [state])
 
+  // Every move makes a sound, not only yours — a turn you cannot see happen is
+  // a turn you can at least hear happen.
+  const heard = useRef(0)
+  useEffect(() => {
+    if (!lastMove || lastMove.serial === heard.current) return
+    heard.current = lastMove.serial
+    play(lastMove.move.line === FLOOR ? 'floor' : 'place')
+  }, [lastMove])
+
+  // Each tile reaching the wall rings at a pitch set by what it scored, so a
+  // good round sounds like a good round.
+  const counted = scoring.current
+  useEffect(() => {
+    if (counted) playScore(counted.points)
+  }, [counted])
+
+  const wasMyTurn = useRef(false)
+  useEffect(() => {
+    if (myTurn && !wasMyTurn.current) play('turn')
+    wasMyTurn.current = myTurn
+  }, [myTurn])
+
+  useEffect(() => {
+    if (state.phase === 'over') play('finish')
+  }, [state.phase])
+
   const place = (line: number) => {
     if (!pick) return
     onPlay({ source: pick.source, color: pick.color, line })
@@ -185,7 +212,10 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
               tiles={display}
               pick={pick}
               enabled={myTurn}
-              onPick={(color: Color) => setPick({ source: index, color })}
+              onPick={(color: Color) => {
+                play('pick')
+                setPick({ source: index, color })
+              }}
             />
           ))}
         </div>
@@ -195,7 +225,10 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
           hasFirst={state.centerHasFirst}
           pick={pick}
           enabled={myTurn}
-          onPick={(color: Color) => setPick({ source: CENTER, color })}
+          onPick={(color: Color) => {
+            play('pick')
+            setPick({ source: CENTER, color })
+          }}
         />
       </section>
 

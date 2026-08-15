@@ -266,16 +266,18 @@ kbd {
     0 1px 2px rgba(4, 10, 22, 0.5);
 }
 
-/* Charcoal dusted onto a tin panel. */
+/*
+ * A pounce mark takes its colour from the surface it is dusted onto. The
+ * default is the glazed ground, which is most of the app; charcoal on tin is
+ * the exception, and it is scoped to the tin panels themselves rather than to
+ * a list of places that happen to be dark today.
+ */
 .tile--pounce {
-  color: rgba(20, 35, 61, 0.5);
+  color: rgba(238, 240, 234, 0.4);
 }
 
-/* The same mark on the glazed ground, where charcoal would not show. */
-.panel--dark .tile--pounce,
-.hero__panel .tile--pounce,
-.basin .tile--pounce {
-  color: rgba(238, 240, 234, 0.4);
+.panel:not(.panel--dark) .tile--pounce {
+  color: rgba(20, 35, 61, 0.5);
 }
 
 .tile--first {
@@ -882,6 +884,7 @@ kbd {
   font-family: var(--display);
   letter-spacing: 0.13em;
   text-transform: uppercase;
+  white-space: nowrap;
   font-size: 0.78rem;
   padding: 0.7rem 1.15rem;
   border-radius: 2px;
@@ -1053,6 +1056,147 @@ kbd {
 }
 
 /* ------------------------------------------------------------------- lobby */
+
+.lobby {
+  display: grid;
+  gap: clamp(1rem, 2.4vw, 1.6rem);
+}
+
+.lobby__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* The code, pressed into the piece the way a workshop stamps its own. */
+.stamp {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 1.1rem;
+  border-radius: 2px;
+  background: rgba(8, 17, 32, 0.5);
+  box-shadow:
+    inset 0 0 0 1px rgba(211, 173, 51, 0.35),
+    inset 0 0 0 5px rgba(15, 27, 48, 0.9),
+    inset 0 0 0 6px rgba(211, 173, 51, 0.18);
+}
+
+.stamp__label {
+  font-family: var(--figures);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.stamp__code {
+  font-family: var(--figures);
+  font-size: clamp(1.7rem, 5.5vw, 2.5rem);
+  letter-spacing: 0.28em;
+  line-height: 1.1;
+  color: var(--gold);
+}
+
+.stamp--solo .stamp__code {
+  font-family: var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: clamp(1.1rem, 3.4vw, 1.5rem);
+}
+
+.stamp__status {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.stamp__status[data-status='failed'] {
+  color: #e8a19e;
+}
+
+/* Four chairs at the wall, each holding the board its player will fill. */
+.chairs {
+  display: grid;
+  gap: clamp(0.6rem, 1.6vw, 1rem);
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.chair {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  border-radius: 2px;
+  background: rgba(238, 240, 234, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(238, 240, 234, 0.11);
+}
+
+.chair--taken {
+  background: rgba(238, 240, 234, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(211, 173, 51, 0.3);
+}
+
+.chair__wall {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.16rem;
+  width: min(100%, 9.5rem);
+  padding: 0.35rem;
+  border-radius: 2px;
+  background: rgba(8, 17, 32, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(238, 240, 234, 0.09);
+}
+
+.chair__wall--faded {
+  opacity: 0.4;
+}
+
+/* Width-driven: the tile takes the grid cell and its own square shape. */
+.chair__tile {
+  --tile: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.chair__body {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.chair__name {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.chair--empty .chair__name {
+  color: var(--ink-faint);
+}
+
+.chair__note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.chair__houses {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.chair__houses .button {
+  letter-spacing: 0.08em;
+}
+
+.lobby__foot {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
 
 .code {
   font-family: var(--figures);

@@ -34,6 +34,12 @@ climb behind it. The host holds the next deal back for exactly as long as that t
 from the pile it came off to the slots it lands in. Without that, an opponent's turn is a diff
 you did not see happen.
 
+**It has a voice.** Every sound is synthesised at the moment it is needed — this app ships no
+assets and loads nothing from anywhere, so a fired tile is a filtered noise burst over a decaying
+sine, which is close to what glazed ceramic actually does. Pitch carries meaning: a tile scoring
+seven rings higher than one scoring one, so a good round sounds like one. The context is only
+built on your first click, and the toggle is in the masthead.
+
 Alongside those: the count of tiles nobody has seen yet, per colour, because that is something a
 player reads off a real table by looking; number keys to place and `Esc` to put a handful back;
 and a rules sheet, since the game deserves to be playable by someone who has never met it.

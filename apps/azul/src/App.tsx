@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Home } from './ui/Home'
 import { Lobby } from './ui/Lobby'
 import { Rules } from './ui/Rules'
+import { setSoundEnabled, soundEnabled } from './ui/audio'
 import { Table } from './ui/Table'
 import { useSession } from './useSession'
 import type { RoomKind } from './useSession'
@@ -29,6 +30,7 @@ export default function App() {
   const [name, setName] = useState(initialName)
   const [room, setRoom] = useState<RoomKind | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [sound, setSound] = useState(soundEnabled)
   const session = useSession(room, name.trim() || 'Anonymous')
 
   useEffect(() => {
@@ -72,6 +74,18 @@ export default function App() {
               {session.code ? `Room ${session.code}` : 'Solo'} · {session.status}
             </span>
           ) : null}
+          <button
+            type="button"
+            className="button button--small button--ghost"
+            aria-pressed={sound}
+            onClick={() => {
+              setSoundEnabled(!sound)
+              setSound(!sound)
+            }}
+            title={sound ? 'Sound is on' : 'Sound is off'}
+          >
+            {sound ? 'Sound on' : 'Sound off'}
+          </button>
           <button
             type="button"
             className="button button--small button--ghost"
