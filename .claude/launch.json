@@ -52,6 +52,19 @@
         "--strictPort"
       ],
       "port": 5184
+    },
+    {
+      "name": "azul",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/azul",
+        "dev",
+        "--port",
+        "5185",
+        "--strictPort"
+      ],
+      "port": 5185
     }
   ]
 }

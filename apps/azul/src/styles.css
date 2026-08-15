@@ -1,0 +1,855 @@
+/*
+ * The tile-setter's workshop, after dark.
+ *
+ * The reference is not a board game box — it is the wall the game is named
+ * after. A glazed indigo ground, panels of tin-glaze white with the faint
+ * blue-grey of unfired plaster, and cobalt line work over all of it. Depth
+ * comes from glaze: a hard inner highlight along the top edge of a tile and a
+ * shadow pooled at its foot, the way light sits on a fired surface. There are
+ * no soft drop shadows and no gradients pretending to be light.
+ *
+ * The signature is the pounce: an empty wall space is drawn as the pricked
+ * dotted outline of the motif that belongs there, the way a tile-setter powders
+ * charcoal through a paper stencil to mark what goes where. It tells a first
+ * time player the wall's pattern without a word of instruction, and the moment
+ * a tile lands the pounce is glazed over.
+ */
+
+:root {
+  /* Ground and panels */
+  --glaze: #101d33;
+  --glaze-deep: #0a1424;
+  --tin: #e9ece6;
+  --tin-shade: #d3d8d1;
+  --tin-deep: #bcc3bd;
+  --ink: #16243f;
+  --ink-soft: #4d5f7d;
+  --ink-faint: #8a97ab;
+  --chalk: #f4f6f2;
+
+  /* The five glazes */
+  --cobalt: #2b4fa8;
+  --saffron: #d59a1c;
+  --crimson: #ac3b39;
+  --basalt: #202834;
+  --verdigris: #3d8c83;
+
+  --gold: #c9a227;
+
+  --rule: 1px solid rgba(22, 36, 63, 0.18);
+  --rule-strong: 1.5px solid rgba(22, 36, 63, 0.42);
+
+  --display: 'Optima', 'Palatino Linotype', 'Palatino', 'URW Palladio L', Georgia, serif;
+  --body: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  --figures: ui-monospace, 'SF Mono', 'Menlo', 'Consolas', monospace;
+
+  color-scheme: dark;
+  font-family: var(--body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+
+body {
+  color: var(--tin);
+  background-color: var(--glaze);
+  /* A quarter-drop of cobalt hairlines: the wall behind the wall. */
+  background-image:
+    linear-gradient(rgba(43, 79, 168, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(43, 79, 168, 0.16) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(43, 79, 168, 0.28), transparent 62%);
+  background-size: 4.5rem 4.5rem, 4.5rem 4.5rem, 100% 46rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.app {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: clamp(0.9rem, 2.6vw, 2rem) clamp(0.8rem, 2.6vw, 1.6rem) 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.4vw, 1.6rem);
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-size: clamp(1.6rem, 4.6vw, 2.4rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--chalk);
+}
+
+.wordmark span {
+  color: var(--gold);
+}
+
+.tagline {
+  margin: 0.15rem 0 0;
+  color: var(--ink-faint);
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+}
+
+.relay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--figures);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.relay::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+
+.relay[data-status='connected']::before {
+  background: var(--verdigris);
+}
+
+.relay[data-status='connecting']::before {
+  background: var(--saffron);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.relay[data-status='failed']::before {
+  background: var(--crimson);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ------------------------------------------------------------------ panels */
+
+/*
+ * A panel is a slab of tin glaze: a hairline of light along its top edge, a
+ * cool shade beneath, and a foot of shadow where it meets the wall.
+ */
+.panel {
+  background: var(--tin);
+  color: var(--ink);
+  border-radius: 2px;
+  padding: clamp(0.9rem, 2vw, 1.3rem);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(22, 36, 63, 0.16),
+    0 10px 22px -14px rgba(4, 10, 22, 0.9);
+}
+
+.panel--dark {
+  background: rgba(233, 236, 230, 0.06);
+  color: var(--tin);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(233, 236, 230, 0.12);
+}
+
+.panel__title {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  margin: 0 0 0.7rem;
+  color: var(--ink-soft);
+}
+
+.panel--dark .panel__title {
+  color: var(--ink-faint);
+}
+
+/* ------------------------------------------------------------------ tiles */
+
+.tile {
+  display: block;
+  width: var(--tile, 2.4rem);
+  height: var(--tile, 2.4rem);
+  border-radius: 2px;
+}
+
+.tile--glazed {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.32),
+    0 2px 3px -1px rgba(4, 10, 22, 0.55);
+}
+
+/* Charcoal dusted onto a tin panel. */
+.tile--pounce {
+  color: rgba(22, 36, 63, 0.55);
+}
+
+/* The same mark on the glazed ground, where charcoal would not show. */
+.panel--dark .tile--pounce,
+.hero__panel .tile--pounce,
+.basin .tile--pounce {
+  color: rgba(233, 236, 230, 0.42);
+}
+
+.tile--first {
+  box-shadow:
+    inset 0 0 0 1.5px var(--gold),
+    0 2px 3px -1px rgba(4, 10, 22, 0.55);
+}
+
+/* A tile that has just been fired onto the wall. */
+@keyframes fire {
+  from {
+    transform: scale(0.72);
+    filter: saturate(0.2) brightness(1.7);
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+.tile--fresh {
+  animation: fire 460ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+/* ---------------------------------------------------------------- factories */
+
+/*
+ * The table's one hard rule: your own board and the tiles you are choosing
+ * from are on screen together. Everything else — the other players' walls, the
+ * running score, the last firing — gives up space before those two do.
+ */
+.table {
+  display: grid;
+  gap: clamp(0.8rem, 1.8vw, 1.2rem);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'prompt'
+    'supply'
+    'mine'
+    'info'
+    'others';
+}
+
+.table__prompt {
+  grid-area: prompt;
+}
+.table__supply {
+  grid-area: supply;
+}
+.table__info {
+  grid-area: info;
+}
+.table__mine {
+  grid-area: mine;
+}
+.table__others {
+  grid-area: others;
+}
+
+@media (min-width: 62rem) {
+  .table {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-areas:
+      'prompt prompt'
+      'supply info'
+      'mine others';
+    align-items: start;
+  }
+}
+
+.panel__title--spaced {
+  margin-top: 1rem;
+}
+
+.factories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.6rem, 1.6vw, 1rem);
+  justify-content: center;
+}
+
+/* A factory display is a glazed plate, turned on a wheel. */
+.plate {
+  --plate: clamp(5rem, 11vw, 6.4rem);
+  width: var(--plate);
+  height: var(--plate);
+  border-radius: 50%;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  place-content: center;
+  gap: 0.28rem;
+  padding: 0.5rem;
+  background: radial-gradient(circle at 50% 34%, #f4f6f1, var(--tin-shade) 70%, var(--tin-deep));
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -3px 6px rgba(22, 36, 63, 0.22),
+    0 14px 26px -18px rgba(3, 8, 18, 1);
+}
+
+.plate--empty {
+  background: none;
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.14);
+}
+
+.plate__tile {
+  --tile: clamp(1.45rem, 3.2vw, 1.8rem);
+  border-radius: 2px;
+  transition: transform 120ms ease;
+}
+
+.plate__tile:disabled {
+  cursor: default;
+}
+
+.plate__tile:not(:disabled):hover,
+.plate__tile:not(:disabled):focus-visible {
+  transform: translateY(-2px) scale(1.06);
+}
+
+.plate__tile[data-picked='true'] .tile {
+  box-shadow:
+    inset 0 0 0 2px var(--gold),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.5),
+    0 2px 3px -1px rgba(4, 10, 22, 0.55);
+}
+
+/* The centre of the table: a shallow basin the leftovers slide into. */
+.basin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  min-height: 4.6rem;
+  padding: 0.75rem;
+  border-radius: 2px;
+  background: rgba(10, 20, 36, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.12), inset 0 6px 16px -8px rgba(0, 0, 0, 0.9);
+}
+
+.basin__empty {
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.basin__tile {
+  --tile: clamp(1.6rem, 4vw, 2rem);
+}
+
+/* ------------------------------------------------------------------ boards */
+
+.board {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.board__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.board__name {
+  font-family: var(--display);
+  letter-spacing: 0.06em;
+  font-size: 1.02rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.board__badge {
+  font-family: var(--figures);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.14rem 0.4rem;
+  border: var(--rule);
+  border-radius: 2px;
+  color: var(--ink-soft);
+}
+
+.board--mine .board__name::before {
+  content: '';
+  width: 0.42rem;
+  height: 1.1rem;
+  background: var(--gold);
+}
+
+.board__score {
+  font-family: var(--figures);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.board__grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: clamp(0.5rem, 1.4vw, 0.9rem);
+  align-items: start;
+}
+
+.lines {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: end;
+}
+
+.line {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.14rem;
+  border-radius: 2px;
+  border: 1px solid transparent;
+}
+
+.line--playable {
+  border-color: rgba(201, 162, 39, 0.55);
+  background: rgba(201, 162, 39, 0.12);
+  cursor: pointer;
+}
+
+.line--playable:hover,
+.line--playable:focus-visible {
+  background: rgba(201, 162, 39, 0.24);
+}
+
+.line--refused {
+  cursor: not-allowed;
+}
+
+.slot {
+  --tile: clamp(1.5rem, 3.6vw, 1.95rem);
+  width: var(--tile);
+  height: var(--tile);
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(22, 36, 63, 0.22);
+  background: rgba(22, 36, 63, 0.05);
+}
+
+.wall {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  gap: 0.25rem;
+  padding: 0.35rem;
+  border-radius: 2px;
+  background: rgba(22, 36, 63, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(22, 36, 63, 0.16);
+}
+
+.wall__cell {
+  --tile: clamp(1.5rem, 3.6vw, 1.95rem);
+  position: relative;
+}
+
+.floor {
+  display: flex;
+  gap: 0.2rem;
+  align-items: flex-end;
+}
+
+.floor__slot {
+  display: grid;
+  justify-items: center;
+  gap: 0.12rem;
+}
+
+.floor__cost {
+  font-family: var(--figures);
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+}
+
+.floor__slot--taken .floor__cost {
+  color: var(--crimson);
+  font-weight: 700;
+}
+
+.floor__box {
+  --tile: clamp(1.3rem, 3.2vw, 1.7rem);
+  width: var(--tile);
+  height: var(--tile);
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(172, 59, 57, 0.35);
+  background: rgba(172, 59, 57, 0.06);
+}
+
+.floor--playable {
+  cursor: pointer;
+  outline: 1px solid rgba(201, 162, 39, 0.55);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ------------------------------------------------------------- side panels */
+
+.rail {
+  display: grid;
+  gap: clamp(0.7rem, 1.6vw, 1rem);
+  align-content: start;
+}
+
+.seats {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.seat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 2px;
+  background: rgba(233, 236, 230, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.1);
+}
+
+.seat--turn {
+  box-shadow: inset 0 0 0 1.5px var(--gold);
+}
+
+.seat__name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+}
+
+.seat__meta {
+  font-family: var(--figures);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+.seat__score {
+  font-family: var(--figures);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+}
+
+.log {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.log__entry {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.log__entry b {
+  color: var(--tin);
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------- prompts */
+
+.prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.6rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 2px;
+  background: rgba(201, 162, 39, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.4);
+  font-size: 0.94rem;
+}
+
+.prompt--quiet {
+  background: rgba(233, 236, 230, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.12);
+  color: var(--ink-faint);
+}
+
+.prompt--warn {
+  background: rgba(172, 59, 57, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(172, 59, 57, 0.5);
+  color: #f0cfcd;
+}
+
+/* ----------------------------------------------------------------- buttons */
+
+.button {
+  font-family: var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  padding: 0.7rem 1.15rem;
+  border-radius: 2px;
+  background: var(--tin);
+  color: var(--ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -2px 0 rgba(22, 36, 63, 0.28),
+    0 8px 16px -12px rgba(0, 0, 0, 1);
+  transition: transform 90ms ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.button--gold {
+  background: var(--gold);
+  color: #241c04;
+}
+
+.button--ghost {
+  background: none;
+  color: var(--tin);
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.32);
+}
+
+.button--small {
+  font-size: 0.7rem;
+  padding: 0.45rem 0.7rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-family: var(--figures);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.field input {
+  padding: 0.65rem 0.75rem;
+  border-radius: 2px;
+  border: none;
+  background: rgba(233, 236, 230, 0.08);
+  color: var(--tin);
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.2);
+  letter-spacing: 0.08em;
+}
+
+.field input::placeholder {
+  color: rgba(233, 236, 230, 0.35);
+}
+
+.field--code input {
+  font-family: var(--figures);
+  text-transform: uppercase;
+  font-size: 1.3rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+
+/* -------------------------------------------------------------------- home */
+
+.home {
+  display: grid;
+  gap: clamp(1rem, 3vw, 1.8rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 54rem) {
+  .home {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.hero {
+  display: grid;
+  gap: clamp(0.9rem, 2vw, 1.4rem);
+  align-content: start;
+}
+
+.hero__panel {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.3rem;
+  width: min(100%, 21rem);
+  padding: 0.6rem;
+  background: rgba(10, 20, 36, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.12);
+  border-radius: 2px;
+}
+
+.hero__cell {
+  --tile: 100%;
+  aspect-ratio: 1;
+}
+
+.hero__lede {
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 3.6vw, 2.1rem);
+  line-height: 1.22;
+  margin: 0;
+  color: var(--chalk);
+}
+
+.hero__body {
+  margin: 0;
+  color: var(--ink-faint);
+  max-width: 34rem;
+  line-height: 1.6;
+}
+
+.choices {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.choice {
+  display: grid;
+  gap: 0.55rem;
+  padding: clamp(0.9rem, 2vw, 1.2rem);
+  border-radius: 2px;
+  background: rgba(233, 236, 230, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(233, 236, 230, 0.12);
+}
+
+.choice h2 {
+  font-family: var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.82rem;
+  margin: 0;
+  color: var(--gold);
+}
+
+.choice p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+.row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ------------------------------------------------------------------- lobby */
+
+.code {
+  font-family: var(--figures);
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  margin: 0;
+}
+
+.hint {
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------- end panel */
+
+.result {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.result__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  gap: 0.6rem;
+  align-items: baseline;
+  font-family: var(--figures);
+  font-size: 0.86rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(233, 236, 230, 0.1);
+}
+
+.result__row--head {
+  color: var(--ink-faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.result__row--winner {
+  color: var(--gold);
+}
+
+.result__name {
+  font-family: var(--body);
+  font-size: 0.95rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -13,6 +13,7 @@ service, no game server, no hosted database.
 | [Bloomwright](apps/bloomwright) | A puzzle where you never draw — you write the rules a plant grows by |
 | [Tonguecracker](apps/tonguecracker) | A language invented fresh each round, inferred from examples and then spoken |
 | [Sealed Orders](apps/sealed-orders) | A two-player duel with no server, made fair by a commit-reveal seal in the link |
+| [Azulejo](apps/azul) | The tile-laying game *Azul* for two to four, played peer to peer over WebRTC |
 | [Sudoku Solver](apps/sudoku-solver) | A solver and playable grid |
 | [Ultimate Tic-Tac-Toe](apps/ultimate-ttt) | Tic-tac-toe nested inside tic-tac-toe |
 
