@@ -41,14 +41,25 @@ export default function App() {
     if (typeof localStorage !== 'undefined') localStorage.setItem(NAME_KEY, name)
   }, [name])
 
-  // A link with a code in it sits somebody straight down at that table.
+  // A link with a code in it is an invitation, not a seat: it brings the
+  // visitor to the front door with the code filled in, so they can say who
+  // they are before sitting down.
+  const [invite, setInvite] = useState<string | null>(parseRoomIdFromLocation)
+
   useEffect(() => {
-    const code = parseRoomIdFromLocation()
-    if (code) setRoom({ kind: 'join', code })
+    const onHash = () => setInvite(parseRoomIdFromLocation())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  const declineInvite = useCallback(() => {
+    setInvite(null)
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search)
   }, [])
 
   const leave = useCallback(() => {
     setRoom(null)
+    setInvite(null)
     if (typeof location !== 'undefined' && location.hash) {
       history.replaceState(null, '', location.pathname + location.search)
     }
@@ -133,6 +144,8 @@ export default function App() {
         <Home
           name={name}
           onName={setName}
+          invite={invite}
+          onDeclineInvite={declineInvite}
           onSolo={() => setRoom({ kind: 'solo' })}
           onHost={() => setRoom({ kind: 'host' })}
           onJoin={code => setRoom({ kind: 'join', code })}

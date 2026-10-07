@@ -15,11 +15,11 @@ import type { CSSProperties } from 'react'
 import type { Color } from '../engine/types'
 
 export const GLAZES: Record<Color, string> = {
-  cobalt: '#2f5aa0',
-  saffron: '#c08a21',
-  crimson: '#b23a2c',
-  basalt: '#2a3340',
-  verdigris: '#2f7d72',
+  cobalt: '#4472c0',
+  saffron: '#d29b2c',
+  crimson: '#c9493a',
+  basalt: '#56647c',
+  verdigris: '#3a9486',
 }
 
 export const COLOR_NAMES: Record<Color, string> = {
@@ -69,6 +69,10 @@ function Motif({ color }: { color: Color }) {
   }
 }
 
+/** A square with Apple-style continuous corners, in a 24-unit box. */
+const SQUIRCLE =
+  'M5.2 0H18.8C22.6 0 24 1.4 24 5.2V18.8C24 22.6 22.6 24 18.8 24H5.2C1.4 24 0 22.6 0 18.8V5.2C0 1.4 1.4 0 5.2 0Z'
+
 export interface TileProps {
   color: Color
   /** Draws the dotted, unfired mark instead of a tile. */
@@ -91,7 +95,7 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
   if (pounce) {
     return (
       <svg viewBox="0 0 24 24" className={classes} style={style} data-flight={flight} role="img" aria-label={label}>
-        <rect x="0.5" y="0.5" width="23" height="23" fill="none" stroke="var(--rule)" strokeWidth="1" />
+        <path d={SQUIRCLE} transform="translate(0.5 0.5) scale(0.9583)" fill="none" stroke="var(--rule-strong)" strokeWidth="1.04" />
         <g
           fill="none"
           stroke={GLAZES[color]}
@@ -109,7 +113,7 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
 
   return (
     <svg viewBox="0 0 24 24" className={classes} style={style} data-flight={flight} role="img" aria-label={label}>
-      <rect x="0" y="0" width="24" height="24" fill={GLAZES[color]} />
+      <path d={SQUIRCLE} fill={GLAZES[color]} />
       <g
         fill="none"
         stroke="#ffffff"
@@ -134,7 +138,7 @@ export function FirstMarker({ className = '', flight }: { className?: string; fl
       role="img"
       aria-label="Starting player marker"
     >
-      <rect x="0.5" y="0.5" width="23" height="23" fill="none" stroke="var(--signal)" strokeWidth="1" />
+      <path d={SQUIRCLE} transform="translate(0.5 0.5) scale(0.9583)" fill="none" stroke="var(--signal)" strokeWidth="1.04" />
       <path
         d="M12 5.5 13.6 10.4 18.5 12 13.6 13.6 12 18.5 10.4 13.6 5.5 12 10.4 10.4Z"
         fill="none"

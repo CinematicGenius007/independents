@@ -33,12 +33,29 @@ export interface Weights {
   denial: number
   /** Random jitter added to every move's value, in points. */
   noise: number
+  /**
+   * How much weight the best reply of the next player gets. Zero is a bot that
+   * only looks at its own board; above it, the bot also asks what its move
+   * leaves on offer for the person who plays next.
+   */
+  reply: number
+  /** Candidates, best first by one-ply value, that are searched a ply deeper. */
+  breadth: number
+  /**
+   * Candidates played out to the end of the round, everyone following the
+   * greedy policy. Within a round nothing is hidden — the displays are on the
+   * table — so the playout is exact for as long as the others play greedily.
+   * Zero switches it off.
+   */
+  rollouts: number
+  /** How much a playout's verdict counts against the one-ply-and-reply value. */
+  rolloutWeight: number
 }
 
 const WEIGHTS: Record<BotStyle, Weights> = {
-  apprentice: { immediate: 1, progress: 0.2, floor: 0.6, bonus: 0, denial: 0, noise: 2.5 },
-  artisan: { immediate: 1, progress: 0.55, floor: 1, bonus: 0.35, denial: 0.1, noise: 0.8 },
-  master: { immediate: 1, progress: 0.7, floor: 1, bonus: 0.75, denial: 0.35, noise: 0.15 },
+  apprentice: { immediate: 1, progress: 0.2, floor: 0.6, bonus: 0, denial: 0, noise: 2.5, reply: 0, breadth: 0, rollouts: 0, rolloutWeight: 0 },
+  artisan: { immediate: 1, progress: 0.55, floor: 1, bonus: 0.4, denial: 0.15, noise: 0.6, reply: 0.5, breadth: 8, rollouts: 0, rolloutWeight: 0 },
+  master: { immediate: 1, progress: 0.7, floor: 1.1, bonus: 0.8, denial: 0.1, noise: 0.05, reply: 0.9, breadth: 40, rollouts: 12, rolloutWeight: 1 },
 }
 
 /** Tiles of `color` still reachable for `seat`: on the table, anywhere. */
@@ -117,11 +134,77 @@ function centreGift(state: GameState): number {
   return worst
 }
 
+/** One move's own worth to the player making it, before looking at replies. */
+function ownValue(state: GameState, move: Move, seat: number, weights: Weights, before: number): { value: number; next: GameState } {
+  const { state: next } = applyMove(state, move)
+  let value = evaluate(next, seat, weights) - before
+  if (weights.denial > 0) {
+    value -= centreGift(next) * weights.denial
+    // Taking the marker is a real cost late in a round and a real prize early.
+    if (move.source === CENTER && state.centerHasFirst) {
+      value += state.factories.filter(f => f.length > 0).length >= 2 ? 0.6 : -0.4
+    }
+  }
+  return { value, next }
+}
+
+/**
+ * The most the player after `seat` can gain from the position `state`, by
+ * their own evaluation. A move that hands them a fat, ready-made line is worth
+ * less to the mover than its own score suggests.
+ */
+function bestReplyGain(state: GameState, weights: Weights): number {
+  if (state.phase !== 'offer') return 0
+  const replier = state.current
+  const base = evaluate(state, replier, weights)
+  let best = 0
+  for (const reply of legalMoves(state)) {
+    const { state: after } = applyMove(state, reply)
+    best = Math.max(best, evaluate(after, replier, weights) - base)
+  }
+  return best
+}
+
+/** The policy everyone is assumed to follow inside a playout: the artisan, steady-handed. */
+const PLAYOUT: Weights = { ...WEIGHTS.artisan, noise: 0, reply: 0, breadth: 0 }
+
+/**
+ * Plays the round out from `state` with the greedy policy and says how `seat`
+ * stands at the end of it: its own position minus the average of the others.
+ */
+function playout(state: GameState, seat: number): number {
+  let current = state
+  let guard = 80
+  while (current.phase === 'offer' && guard-- > 0) {
+    const moves = legalMoves(current)
+    if (moves.length === 0) break
+    const player = current.current
+    const base = evaluate(current, player, PLAYOUT)
+    let best = moves[0]
+    let bestValue = -Infinity
+    for (const move of moves) {
+      const { state: next } = applyMove(current, move)
+      let value = evaluate(next, player, PLAYOUT) - base
+      value -= centreGift(next) * PLAYOUT.denial
+      if (value > bestValue) {
+        bestValue = value
+        best = move
+      }
+    }
+    current = applyMove(current, best).state
+  }
+  let others = 0
+  for (let i = 0; i < current.players.length; i++) if (i !== seat) others += evaluate(current, i, PLAYOUT)
+  return evaluate(current, seat, PLAYOUT) - others / Math.max(1, current.players.length - 1)
+}
+
 /**
  * Picks a move for the player to act.
  *
- * Ties are broken by the jitter rather than by move order, so two bots in the
- * same seat position do not play the same game twice.
+ * Every legal move is valued on its own result; the best few are then searched
+ * one ply deeper, against the best answer the next player has. Ties are broken
+ * by the jitter rather than by move order, so two bots in the same seat
+ * position do not play the same game twice.
  */
 export function chooseMove(state: GameState, rng: Rng, style: BotStyle = 'master'): Move | null {
   const moves = legalMoves(state)
@@ -131,23 +214,32 @@ export function chooseMove(state: GameState, rng: Rng, style: BotStyle = 'master
   const seat = state.current
   const before = evaluate(state, seat, weights)
 
-  let best: Move | null = null
-  let bestValue = -Infinity
-  for (const move of moves) {
-    const { state: next } = applyMove(state, move)
-    let value = evaluate(next, seat, weights) - before
-    if (weights.denial > 0) {
-      value -= centreGift(next) * weights.denial
-      // Taking the marker is a real cost late in a round and a real prize early.
-      if (move.source === CENTER && state.centerHasFirst) {
-        value += state.factories.filter(f => f.length > 0).length >= 2 ? 0.6 : -0.4
+  const scored = moves
+    .map(move => ({ move, ...ownValue(state, move, seat, weights, before) }))
+    .map(entry => ({ ...entry, value: entry.value + (rng() - 0.5) * 2 * weights.noise }))
+    .sort((a, b) => b.value - a.value)
+
+  if (weights.reply === 0 || weights.breadth === 0) return scored[0].move
+
+  const searched = scored.slice(0, weights.breadth).map(entry => ({
+    ...entry,
+    value: entry.value - weights.reply * bestReplyGain(entry.next, weights),
+  }))
+  searched.sort((a, b) => b.value - a.value)
+
+  if (weights.rollouts > 0) {
+    const top = searched.slice(0, weights.rollouts)
+    const spread = top[0].value
+    let best = top[0]
+    let bestValue = -Infinity
+    for (const entry of top) {
+      const value = playout(entry.next, seat) * weights.rolloutWeight + (entry.value - spread) * 0.25
+      if (value > bestValue) {
+        bestValue = value
+        best = entry
       }
     }
-    value += (rng() - 0.5) * 2 * weights.noise
-    if (value > bestValue) {
-      bestValue = value
-      best = move
-    }
+    return best.move
   }
-  return best
+  return searched[0].move
 }

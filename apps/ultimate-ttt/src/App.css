@@ -819,3 +819,11 @@ input:focus-visible {
     margin-left: 8px;
   }
 }
+
+.lobby-card--invite {
+  border-color: var(--accent, currentColor);
+}
+
+.lobby-invite-code {
+  letter-spacing: 0.2em;
+}

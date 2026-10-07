@@ -22,18 +22,26 @@ export function flightId(name: string): { 'data-flight': string } {
   return { 'data-flight': name }
 }
 
-/** A handful of tiles crossing the table. Slow enough to follow. */
-export const FLIGHT_MS = 900
+/** One tile crossing the table: long enough to follow, short enough to feel like a hand. */
+export const FLIGHT_MS = 1150
 /** Gap between tiles of one handful leaving, so they read as separate pieces. */
-export const FLIGHT_STAGGER_MS = 130
+export const FLIGHT_STAGGER_MS = 140
+/** Leftovers sweep into the centre once the taken tiles are on their way. */
+export const LEFTOVER_DELAY_MS = 260
 
-function rectOf(root: ParentNode, name: string): DOMRect | null {
-  const node = root.querySelector<HTMLElement | SVGElement>(`[data-flight="${CSS.escape(name)}"]`)
-  return node ? node.getBoundingClientRect() : null
+function nodeOf(root: ParentNode, name: string): HTMLElement | SVGElement | null {
+  return root.querySelector<HTMLElement | SVGElement>(`[data-flight="${CSS.escape(name)}"]`)
 }
 
 export function prefersReducedMotion(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/** A size token in pixels, read from the document so flights match the CSS. */
+function tokenPx(name: string, fallback: number): number {
+  if (typeof getComputedStyle === 'undefined') return fallback
+  const value = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name))
+  return Number.isFinite(value) ? value : fallback
 }
 
 export interface PieceFlight {
@@ -44,54 +52,113 @@ export interface PieceFlight {
   delay?: number
   /** Size the piece takes: the source's, the target's, or a fixed square. */
   size?: 'from' | 'to' | number
-  /** A tile copy dissolves into the tile already drawn where it lands. */
+  /** Width the piece starts at, when it should grow or shrink on the way. */
+  startSize?: number
+  /**
+   * Draw the piece as a copy of the tile already drawn at the target, motif
+   * and all, and keep that tile hidden until the copy arrives — so the tile
+   * is seen to *travel*, not to appear at its end while a ghost chases it.
+   */
+  carry?: boolean
+  /** Fade out on arrival instead of handing over to the tile underneath. */
   dissolve?: boolean
+  /** Where in the target's box the piece lands, 0–1 on each axis. Defaults to the middle. */
+  lands?: { x: number; y: number }
 }
 
 /** Flies one piece. Returns false if either endpoint is missing. */
 export function flyPiece(root: ParentNode, flight: PieceFlight): boolean {
   if (prefersReducedMotion()) return false
-  const from = rectOf(root, flight.from)
-  const to = rectOf(root, flight.to)
-  if (!from || !to) return false
+  const fromNode = nodeOf(root, flight.from)
+  const toNode = nodeOf(root, flight.to)
+  if (!fromNode || !toNode) return false
+  const from = fromNode.getBoundingClientRect()
+  // A target may be a wrapper around the tile; measure and copy the tile.
+  const tileNode = toNode instanceof SVGElement ? toNode : (toNode.querySelector('svg') ?? toNode)
+  const to = tileNode.getBoundingClientRect()
 
-  const startSize =
-    typeof flight.size === 'number' ? flight.size : flight.size === 'to' ? to.width : from.width
-  const endSize = typeof flight.size === 'number' ? flight.size : to.width
+  const endSize = typeof flight.size === 'number' ? flight.size : flight.size === 'from' ? from.width : to.width
+  const startSize = flight.startSize ?? endSize
   const x0 = from.left + from.width / 2 - startSize / 2
   const y0 = from.top + from.height / 2 - startSize / 2
-  const x1 = to.left + to.width / 2 - startSize / 2
-  const y1 = to.top + to.height / 2 - startSize / 2
+  const lx = flight.lands?.x ?? 0.5
+  const ly = flight.lands?.y ?? 0.5
+  const x1 = to.left + to.width * lx - startSize / 2
+  const y1 = to.top + to.height * ly - startSize / 2
 
-  const piece = document.createElement('div')
-  piece.className = 'flight'
-  piece.style.cssText = `
+  let piece: HTMLElement | SVGElement
+  if (flight.carry && tileNode instanceof SVGElement) {
+    piece = tileNode.cloneNode(true) as SVGElement
+    piece.removeAttribute('data-flight')
+    piece.removeAttribute('id')
+    piece.classList.remove('tile--fresh', 'slot--incoming')
+  } else {
+    piece = document.createElement('div')
+    piece.style.background = flight.tint
+  }
+  piece.classList.add('flight')
+  piece.setAttribute('aria-hidden', 'true')
+  piece.style.cssText += `
     position: fixed; left: ${x0}px; top: ${y0}px;
     width: ${startSize}px; height: ${startSize}px;
-    background: ${flight.tint}; pointer-events: none; z-index: 60;
+    pointer-events: none; z-index: 60; transform-origin: 50% 50%;
   `
   document.body.append(piece)
 
-  const scale = endSize / Math.max(1, startSize)
-  const keyframes: Keyframe[] = flight.dissolve
-    ? [
-        { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: 0 },
-        { opacity: 1, offset: 0.78 },
-        { transform: `translate(${x1 - x0}px, ${y1 - y0}px) scale(${scale})`, opacity: 0, offset: 1 },
-      ]
-    : [
-        { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-        { transform: `translate(${x1 - x0}px, ${y1 - y0}px) scale(${scale})`, opacity: 1 },
-      ]
+  const hidden = flight.carry ? flight.to : null
+  const hide = (on: boolean) => {
+    if (!hidden) return
+    const node = nodeOf(root, hidden)
+    const target = node instanceof SVGElement ? node : (node?.querySelector('svg') ?? node)
+    if (on) target?.setAttribute('data-arriving', '')
+    else target?.removeAttribute('data-arriving')
+  }
+  hide(true)
 
-  const animation = piece.animate(keyframes, {
+  const dx = x1 - x0
+  const dy = y1 - y0
+  const scale = endSize / Math.max(1, startSize)
+  const distance = Math.hypot(dx, dy)
+  // The tile is lifted off its pile, carried over the table on a shallow arc,
+  // and set down: three moves, not one slide.
+  const arc = Math.min(64, Math.max(14, distance * 0.1))
+  const lift = 1.14
+  const frames: Keyframe[] = [
+    { transform: 'translate(0px, 0px) scale(1)', opacity: 1, offset: 0, easing: 'cubic-bezier(0.3, 0, 0.4, 1)' },
+    {
+      transform: `translate(0px, -6px) scale(${lift})`,
+      opacity: 1,
+      offset: 0.16,
+      easing: 'cubic-bezier(0.45, 0, 0.35, 1)',
+    },
+    {
+      transform: `translate(${dx * 0.5}px, ${dy * 0.5 - arc}px) scale(${lift * (1 + (scale - 1) * 0.5)})`,
+      opacity: 1,
+      offset: 0.58,
+      easing: 'cubic-bezier(0.25, 0.6, 0.3, 1)',
+    },
+    {
+      transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
+      opacity: flight.dissolve ? 0 : 1,
+      offset: 1,
+    },
+  ]
+  const shadowed = flight.carry || flight.dissolve
+  const plain: Keyframe[] = [
+    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+    { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 1 },
+  ]
+
+  const animation = piece.animate(shadowed ? frames : plain, {
     duration: flight.duration,
     delay: flight.delay ?? 0,
-    // Leaves gently, arrives decisively — the shape of a hand placing a tile.
-    easing: 'cubic-bezier(0.45, 0.05, 0.25, 1)',
+    easing: shadowed ? 'linear' : 'cubic-bezier(0.45, 0.05, 0.25, 1)',
     fill: 'both',
   })
-  const done = () => piece.remove()
+  const done = () => {
+    piece.remove()
+    hide(false)
+  }
   animation.onfinish = done
   animation.oncancel = done
   return true
@@ -103,10 +170,15 @@ export interface FlightRequest {
   from: string
   /** One name per tile, in the order they land. */
   to: string[]
+  /** Tiles of the same display that were not taken, swept into the centre. */
+  leftovers?: { color: Color; to: string }[]
+  /** The starting marker, if this move claimed it. */
+  marker?: { to: string }
 }
 
 /** Flies every tile of a handful from its pile to the slots it lands in. */
 export function flyTiles(root: ParentNode, request: FlightRequest, tint: string): void {
+  const pocket = tokenPx('--tile-pocket', 24)
   request.to.forEach((to, index) =>
     flyPiece(root, {
       from: request.from,
@@ -114,12 +186,36 @@ export function flyTiles(root: ParentNode, request: FlightRequest, tint: string)
       tint,
       duration: FLIGHT_MS,
       delay: index * FLIGHT_STAGGER_MS,
-      // Tile-sized from the start: the source is a whole display or the centre
-      // strip, and a piece the size of its container is not a tile.
+      startSize: pocket,
       size: 'to',
-      dissolve: true,
+      carry: true,
     }),
   )
+  const base = request.to.length * FLIGHT_STAGGER_MS * 0.5 + LEFTOVER_DELAY_MS
+  request.leftovers?.forEach((leftover, index) =>
+    flyPiece(root, {
+      from: request.from,
+      to: leftover.to,
+      tint: 'transparent',
+      duration: FLIGHT_MS,
+      delay: base + index * FLIGHT_STAGGER_MS,
+      startSize: pocket,
+      size: 'to',
+      carry: true,
+    }),
+  )
+  if (request.marker) {
+    flyPiece(root, {
+      from: 'pile:-1',
+      to: request.marker.to,
+      tint: 'transparent',
+      duration: FLIGHT_MS,
+      delay: 0,
+      startSize: pocket,
+      size: 'to',
+      carry: true,
+    })
+  }
 }
 
 /**

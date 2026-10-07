@@ -56,7 +56,7 @@ export interface RoomConfig {
  * Slow enough to watch the house's tiles travel across the table and land,
  * which is the only way to follow a turn you did not take.
  */
-export const DEFAULT_CONFIG: RoomConfig = { botDelayMs: 1500 }
+export const DEFAULT_CONFIG: RoomConfig = { botDelayMs: 2200 }
 
 
 export type CtrlMessage =

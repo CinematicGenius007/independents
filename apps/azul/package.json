@@ -10,7 +10,8 @@
     "type-check": "tsc -b --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "playtest": "tsx scripts/playtest.ts"
+    "playtest": "tsx scripts/playtest.ts",
+    "bench": "tsx scripts/bench.ts"
   },
   "packageManager": "pnpm@11.10.0",
   "dependencies": {
