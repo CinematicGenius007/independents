@@ -49,13 +49,28 @@ export function parseRoomIdFromLocation(): RoomId | null {
 }
 
 /**
+ * Where rooms are hosted, if anywhere.
+ *
+ * With `VITE_ROOMS_URL` set, rooms go through the independents rooms service:
+ * a server that is always reachable, with reconnects and stable seats. Without
+ * it, the game falls back to signalling peer to peer over public relays, which
+ * needs no infrastructure at all but depends on strangers' servers and on two
+ * browsers managing to reach each other directly.
+ */
+export const ROOMS_URL: string | null = (import.meta.env.VITE_ROOMS_URL ?? '').trim() || null
+
+/**
  * Loaded on demand.
  *
- * The signalling libraries are most of this app's bytes, and a solo game never
- * signals anything. Fetching them only when somebody opens or joins a room
- * keeps the front page cheap.
+ * Networking code is most of this app's bytes, and a solo game never opens a
+ * room. Fetching it only when somebody opens or joins one keeps the front
+ * page cheap.
  */
-async function handleFor(roomId: RoomId): Promise<RoomHandle> {
+async function handleFor(roomId: RoomId, name: string): Promise<RoomHandle> {
+  if (ROOMS_URL) {
+    const { createRoomsHandle } = await import('./ws-transport')
+    return createRoomsHandle({ baseUrl: ROOMS_URL, roomId, name, url: buildRoomUrl(roomId) })
+  }
   const { createTrysteroTransport } = await import('./trystero-transport')
   const connection = createTrysteroTransport(roomId)
   return {
@@ -66,10 +81,10 @@ async function handleFor(roomId: RoomId): Promise<RoomHandle> {
   }
 }
 
-export function createRoom(random?: () => number): Promise<RoomHandle> {
-  return handleFor(generateRoomCode(random))
+export function createRoom(name: string, random?: () => number): Promise<RoomHandle> {
+  return handleFor(generateRoomCode(random), name)
 }
 
-export function joinRoom(code: string): Promise<RoomHandle> {
-  return handleFor(normalizeRoomCode(code))
+export function joinRoom(code: string, name: string): Promise<RoomHandle> {
+  return handleFor(normalizeRoomCode(code), name)
 }

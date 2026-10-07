@@ -74,8 +74,8 @@ export function useSession(room: RoomKind | null, name: string): RoomSession | n
         room.kind === 'solo'
           ? soloHandle()
           : room.kind === 'host'
-            ? await createRoom()
-            : await joinRoom(room.code)
+            ? await createRoom(nameRef.current)
+            : await joinRoom(room.code, nameRef.current)
 
       if (!live) {
         handle.transport.leave()
