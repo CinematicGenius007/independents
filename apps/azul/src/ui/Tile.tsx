@@ -1,33 +1,25 @@
 /**
- * One glazed tile, and the pounce mark left where a tile will go.
+ * One tile, and the mark left where a tile will go.
  *
- * Every colour carries its own painted motif. That is not decoration: it is
- * what makes the wall readable at a glance and what makes the game playable
- * without relying on hue, which about one man in twelve cannot be asked to do.
+ * Printed, not lit: a flat square of ink with its motif drawn over it in white
+ * line work, the way a chart prints a symbol. Every glaze has its own motif —
+ * quatrefoil, compass star, lozenge, chevrons, waves — so the board reads
+ * without relying on hue.
  *
- * The motifs are drawn as line work over a flat glaze, in the vocabulary of
- * the tiles the game is named for — a quatrefoil, a compass star, a pomegranate
- * lozenge, a chevron, a scallop.
+ * An unfired wall space is the same motif in its own glaze, dotted and faint
+ * inside a hairline square. It is the pounce of the old design kept honest:
+ * the wall shows what belongs where before a single tile has landed.
  */
 
 import type { CSSProperties } from 'react'
 import type { Color } from '../engine/types'
 
 export const GLAZES: Record<Color, string> = {
-  cobalt: '#2b4fa8',
-  saffron: '#d59a1c',
-  crimson: '#ac3b39',
-  basalt: '#202834',
-  verdigris: '#3d8c83',
-}
-
-/** The line colour painted over each glaze. Basalt is the one that inverts. */
-const LINEWORK: Record<Color, string> = {
-  cobalt: '#c9d8ff',
-  saffron: '#5c3d05',
-  crimson: '#f4d3ce',
-  basalt: '#8fa2bd',
-  verdigris: '#dff0eb',
+  cobalt: '#2f5aa0',
+  saffron: '#c08a21',
+  crimson: '#b23a2c',
+  basalt: '#2a3340',
+  verdigris: '#2f7d72',
 }
 
 export const COLOR_NAMES: Record<Color, string> = {
@@ -38,159 +30,116 @@ export const COLOR_NAMES: Record<Color, string> = {
   verdigris: 'Verdigris',
 }
 
-/** Motif paths, drawn in a 24×24 box. */
-function Motif({ color, stroke }: { color: Color; stroke: string }) {
-  const common = {
-    fill: 'none',
-    stroke,
-    strokeWidth: 1.6,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-  }
+/** Motifs in a 24×24 box, stroked. */
+function Motif({ color }: { color: Color }) {
   switch (color) {
     case 'cobalt':
-      // Quatrefoil: four petals meeting at the centre.
       return (
-        <g {...common}>
-          <path d="M12 5c2.2 0 3.6 1.5 3.6 3.5S13.9 12 12 12s-3.6-1.5-3.6-3.5S9.8 5 12 5Z" />
-          <path d="M12 19c-2.2 0-3.6-1.5-3.6-3.5S10.1 12 12 12s3.6 1.5 3.6 3.5S14.2 19 12 19Z" />
-          <path d="M5 12c0-2.2 1.5-3.6 3.5-3.6S12 10.1 12 12s-1.5 3.6-3.5 3.6S5 14.2 5 12Z" />
-          <path d="M19 12c0 2.2-1.5 3.6-3.5 3.6S12 13.9 12 12s1.5-3.6 3.5-3.6S19 9.8 19 12Z" />
-        </g>
+        <>
+          <circle cx="12" cy="8.6" r="3.3" />
+          <circle cx="12" cy="15.4" r="3.3" />
+          <circle cx="8.6" cy="12" r="3.3" />
+          <circle cx="15.4" cy="12" r="3.3" />
+        </>
       )
     case 'saffron':
-      // Compass star.
-      return (
-        <g {...common}>
-          <path d="M12 3.5 14 10l6.5 2-6.5 2-2 6.5-2-6.5L3.5 12l6.5-2 2-6.5Z" />
-        </g>
-      )
+      return <path d="M12 3.4 13.9 10.1 20.6 12 13.9 13.9 12 20.6 10.1 13.9 3.4 12 10.1 10.1Z" />
     case 'crimson':
-      // Pomegranate lozenge.
       return (
-        <g {...common}>
-          <path d="M12 4 19 12l-7 8-7-8 7-8Z" />
-          <circle cx="12" cy="12" r="2.6" />
-        </g>
+        <>
+          <path d="M12 3.8 19.4 12 12 20.2 4.6 12Z" />
+          <circle cx="12" cy="12" r="2.5" />
+        </>
       )
     case 'basalt':
-      // Chevrons, the mason's mark.
       return (
-        <g {...common}>
-          <path d="M5 9.5 12 5l7 4.5" />
-          <path d="M5 14.5 12 10l7 4.5" />
-          <path d="M5 19 12 14.5 19 19" />
-        </g>
+        <>
+          <path d="M5 9.4 12 5.2 19 9.4" />
+          <path d="M5 14.3 12 10.1 19 14.3" />
+          <path d="M5 19.2 12 15 19 19.2" />
+        </>
       )
     case 'verdigris':
-      // Scalloped wave.
       return (
-        <g {...common}>
-          <path d="M4 15c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3" />
-          <path d="M4 10c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3" />
-        </g>
+        <>
+          <path d="M3.8 15.2c2.6 0 2.6-3.1 5.2-3.1s2.6 3.1 5.2 3.1 2.6-3.1 5.2-3.1" />
+          <path d="M3.8 10c2.6 0 2.6-3.1 5.2-3.1s2.6 3.1 5.2 3.1 2.6-3.1 5.2-3.1" />
+        </>
       )
   }
 }
 
 export interface TileProps {
   color: Color
-  /** Draws the pricked stencil outline instead of a fired tile. */
+  /** Draws the dotted, unfired mark instead of a tile. */
   pounce?: boolean
-  /** Plays the kiln flash once, for a tile that has just landed. */
+  /** Plays the landing once, for a tile that has just fired onto the wall. */
   fresh?: boolean
   className?: string
   style?: CSSProperties
   title?: string
-  /** Names this tile as a flight endpoint. See {@link flightId}. */
+  /** Names this tile as a flight endpoint. */
   flight?: string
 }
 
-export function Tile({
-  color,
-  pounce = false,
-  fresh = false,
-  className = '',
-  style,
-  title,
-  flight,
-}: TileProps) {
-  // A pounce mark is charcoal on whatever it is dusted onto, so it takes its
-  // colour from the surface: dark on a tin panel, pale on the glazed ground.
-  const stroke = pounce ? 'currentColor' : LINEWORK[color]
+export function Tile({ color, pounce = false, fresh = false, className = '', style, title, flight }: TileProps) {
+  const classes = ['tile', pounce ? 'tile--pounce' : 'tile--ink', fresh ? 'tile--fresh' : '', className]
+    .filter(Boolean)
+    .join(' ')
+  const label = title ?? `${COLOR_NAMES[color]}${pounce ? ' space' : ' tile'}`
+
+  if (pounce) {
+    return (
+      <svg viewBox="0 0 24 24" className={classes} style={style} data-flight={flight} role="img" aria-label={label}>
+        <rect x="0.5" y="0.5" width="23" height="23" fill="none" stroke="var(--rule)" strokeWidth="1" />
+        <g
+          fill="none"
+          stroke={GLAZES[color]}
+          strokeOpacity="0.55"
+          strokeWidth="1"
+          strokeDasharray="1.4 1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <Motif color={color} />
+        </g>
+      </svg>
+    )
+  }
+
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={[
-        'tile',
-        pounce ? 'tile--pounce' : 'tile--glazed',
-        fresh ? 'tile--fresh' : '',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      style={style}
-      data-flight={flight}
-      role="img"
-      aria-label={title ?? `${COLOR_NAMES[color]}${pounce ? ' space' : ' tile'}`}
-    >
-      {pounce ? (
-        <rect
-          x="0.75"
-          y="0.75"
-          width="22.5"
-          height="22.5"
-          rx="1"
-          fill="currentColor"
-          fillOpacity="0.07"
-          stroke="currentColor"
-          strokeOpacity="0.28"
-          strokeWidth="0.9"
-        />
-      ) : (
-        <>
-          <rect x="0" y="0" width="24" height="24" rx="1.5" fill={GLAZES[color]} />
-          {/* Glaze pools thicker at the foot of a fired tile and catches the
-              light along its top edge. Two flat overlays, no gradient stack. */}
-          <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h21A1.5 1.5 0 0 1 24 1.5V8H0Z" fill="#fff" opacity="0.14" />
-          <path d="M0 17h24v5.5A1.5 1.5 0 0 1 22.5 24h-21A1.5 1.5 0 0 1 0 22.5Z" fill="#000" opacity="0.16" />
-        </>
-      )}
-      <g opacity={pounce ? 0.75 : 1}>
-        {pounce ? (
-          <PounceMotif color={color} stroke={stroke} />
-        ) : (
-          <Motif color={color} stroke={stroke} />
-        )}
+    <svg viewBox="0 0 24 24" className={classes} style={style} data-flight={flight} role="img" aria-label={label}>
+      <rect x="0" y="0" width="24" height="24" fill={GLAZES[color]} />
+      <g
+        fill="none"
+        stroke="#ffffff"
+        strokeOpacity={color === 'basalt' ? 0.78 : 0.92}
+        strokeWidth="1.1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <Motif color={color} />
       </g>
     </svg>
   )
 }
 
-/** The same motif, pricked through paper: dotted, and a little shy. */
-function PounceMotif({ color, stroke }: { color: Color; stroke: string }) {
-  return (
-    <g strokeDasharray="0.8 2.4" strokeOpacity="0.9">
-      <Motif color={color} stroke={stroke} />
-    </g>
-  )
-}
-
-/** The starting-player marker: not a glaze, a gilded blank. */
-export function FirstMarker({ className = '' }: { className?: string }) {
+/** The starting-player marker: a signal-ink star in an open square. */
+export function FirstMarker({ className = '', flight }: { className?: string; flight?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
       className={`tile tile--first ${className}`}
+      data-flight={flight}
       role="img"
       aria-label="Starting player marker"
     >
-      <rect x="0" y="0" width="24" height="24" rx="1.5" fill="#f4f0e2" />
+      <rect x="0.5" y="0.5" width="23" height="23" fill="none" stroke="var(--signal)" strokeWidth="1" />
       <path
-        d="M12 5.5 13.8 10h4.7l-3.8 2.9 1.5 4.6L12 14.7 7.8 17.5l1.5-4.6L5.5 10h4.7L12 5.5Z"
+        d="M12 5.5 13.6 10.4 18.5 12 13.6 13.6 12 18.5 10.4 13.6 5.5 12 10.4 10.4Z"
         fill="none"
-        stroke="#c9a227"
-        strokeWidth="1.6"
+        stroke="var(--signal)"
+        strokeWidth="1.1"
         strokeLinejoin="round"
       />
     </svg>

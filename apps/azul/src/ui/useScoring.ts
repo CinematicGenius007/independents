@@ -1,101 +1,107 @@
 /**
- * Playback of the wall-tiling.
+ * Playback of the round's scoring.
  *
- * The engine fires every complete line at once, in a single call, because that
- * is what the rules say happens. Watching it that way is a number changing.
- * The best part of a round of Azul is the count itself — this tile touches
- * those three, so it is worth four — and an interface that skips it throws
- * away the game's best moment.
+ * The position arrives already scored. This hook plays the
+ * {@link scoringTimeline} over it on a clock: until a tile's moment comes its
+ * wall space still shows unfired, and every score shown counts up a point at a
+ * time as each point lands on the track. Nothing here changes the game.
  *
- * So the position arrives finished and is *unwound*: this hook hands back the
- * wall as it was before the firing, then reveals the placements one at a time
- * on a clock the host has already budgeted for, with the running score at each
- * step. Nothing here changes the game; it only decides what has been shown yet.
+ * Each event is reported exactly once, as the clock passes it, so the table
+ * can fly the point and make the sound. Skipping jumps to the end without
+ * replaying what was skipped — a skip is for someone who has seen enough.
  */
 
-import { useEffect, useState } from 'react'
-import type { GameState, Placement, RoundReport } from '../engine/types'
-import { SCORING_STEP_MS } from '../net/protocol'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { GameState } from '../engine/types'
+import { frameAt, scoringTimeline } from '../engine/timeline'
+import type { Frame, Timeline, TimelineEvent } from '../engine/timeline'
+import { prefersReducedMotion } from './useFlight'
 
 export interface ScoringPlayback {
-  /** True while tiles are still being shown reaching the wall. */
+  /** True while the scoring is still being played out. */
   running: boolean
-  /** Wall spaces not yet revealed, keyed `seat:row-col`. */
-  hidden: Set<string>
-  /** The tile being counted right now. */
-  current: Placement | null
-  /** Score to display per seat, counting up as tiles are revealed. */
+  frame: Frame
+  /** The score each seat should show right now. */
   scores: number[]
-  /** Placements already shown, keyed `seat:row-col`, for the fired look. */
-  revealed: Set<string>
+  skip: () => void
 }
 
-function key(seat: number, row: number, col: number): string {
-  return `${seat}:${row}-${col}`
-}
-
-/** Every placement of the round, in the order they should be counted. */
-function ordered(reports: RoundReport[]): Placement[] {
-  return reports
-    .flatMap(report => report.placements)
-    .sort((a, b) => a.row - b.row || a.playerIndex - b.playerIndex)
-}
-
-export function useScoring(state: GameState | null): ScoringPlayback {
+export function useScoring(
+  state: GameState | null,
+  onEvent?: (event: TimelineEvent) => void,
+): ScoringPlayback {
   const reports = state?.lastRound ?? null
-  const round = state?.round ?? 0
-  const [step, setStep] = useState(0)
+  const finals = state?.finalReports ?? null
 
-  const placements = reports ? ordered(reports) : []
-  const total = placements.length
+  const timeline = useMemo(
+    () => scoringTimeline({ lastRound: reports, finalReports: finals }),
+    [reports, finals],
+  )
+
+  const startScores = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const r of reports ?? []) map.set(r.playerIndex, r.scoreBefore)
+    // A game that ended this round counts its bonuses from where the round left it.
+    for (const f of finals ?? []) if (!map.has(f.playerIndex)) map.set(f.playerIndex, f.scoreBefore)
+    return map
+  }, [reports, finals])
+
+  // The clock remembers which timeline it is timing. On the render where a
+  // new round's scoring first appears, the effect that starts the clock has
+  // not run yet; without this, that one frame would show the finished scores
+  // and spoil the count before rewinding to zero.
+  const [clock, setClock] = useState<{ timeline: Timeline | null; elapsed: number }>({
+    timeline: null,
+    elapsed: Number.POSITIVE_INFINITY,
+  })
+  const started = useRef(0)
+  const reported = useRef(-1)
+  const eventRef = useRef(onEvent)
+  eventRef.current = onEvent
 
   useEffect(() => {
-    if (!reports) return
-    setStep(0)
-    if (total === 0) return
-    const timer = setInterval(() => {
-      setStep(previous => {
-        if (previous >= total) {
-          clearInterval(timer)
-          return previous
-        }
-        return previous + 1
-      })
-    }, SCORING_STEP_MS)
-    return () => clearInterval(timer)
-    // Keyed on the round rather than the reports array so a re-render caused by
-    // something else — a peer joining, a name change — does not restart it.
-  }, [round, total, reports])
+    reported.current = -1
+    if (timeline.total === 0 || prefersReducedMotion()) {
+      setClock({ timeline, elapsed: Number.POSITIVE_INFINITY })
+      reported.current = timeline.events.length - 1
+      return
+    }
+    started.current = performance.now()
+    setClock({ timeline, elapsed: 0 })
 
-  const shown = reports ? Math.min(step, total) : total
-  const hidden = new Set<string>()
-  const revealed = new Set<string>()
-  placements.forEach((placement, index) => {
-    const id = key(placement.playerIndex, placement.row, placement.col)
-    if (index < shown) revealed.add(id)
-    else hidden.add(id)
-  })
+    let frame = 0
+    const tick = () => {
+      const now = performance.now() - started.current
+      // Report every event the clock has passed since the last tick.
+      while (reported.current + 1 < timeline.events.length && timeline.events[reported.current + 1].at <= now) {
+        reported.current++
+        eventRef.current?.(timeline.events[reported.current])
+      }
+      setClock({ timeline, elapsed: now })
+      if (now < timeline.total) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [timeline])
+
+  const skip = useCallback(() => {
+    reported.current = timeline.events.length - 1
+    started.current = performance.now() - timeline.total
+    setClock({ timeline, elapsed: Number.POSITIVE_INFINITY })
+  }, [timeline])
+
+  const elapsed =
+    clock.timeline === timeline
+      ? clock.elapsed
+      : timeline.total === 0 || prefersReducedMotion()
+        ? Number.POSITIVE_INFINITY
+        : 0
+
+  const frame = useMemo(() => frameAt(timeline, startScores, elapsed), [timeline, startScores, elapsed])
+  const running = !frame.done
 
   const scores =
-    state?.players.map((player, seat) => {
-      const report = reports?.find(r => r.playerIndex === seat)
-      if (!report) return player.score
-      // Count the tiles shown so far, then apply the floor once they are all up.
-      const gained = placements
-        .slice(0, shown)
-        .filter(p => p.playerIndex === seat)
-        .reduce((sum, p) => sum + p.points, 0)
-      // Once everything is up, the player's own score is the truth — it also
-      // carries the end-of-game bonuses, which the round report does not.
-      if (shown >= total) return player.score
-      return Math.max(0, report.scoreBefore + gained)
-    }) ?? []
+    state?.players.map((player, seat) => (running ? (frame.scores.get(seat) ?? player.score) : player.score)) ?? []
 
-  return {
-    running: Boolean(reports) && shown < total,
-    hidden,
-    revealed,
-    current: shown > 0 && shown <= total ? placements[shown - 1] : null,
-    scores,
-  }
+  return { running, frame, scores, skip }
 }

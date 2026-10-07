@@ -31,9 +31,8 @@ export function Home({ name, onName, onSolo, onHost, onJoin }: HomeProps) {
           many and it costs you.
         </h2>
         <p className="hero__body">
-          The tile-laying game <i>Azul</i>, played in the browser between two and four people. There
-          is no server holding the game — the players hold it between them, and whoever opened the
-          room deals from the bag.
+          The tile-laying game <i>Azul</i>, played in the browser between two and four people. No
+          account, no install: open a room, send the code, and whoever opened it deals from the bag.
         </p>
       </div>
 
