@@ -1,6 +1,10 @@
 /// <reference types="vite/client" />
 
-declare module '*.css' {
-  const content: Record<string, string>;
-  export default content;
+interface ImportMetaEnv {
+  /** Base URL of the independents rooms service. Unset = online play off. */
+  readonly VITE_ROOMS_URL?: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
 }

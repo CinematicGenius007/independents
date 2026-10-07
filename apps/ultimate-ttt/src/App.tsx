@@ -1,308 +1,415 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
+import { applyMove, boardsWon, initialState } from './game'
+import type { BoardWinner, GameState, Player } from './game'
+import { BOARD_NAMES, MegaGrid, OMark, PlayerMark, SIDE_NAME, XMark } from './Board'
+import { ROOMS_URL, useTable } from './net/useTable'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Rooms and links ─────────────────────────────────────────────────────────
 
-type Player = 'X' | 'O'
-type Cell = Player | null
-type BoardWinner = Player | 'tie' | null
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+const NAME_KEY = 'ultra-ttt:name'
 
-interface SmallGridProps {
-  cells: Cell[]
-  onCellClick: (cellIdx: number) => void
-  isActive: boolean
-  winner: BoardWinner
-  isDisabled: boolean
-  currentPlayer: Player
+function newCode(): string {
+  const bytes = new Uint8Array(5)
+  crypto.getRandomValues(bytes)
+  return [...bytes].map(b => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('')
 }
 
-// ─── Text Helpers ─────────────────────────────────────────────────────────────
+function codeFromHash(): string | null {
+  const match = /^#?room=([A-Za-z0-9]{4,12})$/.exec(location.hash)
+  return match ? match[1].toUpperCase() : null
+}
 
-const BOARD_TO_NAME_MAP: string[] = [
-  "Top left",
-  "Top center",
-  "Top right",
-  "Center left",
-  "Center middle",
-  "Center right",
-  "Bottom left",
-  "Bottom center",
-  "Bottom right"
-];
+function roomLink(code: string): string {
+  return `${location.origin}${location.pathname}#room=${code}`
+}
 
-// ─── Game Logic ───────────────────────────────────────────────────────────────
-
-const WIN_LINES: [number, number, number][] = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8],
-  [0, 3, 6], [1, 4, 7], [2, 5, 8],
-  [0, 4, 8], [2, 4, 6],
-]
-
-const checkWinner = (board: (Cell | BoardWinner)[]): BoardWinner => {
-  for (const [a, b, c] of WIN_LINES) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a] as Player
-    }
+function savedName(): string {
+  try {
+    return localStorage.getItem(NAME_KEY) || ''
+  } catch {
+    return ''
   }
-  if (board.every((cell) => cell !== null)) return 'tie'
-  return null
 }
 
-const createEmptyBoards = (): Cell[][] =>
-  Array(9).fill(null).map(() => Array(9).fill(null))
+type Mode = { kind: 'lobby' } | { kind: 'local' } | { kind: 'online'; code: string }
 
-// ─── SVG Marks ────────────────────────────────────────────────────────────────
+// ─── App ──────────────────────────────────────────────────────────────────────
 
-const XMark = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden="true">
-    <line x1="6" y1="6" x2="22" y2="22" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    <line x1="22" y1="6" x2="6" y2="22" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-  </svg>
-)
+function App() {
+  const [mode, setMode] = useState<Mode>(() => {
+    const code = codeFromHash()
+    return code && ROOMS_URL ? { kind: 'online', code } : { kind: 'lobby' }
+  })
+  const [name, setName] = useState(savedName)
 
-const OMark = ({ size = 26 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 28 28" fill="none" aria-hidden="true">
-    <circle cx="14" cy="14" r="8.5" stroke="currentColor" strokeWidth="3" />
-  </svg>
-)
+  useEffect(() => {
+    try {
+      localStorage.setItem(NAME_KEY, name)
+    } catch {
+      // storage refused; the name lasts for this visit
+    }
+  }, [name])
 
-const PlayerMark = ({ player, size }: { player: Player; size?: number }) =>
-  player === 'X' ? <XMark size={size} /> : <OMark size={size} />
+  const goOnline = useCallback((code: string) => {
+    history.replaceState(null, '', `#room=${code}`)
+    setMode({ kind: 'online', code })
+  }, [])
 
-// ─── Small Grid ───────────────────────────────────────────────────────────────
-
-const SmallGrid = ({
-  cells,
-  onCellClick,
-  isActive,
-  winner,
-  isDisabled,
-  currentPlayer,
-}: SmallGridProps) => {
-  const classes = [
-    'small-grid',
-    isActive && !winner ? 'active' : '',
-    winner ? `won won-${winner}` : '',
-    !isActive && !winner ? 'inactive' : '',
-  ].filter(Boolean).join(' ')
+  const toLobby = useCallback(() => {
+    history.replaceState(null, '', location.pathname + location.search)
+    setMode({ kind: 'lobby' })
+  }, [])
 
   return (
-    <div className={classes}>
-      {winner && (
-        <div className={`board-winner board-winner-${winner}`}>
-          {winner === 'tie' ? (
-            <span className="board-winner-text">—</span>
+    <div className="app">
+      <div className="bg-noise" aria-hidden="true" />
+      {mode.kind === 'lobby' && (
+        <Lobby
+          name={name}
+          onName={setName}
+          onLocal={() => setMode({ kind: 'local' })}
+          onCreate={() => goOnline(newCode())}
+          onJoin={goOnline}
+        />
+      )}
+      {mode.kind === 'local' && <LocalGame onLeave={toLobby} />}
+      {mode.kind === 'online' && (
+        <OnlineGame code={mode.code} name={name.trim() || 'Player'} onLeave={toLobby} />
+      )}
+    </div>
+  )
+}
+
+// ─── Lobby ────────────────────────────────────────────────────────────────────
+
+function Lobby({
+  name,
+  onName,
+  onLocal,
+  onCreate,
+  onJoin,
+}: {
+  name: string
+  onName: (name: string) => void
+  onLocal: () => void
+  onCreate: () => void
+  onJoin: (code: string) => void
+}) {
+  const [code, setCode] = useState('')
+  const valid = /^[A-Z0-9]{4,12}$/.test(code)
+
+  return (
+    <>
+      <header className="app-header">
+        <Wordmark />
+      </header>
+      <main className="lobby">
+        <section className="lobby-card">
+          <h2 className="lobby-title">Same screen</h2>
+          <p className="lobby-body">Two players, one device, taking turns.</p>
+          <button className="btn-play-again" onClick={onLocal}>
+            Play here
+          </button>
+        </section>
+
+        <section className="lobby-card">
+          <h2 className="lobby-title">Online</h2>
+          {ROOMS_URL ? (
+            <>
+              <label className="lobby-label" htmlFor="name">
+                Your name
+              </label>
+              <input
+                id="name"
+                className="lobby-input"
+                value={name}
+                maxLength={24}
+                placeholder="Name"
+                onChange={e => onName(e.target.value)}
+              />
+              <button className="btn-play-again" onClick={onCreate}>
+                Create a room
+              </button>
+              <div className="lobby-join">
+                <input
+                  className="lobby-input lobby-code"
+                  value={code}
+                  maxLength={12}
+                  placeholder="Room code"
+                  aria-label="Room code"
+                  onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && valid) onJoin(code)
+                  }}
+                />
+                <button className="btn-new" disabled={!valid} onClick={() => onJoin(code)}>
+                  Join
+                </button>
+              </div>
+              <p className="lobby-body lobby-fine">
+                The first two people in a room play; anyone after them watches.
+              </p>
+            </>
           ) : (
-            <span className="board-winner-mark">
+            <p className="lobby-body">Online play isn&rsquo;t configured for this deployment.</p>
+          )}
+        </section>
+      </main>
+      <Footer />
+    </>
+  )
+}
+
+// ─── Local game ───────────────────────────────────────────────────────────────
+
+function LocalGame({ onLeave }: { onLeave: () => void }) {
+  const [game, setGame] = useState<GameState>(initialState)
+
+  const play = useCallback((board: number, cell: number) => {
+    setGame(current => applyMove(current, { board, cell }) ?? current)
+  }, [])
+  const reset = useCallback(() => setGame(initialState()), [])
+
+  return (
+    <>
+      <Header game={game} onLeave={onLeave}>
+        <button className="btn-new" onClick={reset}>
+          New game
+        </button>
+      </Header>
+      <main className="arena">
+        <MegaGrid game={game} canPlay onPlay={play} />
+        {game.winner && (
+          <GameOver winner={game.winner}>
+            <button className="btn-play-again" onClick={reset}>
+              Play again
+            </button>
+          </GameOver>
+        )}
+      </main>
+      <Footer />
+    </>
+  )
+}
+
+// ─── Online game ──────────────────────────────────────────────────────────────
+
+function OnlineGame({ code, name, onLeave }: { code: string; name: string; onLeave: () => void }) {
+  const online = useTable(code, name)
+  const { table, side, status, peers, error } = online
+  const game = table.game
+  const [copied, setCopied] = useState(false)
+
+  const opponentSide: Player | null = side === 'X' ? 'O' : side === 'O' ? 'X' : null
+  const opponentId = opponentSide ? table.seats[opponentSide] : null
+  const opponentHere = opponentId !== null && peers.has(opponentId)
+  const seated = table.seats.X !== null && table.seats.O !== null
+  const myTurn = status === 'open' && seated && side === game.current && !game.winner
+
+  const nameOf = (id: string | null) =>
+    id === null ? null : id === online.self ? name : (peers.get(id)?.name ?? 'Away')
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(roomLink(code))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  let note: string
+  if (error) note = error
+  else if (status === 'connecting') note = 'Connecting to the room…'
+  else if (status === 'reconnecting') note = 'Connection lost — reconnecting. Your seat is held.'
+  else if (!seated) note = side ? 'Waiting for an opponent. Send them the link.' : 'Taking a seat…'
+  else if (side === null) note = 'Watching. Both seats are taken.'
+  else if (!opponentHere && !game.winner) note = `${nameOf(opponentId)} has stepped away. Their seat is held.`
+  else if (myTurn) note = 'Your move.'
+  else if (!game.winner) note = `${nameOf(opponentId)} is thinking…`
+  else note = ''
+
+  return (
+    <>
+      <Header game={game} onLeave={onLeave} mine={side} myTurn={myTurn}>
+        <button className="btn-new" onClick={copy} title={roomLink(code)}>
+          {copied ? 'Link copied' : `Room ${code}`}
+        </button>
+      </Header>
+
+      <div className="room-bar" role="status" aria-live="polite">
+        <span className={`room-dot room-dot-${status}`} aria-hidden="true" />
+        <SeatChip side="X" name={nameOf(table.seats.X)} you={side === 'X'} here={table.seats.X ? table.seats.X === online.self || peers.has(table.seats.X) : false} />
+        <span className="room-vs">vs</span>
+        <SeatChip side="O" name={nameOf(table.seats.O)} you={side === 'O'} here={table.seats.O ? table.seats.O === online.self || peers.has(table.seats.O) : false} />
+        {note && <span className="room-note">{note}</span>}
+      </div>
+
+      <main className="arena">
+        <MegaGrid game={game} canPlay={myTurn} onPlay={(board, cell) => online.play({ board, cell })} />
+        {game.winner && (
+          <GameOver winner={game.winner} perspective={side}>
+            {side ? (
+              <button className="btn-play-again" onClick={online.rematch} disabled={status !== 'open'}>
+                Rematch — sides swap
+              </button>
+            ) : (
+              <p className="overlay-body">Waiting for the players to start a rematch.</p>
+            )}
+          </GameOver>
+        )}
+      </main>
+      <Footer />
+    </>
+  )
+}
+
+function SeatChip({ side, name, you, here }: { side: Player; name: string | null; you: boolean; here: boolean }) {
+  return (
+    <span className={`seat-chip seat-chip-${side} ${here ? '' : 'seat-chip-away'}`}>
+      <PlayerMark player={side} size={12} />
+      <span>{name ?? 'Open seat'}</span>
+      {you && <span className="seat-you">you</span>}
+    </span>
+  )
+}
+
+// ─── Shared chrome ────────────────────────────────────────────────────────────
+
+function Wordmark() {
+  return (
+    <div className="wordmark">
+      <span className="wm-ultra">ULTRA</span>
+      <span className="wm-ttt">TTT</span>
+    </div>
+  )
+}
+
+function Header({
+  game,
+  onLeave,
+  mine,
+  myTurn,
+  children,
+}: {
+  game: GameState
+  onLeave: () => void
+  /** The side this browser plays online; undefined for local play. */
+  mine?: Player | null
+  myTurn?: boolean
+  children?: React.ReactNode
+}) {
+  const current = game.current
+  const xCount = boardsWon(game, 'X')
+  const oCount = boardsWon(game, 'O')
+  const who = mine === undefined ? SIDE_NAME[current] : myTurn ? 'You' : SIDE_NAME[current]
+
+  return (
+    <header className="app-header">
+      <button className="wordmark wordmark-button" onClick={onLeave} title="Back to the lobby">
+        <span className="wm-ultra">ULTRA</span>
+        <span className="wm-ttt">TTT</span>
+      </button>
+
+      <div className="header-center">
+        {game.winner ? (
+          <div className={`status-winner status-winner-${game.winner}`}>
+            {game.winner === 'tie' ? (
+              'Draw — well played'
+            ) : (
+              <>
+                <span className="status-mark">
+                  <PlayerMark player={game.winner} size={16} />
+                </span>
+                {SIDE_NAME[game.winner]} wins
+              </>
+            )}
+          </div>
+        ) : (
+          <div className={`status-turn status-turn-${current}`}>
+            <span className="status-mark">
+              <PlayerMark player={current} size={14} />
+            </span>
+            <span>
+              {who}
+              <span className="status-sub">
+                {game.activeBoard === null ? ' · Any board' : ` · ${BOARD_NAMES[game.activeBoard]}`}
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="header-right">
+        <div className="score-pill">
+          <span className={`score-x ${current === 'X' && !game.winner ? 'score-current' : ''} ${game.winner === 'X' ? 'score-won' : ''}`}>
+            <XMark size={12} />
+            <span className="scores">{xCount}</span>
+          </span>
+          <span className="score-sep" />
+          <span className={`score-o ${current === 'O' && !game.winner ? 'score-current' : ''} ${game.winner === 'O' ? 'score-won' : ''}`}>
+            <span className="scores">{oCount}</span>
+            <OMark size={12} />
+          </span>
+        </div>
+        {children}
+      </div>
+    </header>
+  )
+}
+
+function GameOver({
+  winner,
+  perspective,
+  children,
+}: {
+  winner: BoardWinner
+  /** Online, the result is told from this side's point of view. */
+  perspective?: Player | null
+  children: React.ReactNode
+}) {
+  if (!winner) return null
+  const body =
+    winner === 'tie'
+      ? 'Neither side blinked.'
+      : perspective
+        ? perspective === winner
+          ? 'Dominant performance.'
+          : 'Next one is yours.'
+        : 'Dominant performance.'
+  return (
+    <div className={`overlay overlay-${winner}`}>
+      <div className="overlay-card">
+        <p className="overlay-eyebrow">Game over</p>
+        {winner === 'tie' ? (
+          <h2 className="overlay-title">Draw</h2>
+        ) : (
+          <h2 className={`overlay-title overlay-title-${winner}`}>
+            <span className="overlay-mark">
               <PlayerMark player={winner} size={48} />
             </span>
-          )}
-        </div>
-      )}
-
-      <div className="cell-grid">
-        {cells.map((cell, idx) => {
-          const canPlay = isActive && !cell && !winner && !isDisabled
-          return (
-            <button
-              key={idx}
-              className={[
-                'cell',
-                cell ? `cell-${cell} filled` : '',
-                canPlay ? 'playable' : '',
-              ].filter(Boolean).join(' ')}
-              onClick={() => onCellClick(idx)}
-              disabled={!canPlay}
-            >
-              <span className="cell-inner">
-                {cell && <PlayerMark player={cell} size={18} />}
-                {!cell && canPlay && (
-                  <span className="cell-ghost">
-                    <PlayerMark player={currentPlayer} size={18} />
-                  </span>
-                )}
-              </span>
-            </button>
-          )
-        })}
+            {perspective ? (perspective === winner ? 'You win' : `${SIDE_NAME[winner]} wins`) : `${SIDE_NAME[winner]} wins`}
+          </h2>
+        )}
+        <p className="overlay-body">{body}</p>
+        {children}
       </div>
     </div>
   )
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
-
-function App() {
-  const [boards, setBoards] = useState<Cell[][]>(createEmptyBoards)
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('X')
-  const [activeBoard, setActiveBoard] = useState<number | null>(null)
-  const [boardWinners, setBoardWinners] = useState<BoardWinner[]>(Array(9).fill(null))
-  const [gameWinner, setGameWinner] = useState<BoardWinner>(null)
-
-  const handleCellClick = useCallback(
-    (boardIdx: number, cellIdx: number): void => {
-      if (gameWinner) return
-      if (boardWinners[boardIdx]) return
-      if (boards[boardIdx][cellIdx]) return
-      if (activeBoard !== null && activeBoard !== boardIdx) return
-
-      const newBoards = boards.map((board, idx) =>
-        idx === boardIdx
-          ? board.map((cell, cIdx) => (cIdx === cellIdx ? currentPlayer : cell))
-          : board,
-      )
-      setBoards(newBoards)
-
-      const newBoardWinners = [...boardWinners]
-      const smallBoardWinner = checkWinner(newBoards[boardIdx])
-      if (smallBoardWinner) {
-        newBoardWinners[boardIdx] = smallBoardWinner
-        setBoardWinners(newBoardWinners)
-
-        const bigBoardWinner = checkWinner(
-          newBoardWinners.map((w) => (w === 'tie' ? null : w)),
-        )
-        if (bigBoardWinner) {
-          setGameWinner(bigBoardWinner)
-        }
-      }
-
-      const nextBoard = cellIdx
-      setActiveBoard(newBoardWinners[nextBoard] ? null : nextBoard)
-      setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X')
-    },
-    [boards, boardWinners, currentPlayer, activeBoard, gameWinner],
-  )
-
-  const resetGame = useCallback((): void => {
-    setBoards(createEmptyBoards())
-    setCurrentPlayer('X')
-    setActiveBoard(null)
-    setBoardWinners(Array(9).fill(null))
-    setGameWinner(null)
-  }, [])
-
-  const xCount = boardWinners.filter((w) => w === 'X').length
-  const oCount = boardWinners.filter((w) => w === 'O').length
-
+function Footer() {
   return (
-    <div className="app">
-      <div className="bg-noise" aria-hidden="true" />
-
-      {/* ── Header ── */}
-      <header className="app-header">
-        <div className="wordmark">
-          <span className="wm-ultra">ULTRA</span>
-          <span className="wm-ttt">TTT</span>
-        </div>
-
-        <div className="header-center">
-          {gameWinner ? (
-            <div className={`status-winner status-winner-${gameWinner}`}>
-              {gameWinner === 'tie' ? (
-                'Draw — well played'
-              ) : (
-                <>
-                  <span className="status-mark">
-                    <PlayerMark player={gameWinner} size={16} />
-                  </span>
-                  {gameWinner === 'X' ? 'Blue' : 'Red'} wins
-                </>
-              )}
-            </div>
-          ) : (
-            <div className={`status-turn status-turn-${currentPlayer}`}>
-              <span className="status-mark">
-                <PlayerMark player={currentPlayer} size={14} />
-              </span>
-              <span>
-                {currentPlayer === 'X' ? 'Blue' : 'Red'}
-                <span className="status-sub">
-                  {activeBoard === null ? ' · Any board' : ` · ${BOARD_TO_NAME_MAP[activeBoard]}`}
-                </span>
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="header-right">
-          <div className="score-pill">
-            <span className={`score-x ${currentPlayer === 'X' && !gameWinner ? 'score-current' : ''} ${gameWinner === 'X' ? 'score-won' : ''}`}>
-              <XMark size={12} />
-              <span className='scores'>{xCount}</span>
-            </span>
-            <span className="score-sep" />
-            <span className={`score-o ${currentPlayer === 'O' && !gameWinner ? 'score-current' : ''} ${gameWinner === 'O' ? 'score-won' : ''}`}>
-              <span className='scores'>{oCount}</span>
-              <OMark size={12} />
-            </span>
-          </div>
-          <button className="btn-new" onClick={resetGame}>
-            New game
-          </button>
-        </div>
-      </header>
-
-      {/* ── Board arena ── */}
-      <main className="arena">
-        <div className="mega-grid">
-          {boards.map((board, boardIdx) => (
-            <SmallGrid
-              key={boardIdx}
-              cells={board}
-              onCellClick={(cellIdx) => handleCellClick(boardIdx, cellIdx)}
-              isActive={
-                !gameWinner &&
-                (activeBoard === null
-                  ? !boardWinners[boardIdx]
-                  : activeBoard === boardIdx)
-              }
-              winner={boardWinners[boardIdx]}
-              isDisabled={gameWinner !== null}
-              currentPlayer={currentPlayer}
-            />
-          ))}
-        </div>
-
-        {/* ── Game-over overlay ── */}
-        {gameWinner && (
-          <div className={`overlay overlay-${gameWinner}`}>
-            <div className="overlay-card">
-              {gameWinner === 'tie' ? (
-                <>
-                  <p className="overlay-eyebrow">Game over</p>
-                  <h2 className="overlay-title">Draw</h2>
-                  <p className="overlay-body">Neither side blinked.</p>
-                </>
-              ) : (
-                <>
-                  <p className="overlay-eyebrow">Game over</p>
-                  <h2 className={`overlay-title overlay-title-${gameWinner}`}>
-                    <span className="overlay-mark">
-                      <PlayerMark player={gameWinner} size={48} />
-                    </span>
-                    {gameWinner === 'X' ? 'Blue' : 'Red'} wins
-                  </h2>
-                  <p className="overlay-body">Dominant performance.</p>
-                </>
-              )}
-              <button className="btn-play-again" onClick={resetGame}>
-                Play again
-              </button>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* ── Footer rules ── */}
-      <footer className="app-footer">
-        <span>Your cell choice picks the next board</span>
-        <span className="footer-dot">·</span>
-        <span>Win 3 boards in a row to claim victory</span>
-        <span className="footer-dot">·</span>
-        <span>Sent to a won board? Play anywhere</span>
-      </footer>
-    </div>
+    <footer className="app-footer">
+      <span>Your cell choice picks the next board</span>
+      <span className="footer-dot">·</span>
+      <span>Win 3 boards in a row to claim victory</span>
+      <span className="footer-dot">·</span>
+      <span>Sent to a won board? Play anywhere</span>
+    </footer>
   )
 }
 
