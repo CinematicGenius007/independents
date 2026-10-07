@@ -89,7 +89,7 @@ export function useSession(room: RoomKind | null, name: string): RoomSession | n
       })
       // A solo table is never waiting for anyone, so it starts with an
       // opponent already sitting down. The player can add or remove seats.
-      if (room.kind === 'solo') session.addBot('artisan')
+      if (room.kind === 'solo') session.addBot('master')
 
       setStatus(handle.status())
       unsubscribes.push(handle.onStatus(setStatus), session.onChange(bump))

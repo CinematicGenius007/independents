@@ -38,10 +38,10 @@ type Mode = { kind: 'lobby' } | { kind: 'local' } | { kind: 'online'; code: stri
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 function App() {
-  const [mode, setMode] = useState<Mode>(() => {
-    const code = codeFromHash()
-    return code && ROOMS_URL ? { kind: 'online', code } : { kind: 'lobby' }
-  })
+  // A room link is an invitation, not a seat: it opens the lobby with the code
+  // filled in, so the visitor can say who they are before sitting down.
+  const [mode, setMode] = useState<Mode>({ kind: 'lobby' })
+  const [invite, setInvite] = useState<string | null>(() => (ROOMS_URL ? codeFromHash() : null))
   const [name, setName] = useState(savedName)
 
   useEffect(() => {
@@ -54,11 +54,13 @@ function App() {
 
   const goOnline = useCallback((code: string) => {
     history.replaceState(null, '', `#room=${code}`)
+    setInvite(null)
     setMode({ kind: 'online', code })
   }, [])
 
   const toLobby = useCallback(() => {
     history.replaceState(null, '', location.pathname + location.search)
+    setInvite(null)
     setMode({ kind: 'lobby' })
   }, [])
 
@@ -69,6 +71,8 @@ function App() {
         <Lobby
           name={name}
           onName={setName}
+          invite={invite}
+          onDeclineInvite={toLobby}
           onLocal={() => setMode({ kind: 'local' })}
           onCreate={() => goOnline(newCode())}
           onJoin={goOnline}
@@ -87,12 +91,16 @@ function App() {
 function Lobby({
   name,
   onName,
+  invite,
+  onDeclineInvite,
   onLocal,
   onCreate,
   onJoin,
 }: {
   name: string
   onName: (name: string) => void
+  invite: string | null
+  onDeclineInvite: () => void
   onLocal: () => void
   onCreate: () => void
   onJoin: (code: string) => void
@@ -106,6 +114,37 @@ function Lobby({
         <Wordmark />
       </header>
       <main className="lobby">
+        {invite ? (
+          <section className="lobby-card lobby-card--invite" aria-label="Invitation">
+            <h2 className="lobby-title">You&rsquo;re invited</h2>
+            <p className="lobby-body">
+              A game is waiting in room <b className="lobby-invite-code">{invite}</b>. Tell your
+              opponent who you are, then take a seat.
+            </p>
+            <label className="lobby-label" htmlFor="invite-name">
+              Your name
+            </label>
+            <input
+              id="invite-name"
+              className="lobby-input"
+              value={name}
+              maxLength={24}
+              placeholder="Name"
+              autoFocus
+              onChange={e => onName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') onJoin(invite)
+              }}
+            />
+            <button className="btn-play-again" onClick={() => onJoin(invite)}>
+              Join room {invite}
+            </button>
+            <button className="btn-new" onClick={onDeclineInvite}>
+              Not this room
+            </button>
+          </section>
+        ) : null}
+
         <section className="lobby-card">
           <h2 className="lobby-title">Same screen</h2>
           <p className="lobby-body">Two players, one device, taking turns.</p>

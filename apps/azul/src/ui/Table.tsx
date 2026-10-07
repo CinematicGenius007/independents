@@ -160,7 +160,27 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
       let floorSlot = player.floor.length + claimed
       for (let i = 0; i < taken - placed && floorSlot < 7; i++, floorSlot++) to.push(`floor:${seat}:${floorSlot}`)
       if (to.length === 0) return null
-      return { request: { color: played.color, from: `pile:${played.source}`, to }, tint: GLAZES[played.color] }
+      // The rest of a display is swept into the centre, behind the taken tiles.
+      const leftovers: { color: Color; to: string }[] = []
+      if (played.source !== CENTER) {
+        const seen: Partial<Record<Color, number>> = {}
+        for (const color of pile) {
+          if (color === played.color) continue
+          const already = before.center.filter(t => t === color).length + (seen[color] ?? 0)
+          seen[color] = (seen[color] ?? 0) + 1
+          leftovers.push({ color, to: `centre:${color}:${already}` })
+        }
+      }
+      return {
+        request: {
+          color: played.color,
+          from: `pile:${played.source}`,
+          to,
+          leftovers,
+          marker: claimed ? { to: `floor:${seat}:${player.floor.length}` } : undefined,
+        },
+        tint: GLAZES[played.color],
+      }
     },
     root,
   )
@@ -397,7 +417,7 @@ function Centre({
             aria-label={`Take ${count} ${COLOR_NAMES[color]} from the centre${hasFirst ? ', and the starting marker' : ''}`}
             title={enabled ? `Take ${count} × ${COLOR_NAMES[color]}` : COLOR_NAMES[color]}
           >
-            <Tile color={color} />
+            <Tile color={color} flight={`centre:${color}:${i}`} />
           </button>
         )),
       )}

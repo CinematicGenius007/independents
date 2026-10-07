@@ -1,8 +1,8 @@
 /*
- * Observatory print.
+ * Observatory print, after dark.
  *
  * The table is drawn the way a star chart or a survey sheet is printed: flat
- * ink on white stock, hairline rules, orbit arcs running behind the content,
+ * ink on night-blue stock, hairline rules, orbit arcs running behind the content,
  * small wide-tracked figures, and one signal colour that does all the
  * pointing. Nothing glows and nothing floats; every element sits on the paper.
  *
@@ -12,33 +12,33 @@
 
 :root {
   /* Paper and rules */
-  --paper: #ffffff;
-  --paper-sunk: #f1f2ef;
-  --panel: #fafaf8;
-  --rule: #d3d7d3;
-  --rule-strong: #b9bfba;
+  --paper: #0d1116;
+  --paper-sunk: #090c10;
+  --panel: #131920;
+  --rule: #252d36;
+  --rule-strong: #3a4552;
 
   /* Ink */
-  --ink: #10141a;
-  --ink-dim: #5c6670;
-  --ink-faint: #8b949b;
-  --ink-bright: #080b0f;
+  --ink: #e4e9ee;
+  --ink-dim: #9ba6b1;
+  --ink-faint: #67727d;
+  --ink-bright: #ffffff;
 
   /* The one colour that points */
-  --signal: #d6431c;
-  --signal-dim: #a33417;
-  --signal-wash: rgba(214, 67, 28, 0.06);
-  --chart-teal: #2e6a72;
+  --signal: #ff6a3d;
+  --signal-dim: #e5532a;
+  --signal-wash: rgba(255, 106, 61, 0.09);
+  --chart-teal: #5fb3bd;
 
   /* Glazes — flat inks, mid-tone so white line work reads on every one */
-  --glaze-cobalt: #2f5aa0;
-  --glaze-saffron: #c08a21;
-  --glaze-crimson: #b23a2c;
-  --glaze-basalt: #2a3340;
-  --glaze-verdigris: #2f7d72;
+  --glaze-cobalt: #4472c0;
+  --glaze-saffron: #d29b2c;
+  --glaze-crimson: #c9493a;
+  --glaze-basalt: #56647c;
+  --glaze-verdigris: #3a9486;
 
-  --gain: #2c7a56;
-  --cost: #b23a2c;
+  --gain: #55c593;
+  --cost: #f2796a;
 
   /* Type */
   --font-display: 'Saira Condensed', 'Arial Narrow', sans-serif;
@@ -50,25 +50,51 @@
    * are where you act, the wall is what you read, the displays are what you
    * choose from at a glance.
    */
-  --tile-line: 34px;
-  --tile-wall: 30px;
-  --tile-pocket: 24px;
-  --tile-mini: 15px;
+  --tile-line: 54px;
+  --tile-wall: 48px;
+  --tile-floor: 44px;
+  --tile-pocket: 34px;
+  --tile-mini: 20px;
+  --tile-gap: 6px;
+  --tile-edge: rgba(255, 255, 255, 0.14);
+  /* Tiles are rounded the way Apple rounds: a small radius that eases in. */
+  --tile-radius: 14%;
 
   /* Motion — slow enough to follow a piece with your eye */
-  --land-ms: 900ms;
+  --land-ms: 1100ms;
 
-  color-scheme: light;
+  color-scheme: dark;
   font-family: var(--font-body);
   color: var(--ink);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 1079px) {
   :root {
-    --tile-line: 29px;
-    --tile-wall: 26px;
-    --tile-pocket: 21px;
-    --tile-mini: 12px;
+    --tile-line: 46px;
+    --tile-wall: 41px;
+    --tile-floor: 38px;
+    --tile-pocket: 30px;
+    --tile-mini: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --tile-line: 40px;
+    --tile-wall: 36px;
+    --tile-floor: 34px;
+    --tile-pocket: 27px;
+    --tile-mini: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --tile-line: 36px;
+    --tile-wall: 31px;
+    --tile-floor: 30px;
+    --tile-pocket: 25px;
+    --tile-mini: 13px;
   }
 }
 
@@ -89,7 +115,7 @@ body {
  */
 body {
   background-color: var(--paper);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='900' viewBox='0 0 1440 900' fill='none'%3E%3Cg stroke='%23D3D7D3' stroke-width='1' opacity='.55'%3E%3Cpath d='M0 120H1440M0 300H1440M0 480H1440M0 660H1440M0 840H1440M180 0V900M360 0V900M540 0V900M720 0V900M900 0V900M1080 0V900M1260 0V900'/%3E%3C/g%3E%3Cg stroke='%23D3D7D3' stroke-width='1' opacity='.9'%3E%3Ccircle cx='1180' cy='300' r='360'/%3E%3Ccircle cx='1180' cy='300' r='520'/%3E%3Ccircle cx='1180' cy='300' r='700'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='900' viewBox='0 0 1440 900' fill='none'%3E%3Cg stroke='%232A323B' stroke-width='1' opacity='.55'%3E%3Cpath d='M0 120H1440M0 300H1440M0 480H1440M0 660H1440M0 840H1440M180 0V900M360 0V900M540 0V900M720 0V900M900 0V900M1080 0V900M1260 0V900'/%3E%3C/g%3E%3Cg stroke='%232A323B' stroke-width='1' opacity='.9'%3E%3Ccircle cx='1180' cy='300' r='360'/%3E%3Ccircle cx='1180' cy='300' r='520'/%3E%3Ccircle cx='1180' cy='300' r='700'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 1440px 900px;
   background-position: top left;
   background-attachment: fixed;
@@ -334,8 +360,12 @@ kbd {
   flex: none;
 }
 
+.tile {
+  border-radius: var(--tile-radius);
+}
+
 .tile--ink {
-  outline: 1px solid rgba(16, 20, 26, 0.16);
+  outline: 1px solid var(--tile-edge);
   outline-offset: -1px;
 }
 
@@ -358,7 +388,14 @@ kbd {
 }
 
 .flight {
-  outline: 1px solid rgba(16, 20, 26, 0.18);
+  border-radius: var(--tile-radius);
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45));
+  will-change: transform;
+}
+
+/* The tile a flight is carrying waits, unseen, until the copy sets it down. */
+[data-arriving] {
+  visibility: hidden;
 }
 
 /* ---------------------------------------------------------------- table */
@@ -403,7 +440,7 @@ kbd {
    anything on a board, because here you only need to see what is on offer. */
 .ring {
   --tile: var(--tile-pocket);
-  width: calc(var(--tile-pocket) * 2 + 42px);
+  width: calc(var(--tile-pocket) * 2 + 46px);
   aspect-ratio: 1;
   border-radius: 50%;
   border: 1px solid var(--rule-strong);
@@ -581,7 +618,7 @@ kbd {
 
 .lines {
   display: grid;
-  gap: 6px;
+  gap: var(--tile-gap);
 }
 
 .line {
@@ -595,9 +632,9 @@ kbd {
 .line__slots {
   --tile: var(--tile-line);
   display: flex;
-  gap: 5px;
+  gap: var(--tile-gap);
   justify-content: flex-end;
-  width: calc(var(--tile-line) * 5 + 26px);
+  width: calc(var(--tile-line) * 5 + var(--tile-gap) * 4 + 8px);
   padding: 3px;
   border: 1px solid transparent;
 }
@@ -609,7 +646,7 @@ kbd {
 
 .line--playable:hover .line__slots,
 .line--playable:focus-visible .line__slots {
-  background: rgba(214, 67, 28, 0.12);
+  background: rgba(255, 106, 61, 0.16);
 }
 
 .line--refused {
@@ -656,6 +693,7 @@ kbd {
   width: var(--tile);
   height: var(--tile);
   border: 1px solid var(--rule);
+  border-radius: var(--tile-radius);
   flex: none;
 }
 
@@ -666,7 +704,7 @@ kbd {
 .slot--incoming {
   outline: 1px dashed var(--signal);
   outline-offset: -1px;
-  background: rgba(214, 67, 28, 0.08);
+  background: rgba(255, 106, 61, 0.1);
 }
 
 /* ------------------------------------------------------------------ wall */
@@ -675,7 +713,7 @@ kbd {
   --tile: var(--tile-wall);
   display: grid;
   grid-template-columns: repeat(5, var(--tile-wall));
-  gap: 5px;
+  gap: var(--tile-gap);
 }
 
 .wall__cell {
@@ -729,7 +767,7 @@ kbd {
 
 .floor__ruler {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   align-items: flex-end;
 }
 
@@ -750,10 +788,11 @@ kbd {
 }
 
 .floor__box {
-  --tile: 26px;
-  width: 26px;
-  height: 26px;
+  --tile: var(--tile-floor);
+  width: var(--tile-floor);
+  height: var(--tile-floor);
   border: 1px solid var(--rule);
+  border-radius: var(--tile-radius);
 }
 
 .tile.floor__box {
@@ -762,7 +801,7 @@ kbd {
 
 .floor__slot--incoming .floor__box {
   border: 1px dashed var(--cost);
-  background: rgba(178, 58, 44, 0.08);
+  background: rgba(242, 121, 106, 0.1);
 }
 
 .floor--playable {
@@ -999,7 +1038,7 @@ kbd {
   margin: 4px calc(-1 * clamp(14px, 3.4vw, 48px)) 0;
   padding: 14px clamp(14px, 3.4vw, 48px);
   border-top: 1px solid var(--rule);
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(13, 17, 22, 0.94);
   backdrop-filter: blur(4px);
 }
 
@@ -1120,6 +1159,20 @@ kbd {
   border: 1px solid var(--rule);
   background: var(--panel);
   justify-items: start;
+}
+
+.choice[hidden] {
+  display: none;
+}
+
+.choice--invite {
+  border-color: var(--signal);
+}
+
+.invite__code {
+  font-family: var(--font-figures);
+  letter-spacing: 0.25em;
+  color: var(--signal);
 }
 
 .choice h2 {
@@ -1323,7 +1376,7 @@ kbd {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(6, 8, 11, 0.8);
   backdrop-filter: blur(2px);
   animation: fade 200ms ease;
 }
