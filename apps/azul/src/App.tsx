@@ -93,6 +93,23 @@ export default function App() {
           >
             How to play
           </button>
+          {session && playing && view!.state!.phase !== 'over' ? (
+            <button
+              type="button"
+              className="button button--small button--ghost"
+              onClick={() => {
+                // Leaving a solo game throws it away; leaving a room only takes
+                // you out of it — the house holds your seat until you return.
+                const solo = !session.code
+                const ask = solo
+                  ? 'Leave this game? A solo game cannot be resumed.'
+                  : 'Leave the table? The house will play your seat until you rejoin with the link.'
+                if (confirm(ask)) leave()
+              }}
+            >
+              Leave
+            </button>
+          ) : null}
         </div>
       </header>
 
