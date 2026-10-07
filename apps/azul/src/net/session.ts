@@ -80,6 +80,13 @@ const TILING_PAUSE_MS = 1200
 /** Shortest pause before a deal, for a round in which nobody scored. */
 const MIN_DEAL_PAUSE_MS = 900
 
+/**
+ * Extra time before the deal beyond the host's own playback. Every follower
+ * starts the same scoring timeline a network hop later than the host; without
+ * this margin the deal would land while their count was still finishing.
+ */
+const DEAL_MARGIN_MS = 2000
+
 export class Session {
   private transport: Transport
   private listeners = new Set<(view: SessionView) => void>()
@@ -276,7 +283,7 @@ export class Session {
       // land on the table while they are still counting the last one. Every
       // screen plays the same timeline, computed from the same reports.
       const playback = scoringTimeline(state).total
-      this.after(Math.max(MIN_DEAL_PAUSE_MS, playback), () => {
+      this.after(playback === 0 ? MIN_DEAL_PAUSE_MS : playback + DEAL_MARGIN_MS, () => {
         if (!this.game) return
         const { factories } = this.game.deal()
         this.state = this.game.state

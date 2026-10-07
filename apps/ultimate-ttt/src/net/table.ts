@@ -13,7 +13,8 @@
  * - **Cheating, of the lazy kind.** A move from someone not seated on the side
  *   to play is ignored by every reducer, so there is nothing to argue about.
  * - **Late joiners and reloads.** The service keeps the log for this game and
- *   replays it on join; folding it rebuilds the board exactly.
+ *   replays it on join; folding it rebuilds the board exactly. The log is
+ *   never rebased, so the history every browser folds is the same history.
  */
 
 import { applyMove, initialState } from '../game'
@@ -24,11 +25,13 @@ export type TableMessage =
   | { k: 'claim'; side: Player }
   | { k: 'move'; board: number; cell: number }
   /**
-   * Start a fresh game. Sent with `rebase`, so the service drops the old log;
-   * it therefore carries the seats, which are otherwise only in the old log.
-   * Sides swap, so the other player opens.
+   * Start a fresh game once this one is over. Sides swap, so the other player
+   * opens. The new seats are derived from the table, never taken from the
+   * message, and the log is never rebased: every browser — present from the
+   * start or joining later — validates the rematch against the same complete
+   * history, so a bogus one is ignored by all of them alike.
    */
-  | { k: 'rematch'; seats: Seats }
+  | { k: 'rematch' }
 
 export interface Seats {
   X: string | null
@@ -58,10 +61,7 @@ function isMessage(value: unknown): value is TableMessage {
   const m = value as Record<string, unknown>
   if (m.k === 'claim') return m.side === 'X' || m.side === 'O'
   if (m.k === 'move') return typeof m.board === 'number' && typeof m.cell === 'number'
-  if (m.k === 'rematch') {
-    const s = m.seats as Record<string, unknown> | undefined
-    return !!s && (s.X === null || typeof s.X === 'string') && (s.O === null || typeof s.O === 'string')
-  }
+  if (m.k === 'rematch') return true
   return false
 }
 
@@ -85,22 +85,17 @@ export function reduceTable(table: Table, from: string, data: unknown): Table {
       return game ? { ...table, game } : table
     }
     case 'rematch': {
-      // Only a seated player may call one. On a rebased log this message is
-      // the first entry, so a fresh table has no seats yet: trust the payload,
-      // which every client receives identically.
-      const seated = sideOf(table, from) !== null
-      const fresh = table.seats.X === null && table.seats.O === null && table.game.moveCount === 0
-      if (!seated && !fresh) return table
-      const seats = data.seats
-      if (sideOf({ ...table, seats }, from) === null) return table
-      return { seats, game: initialState('X'), round: table.round + 1 }
+      // Only a seated player, and only once the game is over: nobody can reset
+      // a game in progress or reseat anyone.
+      if (sideOf(table, from) === null || table.game.winner === null) return table
+      return { seats: { X: table.seats.O, O: table.seats.X }, game: initialState('X'), round: table.round + 1 }
     }
   }
 }
 
-/** The rematch a seated player sends: same two people, sides swapped. */
-export function rematchMessage(table: Table): TableMessage {
-  return { k: 'rematch', seats: { X: table.seats.O, O: table.seats.X } }
+/** The rematch a seated player sends once the game is over. */
+export function rematchMessage(): TableMessage {
+  return { k: 'rematch' }
 }
 
 /** Folds a whole log, oldest first. */

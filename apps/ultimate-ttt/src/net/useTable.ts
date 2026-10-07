@@ -46,8 +46,8 @@ export function useTable(code: string, name: string): OnlineTable {
   /** A claim of ours that the room has not sequenced yet. */
   const claiming = useRef(false)
 
-  const send = useCallback((message: TableMessage, rebase = false) => {
-    connection.current?.send(message, { echo: true, rebase })
+  const send = useCallback((message: TableMessage) => {
+    connection.current?.send(message, { echo: true })
   }, [])
 
   /**
@@ -86,8 +86,18 @@ export function useTable(code: string, name: string): OnlineTable {
       conn.on('welcome', welcome => {
         lastSeq.current = welcome.seq
         claiming.current = false
+        const log = welcome.log ?? []
+        // A room's first message is seq 1. If the oldest entry kept is later
+        // than that, the log has been trimmed and the board cannot be rebuilt
+        // faithfully — say so rather than show a board that differs from
+        // everyone else's.
+        if (log.length > 0 && log[0].seq > 1) {
+          setError('This room has run too long to rebuild. Start a new room to keep playing.')
+          commit(emptyTable())
+          return
+        }
         setError(null)
-        commit(replay(welcome.log ?? []))
+        commit(replay(log))
       }),
       conn.on('message', (envelope: Envelope) => {
         if (envelope.seq <= lastSeq.current) return // already folded via the log
@@ -97,15 +107,21 @@ export function useTable(code: string, name: string): OnlineTable {
       }),
       conn.on('join', () => setPeers(new Map(conn.peers))),
       conn.on('leave', () => setPeers(new Map(conn.peers))),
-      conn.on('error', e =>
+      conn.on('error', e => {
+        // A refused message may have been our claim. Forget it and try again
+        // shortly, or a free seat could stay empty until the next reconnect.
+        if (claiming.current) {
+          claiming.current = false
+          setTimeout(() => maybeClaim(tableRef.current, conn.self), 1500)
+        }
         setError(
           e.code === 'room_full'
             ? 'That room is full.'
             : e.code === 'identity_taken'
               ? 'This tab is already seated in that room somewhere else.'
               : e.message,
-        ),
-      ),
+        )
+      }),
     ]
 
     return () => {
@@ -118,7 +134,7 @@ export function useTable(code: string, name: string): OnlineTable {
   const side = self ? sideOf(table, self) : null
 
   const play = useCallback((move: Move) => send({ k: 'move', ...move }), [send])
-  const rematch = useCallback(() => send(rematchMessage(tableRef.current), true), [send])
+  const rematch = useCallback(() => send(rematchMessage()), [send])
 
   return { table, self, side, status, peers, error, play, rematch }
 }

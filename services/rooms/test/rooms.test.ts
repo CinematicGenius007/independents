@@ -146,6 +146,20 @@ describe('the HTTP surface', () => {
   })
 })
 
+describe('probing', () => {
+  it('asking about a room that was never joined writes nothing', async () => {
+    const room = code()
+    const info = await (await exports.default.fetch(`${BASE}/v1/rooms/azul/${room}`)).json()
+    expect(info).toEqual({ game: null, peers: 0, seq: 0 })
+    await runInDurableObject(stub('azul', room), async (_i, state) => {
+      const tables = state.storage.sql
+        .exec<{ n: number }>("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table'")
+        .one().n
+      expect(tables).toBe(0)
+    })
+  })
+})
+
 describe('joining', () => {
   it('welcomes the first peer to an empty room', async () => {
     const a = await connect('azul', code(), ident('a'), 'Ana')

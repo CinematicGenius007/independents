@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GameState } from '../engine/types'
-import { frameAt, scoringTimeline } from '../engine/timeline'
+import { PIP_FLIGHT_MS, frameAt, scoringTimeline } from '../engine/timeline'
 import type { Frame, Timeline, TimelineEvent } from '../engine/timeline'
 import { prefersReducedMotion } from './useFlight'
 
@@ -33,10 +33,28 @@ export function useScoring(
   const reports = state?.lastRound ?? null
   const finals = state?.finalReports ?? null
 
+  // Keyed by content, not identity: a snapshot that re-sends the same round
+  // (a reconnect, a late join) must not restart a count already under way.
+  const key = useMemo(() => JSON.stringify([reports, finals]), [reports, finals])
   const timeline = useMemo(
     () => scoringTimeline({ lastRound: reports, finalReports: finals }),
-    [reports, finals],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [key],
   )
+
+  /**
+   * The only moments the picture changes: a tile firing, a point leaving, a
+   * point landing, the end. The clock wakes at these and nowhere else, rather
+   * than re-rendering the whole table every animation frame for a minute.
+   */
+  const boundaries = useMemo(() => {
+    const set = new Set<number>([timeline.total])
+    for (const event of timeline.events) {
+      set.add(event.at)
+      if (event.kind === 'pip') set.add(event.at + PIP_FLIGHT_MS)
+    }
+    return [...set].sort((a, b) => a - b)
+  }, [timeline])
 
   const startScores = useMemo(() => {
     const map = new Map<number, number>()
@@ -44,7 +62,8 @@ export function useScoring(
     // A game that ended this round counts its bonuses from where the round left it.
     for (const f of finals ?? []) if (!map.has(f.playerIndex)) map.set(f.playerIndex, f.scoreBefore)
     return map
-  }, [reports, finals])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
 
   // The clock remembers which timeline it is timing. On the render where a
   // new round's scoring first appears, the effect that starts the clock has
@@ -69,20 +88,21 @@ export function useScoring(
     started.current = performance.now()
     setClock({ timeline, elapsed: 0 })
 
-    let frame = 0
-    const tick = () => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const step = () => {
       const now = performance.now() - started.current
-      // Report every event the clock has passed since the last tick.
+      // Report every event the clock has passed since it last woke.
       while (reported.current + 1 < timeline.events.length && timeline.events[reported.current + 1].at <= now) {
         reported.current++
         eventRef.current?.(timeline.events[reported.current])
       }
       setClock({ timeline, elapsed: now })
-      if (now < timeline.total) frame = requestAnimationFrame(tick)
+      const next = boundaries.find(b => b > now)
+      if (next !== undefined) timer = setTimeout(step, next - now + 1)
     }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-  }, [timeline])
+    timer = setTimeout(step, (boundaries[0] ?? 0) + 1)
+    return () => clearTimeout(timer)
+  }, [timeline, boundaries])
 
   const skip = useCallback(() => {
     reported.current = timeline.events.length - 1

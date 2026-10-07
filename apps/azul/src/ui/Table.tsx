@@ -379,8 +379,11 @@ function Centre({
 }) {
   const groups = COLORS.map(color => ({ color, count: tiles.filter(t => t === color).length })).filter(g => g.count > 0)
   return (
-    <div className="centre" {...flightId(`pile:${CENTER}`)}>
+    <div className="centre">
       <span className="eyebrow centre__label">Centre</span>
+      {/* The flight source is the tiles themselves, not the whole strip, so a
+          handful leaves from where it was sitting. */}
+      <span className="centre__tiles" {...flightId(`pile:${CENTER}`)}>
       {hasFirst ? <FirstMarker className="pocket-tile" /> : null}
       {groups.map(({ color, count }) =>
         Array.from({ length: count }, (_, i) => (
@@ -398,6 +401,7 @@ function Centre({
           </button>
         )),
       )}
+      </span>
       <span className="centre__hint">
         {groups.length === 0
           ? hasFirst
