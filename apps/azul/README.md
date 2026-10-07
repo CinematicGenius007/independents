@@ -1,9 +1,8 @@
 # Azulejo
 
 Azulejo is the tile-laying game *Azul* — Michael Kiesling's, published by Plan B Games — played
-in the browser by two to four people with nothing in the middle. No account service, no game
-server, no hosted database. The players hold the game between them over WebRTC, and whoever
-opened the room deals from the bag.
+in the browser by two to four people. No account and no install: open a room, send the code,
+and whoever opened it deals from the bag.
 
 The rules implemented are the base game, exactly: five glazes of twenty tiles, factory displays
 at two per player plus one, pattern lines that fill right to left, a floor line charging
@@ -11,11 +10,18 @@ at two per player plus one, pattern lines that fill right to left, a floor line 
 triggered by the first completed horizontal line, followed by 2 a row, 7 a column and 10 a
 colour. The variant grey board is not included.
 
-None of the artwork is Plan B's. The visual identity here is drawn from the ceramic the game is
-named for: glazed indigo ground, panels of tin-glaze white, and a *pounce* — the pricked stencil
-outline a tile-setter dusts charcoal through — marking every space on the wall with the motif
-that belongs to it. Each of the five glazes carries its own motif, so the board is readable
-without depending on hue.
+None of the artwork is Plan B's. The table is drawn as an observatory print — a star chart or a
+survey sheet: flat ink on white stock, hairline rules, orbit arcs running behind the content,
+wide-tracked mono figures, and one signal red that does all the pointing. Each of the five
+glazes is a flat ink with its own motif drawn in white line work (quatrefoil, compass star,
+lozenge, chevrons, waves), so the board reads without depending on hue, and every unfired wall
+space shows its motif dotted in its own glaze, so the wall teaches its pattern before a tile has
+landed. The design lives in the Paper file *Azul*, artboard "Table — Astral", whose tokens
+`src/styles.css` mirrors.
+
+Tiles come in three sizes on purpose: the pattern lines are where you act, so they are largest;
+the wall is what you read, a step smaller; the displays are what you choose from at a glance,
+smaller still.
 
 ## What the interface tells you
 
@@ -25,10 +31,14 @@ A digital board can do three things a wooden one cannot, and this one does exact
 this round and what the spillage would cost — `+4  −2` — before you commit to the click. Nobody
 should have to count runs in their head to know what a move is worth.
 
-**It counts the firing out loud.** The engine tiles every wall at once, because that is what the
-rules say. Watching it that way is a number changing, so the position is unwound and replayed:
-each tile arrives on its space in turn, ringed, with the points it just earned, and the scores
-climb behind it. The host holds the next deal back for exactly as long as that takes.
+**It counts the scoring out loud.** The engine tiles every wall at once, because that is what
+the rules say. Watching it that way is a number changing, so each round is played back as a
+script: one player at a time, one tile at a time, and every point carried from its tile to the
+owner's score track — a hundred cells, one per point — on its own. Floor penalties fly back off
+the track a point at a time, and the end-of-game bonuses are paid out the same way. The script
+is a pure function of the round's reports (`src/engine/timeline.ts`), so the host and every
+screen compute the same one, and the host deals the next round only when it has finished.
+Space skips it on your own screen.
 
 **It shows the tiles travelling.** Every move — yours, a peer's, the house's — flies its handful
 from the pile it came off to the slots it lands in. Without that, an opponent's turn is a diff
@@ -44,7 +54,8 @@ Alongside those: the count of tiles nobody has seen yet, per colour, because tha
 player reads off a real table by looking; number keys to place and `Esc` to put a handful back;
 and a rules sheet, since the game deserves to be playable by someone who has never met it.
 
-Built with React 19, TypeScript, Vite and Trystero.
+Built with React 19, TypeScript and Vite. Multiplayer goes through the repository's rooms
+service ([`services/rooms`](../../services/rooms)), with Trystero as the fallback.
 
 ## Run locally
 
@@ -53,10 +64,19 @@ pnpm install
 pnpm dev
 ```
 
+Online rooms use the rooms service when `VITE_ROOMS_URL` is set at build time (in `.env.local`
+for development, or the hosting project's environment for a deployment). Without it, rooms fall
+back to signalling peer to peer over public Nostr and MQTT relays, which needs nothing deployed
+but depends on strangers' servers and on two browsers reaching each other directly.
+
+```
+VITE_ROOMS_URL=http://127.0.0.1:8787     # services/rooms running locally
+```
+
 Other commands:
 
 ```bash
-pnpm test          # Vitest: rules, bot, and a full game replicated across peers
+pnpm test          # Vitest: rules, bot, scoring timeline, and full games over both transports
 pnpm type-check    # TypeScript with no emit
 pnpm build         # production build in dist/
 pnpm playtest      # bot tournament; pnpm playtest 500 2 for 500 two-seat games
@@ -77,7 +97,7 @@ marker, which costs a point and buys the first turn of the next round.
 
 ```
 src/engine/   the rules, as pure functions over plain JSON
-src/net/      rooms, replication, and the one file that imports Trystero
+src/net/      rooms, replication, and the two transports (rooms service, Trystero)
 src/ui/       tiles, boards, the table
 ```
 
@@ -96,6 +116,12 @@ deterministically, and the new host derives a bag by subtracting every tile visi
 boards and on the table from the hundred the game contains. The only thing lost is the order of
 the bag, which nobody could see anyway. A seat whose player is gone is played by the house until
 they come back, and a returning player is given their own seat back by name.
+
+**A reload is not a departure.** Over the rooms service each tab keeps a stable identity, so a
+reload or a network blip reconnects as the same player in the same seat, and a short grace
+period means nobody else is even told. A follower that comes back mid-game asks the host for
+the position at once — waiting for the next event to reveal what it missed would deadlock a game
+in which it is that follower's turn.
 
 ## Where the numbers come from
 
