@@ -27,7 +27,8 @@ import type {
   Transport,
   Unsubscribe,
 } from './protocol'
-import { DEFAULT_CONFIG, MAX_SEATS, MIN_SEATS, scoringDurationMs } from './protocol'
+import { DEFAULT_CONFIG, MAX_SEATS, MIN_SEATS } from './protocol'
+import { scoringTimeline } from '../engine/timeline'
 
 /**
  * The move that produced the current position.
@@ -74,7 +75,10 @@ export interface SessionOptions {
 const ABSENT_GRACE_MS = 1200
 
 /** Pause between the last tile being taken and the walls being tiled. */
-const TILING_PAUSE_MS = 700
+const TILING_PAUSE_MS = 1200
+
+/** Shortest pause before a deal, for a round in which nobody scored. */
+const MIN_DEAL_PAUSE_MS = 900
 
 export class Session {
   private transport: Transport
@@ -267,10 +271,12 @@ export class Session {
     if (state.phase === 'over') return
 
     if (needsDeal(state)) {
-      // The next deal waits for the firing to be shown and counted, so nobody
-      // has tiles land on their board while they are still reading the wall.
-      const shown = Math.max(0, ...(state.lastRound ?? []).map(r => r.placements.length))
-      this.after(scoringDurationMs(shown), () => {
+      // The next deal waits for the scoring to be played out — every tile
+      // fired, every point carried to the track — so nobody has a new round
+      // land on the table while they are still counting the last one. Every
+      // screen plays the same timeline, computed from the same reports.
+      const playback = scoringTimeline(state).total
+      this.after(Math.max(MIN_DEAL_PAUSE_MS, playback), () => {
         if (!this.game) return
         const { factories } = this.game.deal()
         this.state = this.game.state

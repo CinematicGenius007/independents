@@ -161,3 +161,20 @@ export function playScore(points: number): void {
   // A second, quieter voice a fifth up gives the ping some glaze on it.
   strike(0.015, { band: 4200, tone: tone * 1.5, length: 0.04, gain: 0.12 })
 }
+
+/**
+ * One point arriving on the score track. Quiet, because there are many of
+ * them, and stepping up the ladder with `step` so a tile worth six sounds like
+ * six things adding up rather than one thing six times.
+ */
+export function playPoint(step: number): void {
+  if (!enabled) return
+  const tone = LADDER[Math.min(LADDER.length - 1, Math.max(0, step))]
+  strike(0, { band: 3600, tone: tone * 2, length: 0.03, gain: 0.11 })
+}
+
+/** One point the floor takes back: low and short. */
+export function playDebit(): void {
+  if (!enabled) return
+  strike(0, { band: 600, tone: 196, length: 0.05, gain: 0.16, shape: 'triangle' })
+}

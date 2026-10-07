@@ -1,36 +1,100 @@
 /**
- * Tiles that travel.
+ * Things that travel across the table.
  *
- * Before this, a turn was a diff: tiles vanished from a display and appeared
- * on a board, and a player who blinked — or who was watching an opponent's
- * side of the table — had no idea what had happened. Motion here is not
- * decoration, it is the only record of the move.
+ * Two kinds: a handful of tiles going from the pile they came off to the
+ * slots they land in, and single score points going from a fired tile to the
+ * score track. Both are the same move — a copy of a piece crossing from one
+ * named element to another — and both exist for the same reason: a change you
+ * cannot see happen is a change you have to go and find.
  *
- * The technique is deliberately dumb and therefore robust: the elements
- * involved carry `data-flight` names, the hook measures the source and the
- * destinations after the position has changed, and it tweens copies of the
- * tile between the two with the Web Animations API. Nothing in the layout has
- * to cooperate, and if an element is missing the animation is simply skipped.
+ * Elements are named with `data-flight`. Positions are measured after the
+ * position has changed, copies are tweened with the Web Animations API and
+ * appended to the document rather than to React's tree, so a re-render
+ * mid-flight cannot interrupt them. A missing endpoint just skips that piece.
  */
 
 import { useEffect, useRef } from 'react'
 import type { Color } from '../engine/types'
 import type { LastMove } from '../net/session'
 
-/** Names an element as a flight endpoint: `data-flight="pile:f2"`. */
+/** Names an element as a flight endpoint: `data-flight="pile:2"`. */
 export function flightId(name: string): { 'data-flight': string } {
   return { 'data-flight': name }
 }
 
-export const FLIGHT_MS = 380
+/** A handful of tiles crossing the table. Slow enough to follow. */
+export const FLIGHT_MS = 900
+/** Gap between tiles of one handful leaving, so they read as separate pieces. */
+export const FLIGHT_STAGGER_MS = 130
 
-function rectOf(root: HTMLElement, name: string): DOMRect | null {
-  const node = root.querySelector<HTMLElement>(`[data-flight="${CSS.escape(name)}"]`)
+function rectOf(root: ParentNode, name: string): DOMRect | null {
+  const node = root.querySelector<HTMLElement | SVGElement>(`[data-flight="${CSS.escape(name)}"]`)
   return node ? node.getBoundingClientRect() : null
 }
 
-function prefersReducedMotion(): boolean {
+export function prefersReducedMotion(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+export interface PieceFlight {
+  from: string
+  to: string
+  tint: string
+  duration: number
+  delay?: number
+  /** Size the piece takes: the source's, the target's, or a fixed square. */
+  size?: 'from' | 'to' | number
+  /** A tile copy dissolves into the tile already drawn where it lands. */
+  dissolve?: boolean
+}
+
+/** Flies one piece. Returns false if either endpoint is missing. */
+export function flyPiece(root: ParentNode, flight: PieceFlight): boolean {
+  if (prefersReducedMotion()) return false
+  const from = rectOf(root, flight.from)
+  const to = rectOf(root, flight.to)
+  if (!from || !to) return false
+
+  const startSize =
+    typeof flight.size === 'number' ? flight.size : flight.size === 'to' ? to.width : from.width
+  const endSize = typeof flight.size === 'number' ? flight.size : to.width
+  const x0 = from.left + from.width / 2 - startSize / 2
+  const y0 = from.top + from.height / 2 - startSize / 2
+  const x1 = to.left + to.width / 2 - startSize / 2
+  const y1 = to.top + to.height / 2 - startSize / 2
+
+  const piece = document.createElement('div')
+  piece.className = 'flight'
+  piece.style.cssText = `
+    position: fixed; left: ${x0}px; top: ${y0}px;
+    width: ${startSize}px; height: ${startSize}px;
+    background: ${flight.tint}; pointer-events: none; z-index: 60;
+  `
+  document.body.append(piece)
+
+  const scale = endSize / Math.max(1, startSize)
+  const keyframes: Keyframe[] = flight.dissolve
+    ? [
+        { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: 0 },
+        { opacity: 1, offset: 0.78 },
+        { transform: `translate(${x1 - x0}px, ${y1 - y0}px) scale(${scale})`, opacity: 0, offset: 1 },
+      ]
+    : [
+        { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+        { transform: `translate(${x1 - x0}px, ${y1 - y0}px) scale(${scale})`, opacity: 1 },
+      ]
+
+  const animation = piece.animate(keyframes, {
+    duration: flight.duration,
+    delay: flight.delay ?? 0,
+    // Leaves gently, arrives decisively — the shape of a hand placing a tile.
+    easing: 'cubic-bezier(0.45, 0.05, 0.25, 1)',
+    fill: 'both',
+  })
+  const done = () => piece.remove()
+  animation.onfinish = done
+  animation.oncancel = done
+  return true
 }
 
 export interface FlightRequest {
@@ -41,68 +105,25 @@ export interface FlightRequest {
   to: string[]
 }
 
-/**
- * Flies `request.to.length` tiles from the source to each destination.
- *
- * The copies are appended to the document, not to React's tree, so a re-render
- * mid-flight cannot interrupt them, and they clean themselves up on finish.
- */
-export function flyTiles(root: HTMLElement, request: FlightRequest, tint: string): void {
-  if (prefersReducedMotion()) return
-  const from = rectOf(root, request.from)
-  if (!from) return
-
-  request.to.forEach((name, index) => {
-    const to = rectOf(root, name)
-    if (!to) return
-
-    const ghost = document.createElement('div')
-    ghost.className = 'flight'
-    ghost.style.cssText = `
-      position: fixed;
-      left: ${from.left}px;
-      top: ${from.top}px;
-      width: ${from.width}px;
-      height: ${from.height}px;
-      background: ${tint};
-      border-radius: 2px;
-      pointer-events: none;
-      z-index: 60;
-    `
-    document.body.append(ghost)
-
-    const animation = ghost.animate(
-      // The tile is already drawn at the destination by the time this runs, so
-      // the copy dissolves as it lands rather than popping out of existence.
-      [
-        { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: 0 },
-        { opacity: 1, offset: 0.72 },
-        {
-          transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${
-            to.width / Math.max(1, from.width)
-          })`,
-          opacity: 0,
-          offset: 1,
-        },
-      ],
-      {
-        duration: FLIGHT_MS,
-        delay: index * 55,
-        easing: 'cubic-bezier(0.3, 0.8, 0.35, 1)',
-        fill: 'forwards',
-      },
-    )
-    animation.onfinish = () => ghost.remove()
-    animation.oncancel = () => ghost.remove()
-  })
+/** Flies every tile of a handful from its pile to the slots it lands in. */
+export function flyTiles(root: ParentNode, request: FlightRequest, tint: string): void {
+  request.to.forEach((to, index) =>
+    flyPiece(root, {
+      from: request.from,
+      to,
+      tint,
+      duration: FLIGHT_MS,
+      delay: index * FLIGHT_STAGGER_MS,
+      size: 'from',
+      dissolve: true,
+    }),
+  )
 }
 
 /**
- * Runs a flight whenever a new move lands.
- *
- * The caller works out the endpoints, because only it knows how the board is
- * laid out; this hook only notices that a move happened and that it has not
- * been shown yet.
+ * Runs a flight whenever a new move lands. The caller works out endpoints,
+ * since only it knows the layout; this only notices that a move happened and
+ * has not been shown yet.
  */
 export function useFlight(
   lastMove: LastMove | null,
