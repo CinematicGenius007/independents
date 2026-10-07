@@ -338,7 +338,15 @@ export class Session {
 
   private peerJoined(id: PeerId): void {
     this.transport.send({ t: 'hello', name: this.name, joinedAt: Date.now() }, id)
-    if (this.isHost) this.broadcastRoster()
+    if (this.isHost) {
+      this.broadcastRoster()
+    } else if (id === this.hostId && this.started) {
+      // Meeting the host again mid-game means this peer was away and may have
+      // missed events. Waiting for the next one to reveal the gap is not
+      // enough: if it is this peer's turn, the host is waiting too, and no
+      // next event ever comes. So ask for the position straight away.
+      this.transport.send({ t: 'sync' }, id)
+    }
   }
 
   private peerLeft(id: PeerId): void {
