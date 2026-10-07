@@ -114,7 +114,9 @@ export function flyTiles(root: ParentNode, request: FlightRequest, tint: string)
       tint,
       duration: FLIGHT_MS,
       delay: index * FLIGHT_STAGGER_MS,
-      size: 'from',
+      // Tile-sized from the start: the source is a whole display or the centre
+      // strip, and a piece the size of its container is not a tile.
+      size: 'to',
       dissolve: true,
     }),
   )

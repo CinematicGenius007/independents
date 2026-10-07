@@ -75,25 +75,54 @@ export interface JoinRequest {
 export const JOIN_HEADER = 'X-Rooms-Join'
 
 export class Room extends DurableObject<Env> {
-  private sql: SqlStorage
   private buckets = new Map<string, { tokens: number; at: number }>()
+  /** Tables exist in this instance's storage. */
+  private ready = false
+  /** The room's game settings, read once; undefined until first needed. */
+  private cachedConfig: GameConfig | null | undefined = undefined
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
-    this.sql = ctx.storage.sql
-    ctx.blockConcurrencyWhile(async () => this.ensureSchema())
     // Answered by the runtime without waking the object, so a room full of
     // idle players keeping their sockets alive still hibernates.
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair(KEEPALIVE_PING, KEEPALIVE_PONG))
   }
 
   /**
-   * Creates the tables if they are missing. Runs on construction, and again
-   * after an empty room is wiped: `deleteAll()` drops the tables but leaves
-   * this instance alive, and the same code may be reused before it is evicted.
+   * Storage, with its tables created on first use rather than in the
+   * constructor. A room that is only ever *asked about* — someone checking a
+   * code before joining, or a script probing random codes on this public API —
+   * must not leave anything behind. Only a join writes.
+   */
+  private get sql(): SqlStorage {
+    if (!this.ready) this.ensureSchema()
+    return this.ctx.storage.sql
+  }
+
+  /** True if this room has ever been joined and not since wiped. */
+  private hasTables(): boolean {
+    if (this.ready) return true
+    return (
+      this.ctx.storage.sql
+        .exec<{ n: number }>("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'members'")
+        .one().n > 0
+    )
+  }
+
+  private config(): GameConfig | null {
+    if (this.cachedConfig === undefined) this.cachedConfig = gameConfig(this.meta('game') ?? '')
+    return this.cachedConfig
+  }
+
+  /**
+   * Creates the tables if they are missing. Runs on first use, and again on
+   * first use after an empty room is wiped: `deleteAll()` drops the tables but
+   * may leave this instance alive, and the same code can be reused before it
+   * is evicted.
    */
   private ensureSchema(): void {
-    this.sql.exec(`
+    this.ready = true
+    this.ctx.storage.sql.exec(`
       CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS members (
         client    TEXT PRIMARY KEY,
@@ -115,6 +144,7 @@ export class Room extends DurableObject<Env> {
 
   /** Lightweight room status, for a join screen to check before connecting. */
   async info(): Promise<RoomInfo> {
+    if (!this.hasTables()) return { game: null, peers: 0, seq: 0 }
     await this.reconcile()
     return { game: this.meta('game'), peers: this.present().length, seq: this.seq() }
   }
@@ -132,6 +162,7 @@ export class Room extends DurableObject<Env> {
     if (this.meta('game') === null) {
       this.setMeta('game', join.game)
       this.setMeta('code', join.code)
+      this.cachedConfig = config
     }
 
     const pair = new WebSocketPair()
@@ -166,7 +197,7 @@ export class Room extends DurableObject<Env> {
     const msg = parseClientMessage(message)
     if (!msg) return this.fail(ws, 'bad_request', 'Expected {t:"send", data, to?, echo?, rebase?}')
 
-    const config = gameConfig(this.meta('game') ?? '')
+    const config = this.config()
     const targets = msg.to ? this.live(msg.to) : []
     if (msg.to && targets.length === 0) {
       return this.fail(ws, 'unknown_peer', `No peer ${msg.to} is connected`)
@@ -197,6 +228,7 @@ export class Room extends DurableObject<Env> {
 
   /** Announces clients whose grace ran out, and wipes rooms long empty. */
   async alarm(): Promise<void> {
+    if (!this.hasTables()) return
     await this.reconcile()
     const now = Date.now()
     const due = this.sql
@@ -220,7 +252,8 @@ export class Room extends DurableObject<Env> {
       now >= emptySince + EMPTY_ROOM_TTL_MS
     ) {
       await this.ctx.storage.deleteAll()
-      this.ensureSchema()
+      this.ready = false
+      this.cachedConfig = undefined
       return
     }
     await this.reschedule()

@@ -38,7 +38,7 @@ as it was. Empty rooms are wiped six hours after the last person leaves.
 | game | how it uses rooms | `maxPeers` | log |
 | --- | --- | --- | --- |
 | `azul` | host-authoritative: one peer holds the bag and replicates its own sequenced events | 12 | no — the bag is hidden |
-| `ultimate-ttt` | lockstep: every client folds the log in sequence; no host | 10 | yes, 500 entries |
+| `ultimate-ttt` | lockstep: every client folds the log in sequence; no host | 10 | yes, 2,000 entries (~20 games) |
 
 Adding a game is one entry in [`src/games.ts`](src/games.ts), plus a copy of the client in
 the app (see below).

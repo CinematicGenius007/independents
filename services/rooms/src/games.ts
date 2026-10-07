@@ -31,9 +31,10 @@ export const GAMES: Record<string, GameConfig> = {
   azul: { maxPeers: 12, log: false, logLimit: 0 },
 
   // Lockstep: no hidden state, no randomness. Clients replay the room log in
-  // sequence and agree on the board without anyone being in charge. A full
-  // game is at most 81 moves, so the limit leaves room for seats and rematches.
-  'ultimate-ttt': { maxPeers: 10, log: true, logLimit: 500 },
+  // sequence and agree on the board without anyone being in charge, so the
+  // log must stay whole: a game is at most ~85 entries, and this keeps about
+  // twenty of them. Rooms are wiped hours after they empty in any case.
+  'ultimate-ttt': { maxPeers: 10, log: true, logLimit: 2000 },
 }
 
 export function gameConfig(game: string): GameConfig | null {

@@ -471,6 +471,15 @@ kbd {
   flex: none;
 }
 
+.centre__tiles {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: var(--tile-pocket);
+  min-height: var(--tile-pocket);
+}
+
 .centre__hint {
   font-size: 13px;
   color: var(--ink-dim);

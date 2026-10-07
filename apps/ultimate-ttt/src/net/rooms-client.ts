@@ -93,6 +93,8 @@ interface Events {
 /** Close codes after which reconnecting would only be refused again. */
 const FATAL = new Set([4000, 4400, 4403, 4409])
 const KEEPALIVE_MS = 25_000
+/** A handshake that has not completed by now is not going to. */
+const CONNECT_TIMEOUT_MS = 10_000
 /** No frame at all for this long means the socket is dead, whatever it says. */
 const SILENCE_MS = 60_000
 const BACKOFF_MIN_MS = 500
@@ -137,6 +139,7 @@ export class RoomsConnection {
   private retryTimer: unknown = null
   private keepaliveTimer: unknown = null
   private silenceTimer: unknown = null
+  private connectTimer: unknown = null
 
   constructor(options: RoomsOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '')
@@ -214,8 +217,24 @@ export class RoomsConnection {
       return
     }
     this.socket = socket
+    // A connect that hangs — a captive portal, a stalled proxy — produces no
+    // event at all. Without a deadline the client would sit in "connecting"
+    // until the browser gave up, which can take minutes.
+    this.connectTimer = this.timers.set(() => {
+      if (this.socket !== socket || socket.readyState === this.WS.OPEN) return
+      this.socket = null
+      this.clearTimers()
+      try {
+        socket.close()
+      } catch {
+        // never opened
+      }
+      this.scheduleReconnect()
+    }, CONNECT_TIMEOUT_MS)
     socket.addEventListener('open', () => {
       if (this.socket !== socket) return
+      if (this.connectTimer !== null) this.timers.clear(this.connectTimer)
+      this.connectTimer = null
       this.armSilence()
       this.keepaliveTimer = this.timers.set(() => this.keepalive(socket), KEEPALIVE_MS)
     })
@@ -331,10 +350,10 @@ export class RoomsConnection {
   }
 
   private clearTimers(): void {
-    for (const t of [this.retryTimer, this.keepaliveTimer, this.silenceTimer]) {
+    for (const t of [this.retryTimer, this.keepaliveTimer, this.silenceTimer, this.connectTimer]) {
       if (t !== null) this.timers.clear(t)
     }
-    this.retryTimer = this.keepaliveTimer = this.silenceTimer = null
+    this.retryTimer = this.keepaliveTimer = this.silenceTimer = this.connectTimer = null
   }
 
   private setStatus(next: RoomsStatus): void {

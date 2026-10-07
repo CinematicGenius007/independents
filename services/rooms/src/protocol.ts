@@ -40,8 +40,11 @@ export type ClientMessage = {
   /** Also deliver to the sender, in sequence. Lockstep games want this. */
   echo?: boolean
   /**
-   * Clear the room's log and make this message its first entry. A rematch in
-   * a logged game uses it so history does not grow without bound.
+   * Clear the room's log and make this message its first entry. The service
+   * applies it unconditionally, so it is only safe for a game whose clients
+   * would all accept the message anyway — a lockstep game that validates
+   * moves against history should not rebase, because a late joiner would
+   * then trust an entry the others rejected.
    */
   rebase?: boolean
 }

@@ -44,26 +44,22 @@ describe('an online table', () => {
   it('ignores garbage without throwing', () => {
     const t = emptyTable()
     for (const junk of [null, 1, 'x', {}, { k: 'move' }, { k: 'claim', side: 'Z' }, { k: 'rematch' }]) {
+      // (a rematch is well-formed but not allowed before the game ends)
       expect(reduceTable(t, A, junk)).toBe(t)
     }
   })
 
-  it('swaps sides on a rematch, and a rebased log alone rebuilds the table', () => {
-    let t = replay([
+  it('swaps sides on a rematch, and the full log rebuilds the same table', () => {
+    const log = [
       { from: A, data: { k: 'claim', side: 'X' } },
       { from: B, data: { k: 'claim', side: 'O' } },
-      { from: A, data: { k: 'move', board: 4, cell: 4 } },
-    ])
-    const rematch = rematchMessage(t)
-    t = reduceTable(t, B, rematch)
-    expect(t.seats).toEqual({ X: B, O: A })
-    expect(t.game.moveCount).toBe(0)
-    expect(t.round).toBe(2)
-
-    // What a late joiner sees after the service dropped the old log.
-    const fromRebased = replay([{ from: B, data: rematch }])
-    expect(fromRebased.seats).toEqual(t.seats)
-    expect(fromRebased.game).toEqual(t.game)
+    ]
+    let t = replay(log)
+    t = { ...t, game: { ...t.game, winner: 'X' } } // pretend the game ended
+    const after = reduceTable(t, B, rematchMessage())
+    expect(after.seats).toEqual({ X: B, O: A })
+    expect(after.game.moveCount).toBe(0)
+    expect(after.round).toBe(2)
   })
 
   it('refuses a rematch from a spectator', () => {
@@ -71,6 +67,27 @@ describe('an online table', () => {
       { from: A, data: { k: 'claim', side: 'X' } },
       { from: B, data: { k: 'claim', side: 'O' } },
     ])
-    expect(reduceTable(t, C, { k: 'rematch', seats: { X: C, O: A } })).toBe(t)
+    const over = { ...t, game: { ...t.game, winner: 'X' as const } }
+    expect(reduceTable(over, C, { k: 'rematch' })).toBe(over)
+  })
+
+  it('ignores a rematch while the game is still being played', () => {
+    const t = replay([
+      { from: A, data: { k: 'claim', side: 'X' } },
+      { from: B, data: { k: 'claim', side: 'O' } },
+      { from: A, data: { k: 'move', board: 4, cell: 4 } },
+    ])
+    expect(reduceTable(t, B, rematchMessage())).toBe(t)
+  })
+
+  it('derives the new seats itself, whatever the rematch message claims', () => {
+    let t = replay([
+      { from: A, data: { k: 'claim', side: 'X' } },
+      { from: B, data: { k: 'claim', side: 'O' } },
+    ])
+    t = { ...t, game: { ...t.game, winner: 'O' } }
+    // Extra fields claiming other seats are simply ignored.
+    const hijack = reduceTable(t, B, { k: 'rematch', seats: { X: B, O: C } })
+    expect(hijack.seats).toEqual({ X: B, O: A })
   })
 })

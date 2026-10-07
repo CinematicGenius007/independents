@@ -212,6 +212,18 @@ describe('the rooms client', () => {
     expect(statuses.at(-1)).toBe('reconnecting')
   })
 
+  it('gives up on a handshake that hangs, and tries again', () => {
+    const { conn, socket, timers } = setup()
+    const stuck = socket()
+    timers.advance(9_000)
+    expect(FakeSocket.instances).toHaveLength(1)
+    timers.advance(1_500)
+    expect(stuck.closedWith).not.toBeNull()
+    expect(conn.getStatus()).toBe('connecting') // never connected, so not "reconnecting"
+    timers.advance(1_000)
+    expect(FakeSocket.instances).toHaveLength(2)
+  })
+
   it('relays messages and ignores frames it does not understand', () => {
     const { conn, socket } = setup()
     const got: unknown[] = []
