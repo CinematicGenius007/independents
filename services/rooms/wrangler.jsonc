@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "independents-rooms",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  // account_id is added once `wrangler login` has picked the right account.
+
+  "observability": { "enabled": true },
+
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+
+  "vars": {
+    // Comma-separated origins allowed to open rooms. Empty = public.
+    "ALLOWED_ORIGINS": ""
+  }
+
+  // To serve from your own domain instead of *.workers.dev, add the zone to
+  // Cloudflare and uncomment:
+  // "routes": [{ "pattern": "rooms.cinematicgenius007.com", "custom_domain": true }]
+}
