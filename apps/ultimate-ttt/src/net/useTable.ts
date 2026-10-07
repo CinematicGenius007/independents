@@ -18,8 +18,13 @@ import type { Table, TableMessage } from './table'
 
 export const GAME_ID = 'ultimate-ttt'
 
-/** Set at build time. Without it, online play is switched off. */
-export const ROOMS_URL: string | null = (import.meta.env.VITE_ROOMS_URL ?? '').trim() || null
+/**
+ * The rooms service. `VITE_ROOMS_URL` overrides it (for a local `wrangler dev`
+ * or another deployment); otherwise the shared production Worker is used. The
+ * address is public by design — the API is open — so it is safe to ship.
+ */
+export const DEFAULT_ROOMS_URL = 'https://independents-rooms.cloudflareworkers-unsafe064.workers.dev'
+export const ROOMS_URL: string | null = (import.meta.env.VITE_ROOMS_URL ?? '').trim() || DEFAULT_ROOMS_URL
 
 export interface OnlineTable {
   table: Table

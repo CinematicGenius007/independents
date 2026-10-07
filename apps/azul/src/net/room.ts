@@ -57,7 +57,8 @@ export function parseRoomIdFromLocation(): RoomId | null {
  * needs no infrastructure at all but depends on strangers' servers and on two
  * browsers managing to reach each other directly.
  */
-export const ROOMS_URL: string | null = (import.meta.env.VITE_ROOMS_URL ?? '').trim() || null
+export const ROOMS_URL: string | null =
+  (import.meta.env.VITE_ROOMS_URL ?? '').trim() || 'https://independents-rooms.cloudflareworkers-unsafe064.workers.dev'
 
 /**
  * Loaded on demand.
