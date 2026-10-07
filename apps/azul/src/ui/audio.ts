@@ -44,7 +44,12 @@ export function setSoundEnabled(next: boolean): void {
 /** The audio context, made on demand. Null when sound is off or unavailable. */
 function ensure(): AudioContext | null {
   if (!enabled) return null
-  if (context) return context
+  if (context) {
+    // A context made outside a gesture, or paused by the browser, stays
+    // suspended and silent until somebody resumes it.
+    if (context.state === 'suspended') void context.resume().catch(() => {})
+    return context
+  }
   const Ctor = window.AudioContext ?? (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (!Ctor) return null
   context = new Ctor()
@@ -53,6 +58,24 @@ function ensure(): AudioContext | null {
   master.connect(context.destination)
   return context
 }
+
+/**
+ * Browsers keep audio silent until the page has had a real gesture, and a
+ * context created before one stays suspended. Sounds here often start from
+ * the network — a bot's move, a guest arriving — so the first click, tap or key
+ * press anywhere builds the context and resumes it, whatever it was aimed at.
+ */
+function unlockOnGesture(): void {
+  if (typeof window === 'undefined') return
+  const events = ['pointerdown', 'touchend', 'keydown'] as const
+  const unlock = () => {
+    const ctx = ensure()
+    if (ctx && ctx.state === 'running') events.forEach(e => window.removeEventListener(e, unlock, true))
+    else void ctx?.resume().catch(() => {})
+  }
+  events.forEach(e => window.addEventListener(e, unlock, { capture: true, passive: true }))
+}
+unlockOnGesture()
 
 /** A short burst of white noise — the strike of one hard thing on another. */
 function noise(ctx: AudioContext, seconds: number): AudioBufferSourceNode {
