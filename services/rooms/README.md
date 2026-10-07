@@ -119,12 +119,9 @@ VITE_ROOMS_URL=http://127.0.0.1:8787
 
 What is left to do on the server side, once:
 
-1. **Pick the account.** `wrangler whoami` lists every account the login can reach. Add
-   the right one to `wrangler.jsonc`:
-
-   ```jsonc
-   "account_id": "<the account id>",
-   ```
+1. **The account is pinned** in `wrangler.jsonc` (`7ba8903b…3811`, the passmail account),
+   because the login can reach more than one. Make sure you are logged in:
+   `pnpm exec wrangler whoami`.
 
 2. **Deploy.**
 

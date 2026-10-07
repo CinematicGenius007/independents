@@ -3,7 +3,8 @@
   "name": "independents-rooms",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
-  // account_id is added once `wrangler login` has picked the right account.
+  // Cloudflareworkers.unsafe064@passmail.net's Account
+  "account_id": "7ba8903b01eb5ef9dde5d081179d3811",
 
   "observability": { "enabled": true },
 
