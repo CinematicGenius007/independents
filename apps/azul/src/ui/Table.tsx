@@ -25,10 +25,24 @@ import type { LastMove } from '../net/session'
 import { Board } from './Board'
 import { ScoreBoard } from './ScoreBoard'
 import type { PendingPlacement, ScoringView } from './Board'
-import { COLOR_NAMES, FirstMarker, GLAZES, Tile } from './Tile'
+import { COLOR_NAMES, FirstMarker, GLAZES, GLAZE_TEXT, Tile } from './Tile'
 import { useScoring } from './useScoring'
 import { flightId, flyPiece, prefersReducedMotion, useFlight } from './useFlight'
 import { play, playDebit, playPoint, playScore } from './audio'
+
+const SIDE_KEY = 'azulejo:side'
+const SIDE_DEFAULT = 380
+const SIDE_MIN = 280
+const SIDE_MAX = 640
+
+function readSide(): number {
+  try {
+    const value = Number(localStorage.getItem(SIDE_KEY))
+    return value >= SIDE_MIN && value <= SIDE_MAX ? value : SIDE_DEFAULT
+  } catch {
+    return SIDE_DEFAULT
+  }
+}
 
 interface Pick {
   source: number
@@ -42,11 +56,29 @@ export interface TableProps {
   onPlay: (move: Move) => void
   notice: string | null
   lastMove: LastMove | null
+  /** This screen has finished watching round `round` being scored. */
+  onSeen?: (round: number) => void
 }
 
-export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: TableProps) {
+export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSeen }: TableProps) {
   const [pick, setPick] = useState<Pick | null>(null)
   const root = useRef<HTMLDivElement>(null)
+
+  // How wide the side column is. Dragging the handle, or the arrow keys on it,
+  // changes it; the tiles resize themselves to the room that is left.
+  const [side, setSide] = useState(readSide)
+  const [dragging, setDragging] = useState(false)
+  const resizeSide = (width: number) => {
+    const limit = Math.min(SIDE_MAX, Math.round(window.innerWidth * 0.55))
+    const next = Math.max(SIDE_MIN, Math.min(limit, Math.round(width)))
+    setSide(next)
+    try {
+      localStorage.setItem(SIDE_KEY, String(next))
+    } catch {
+      // the width lasts for this visit
+    }
+  }
+
   const previous = useRef<GameState | null>(null)
   const pointsInTile = useRef(0)
 
@@ -71,7 +103,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
           ? `wall:${event.seat}:${event.source.row}-${event.source.col}`
           : `board:${event.seat}`
       const tint =
-        event.source.kind === 'wall' ? GLAZES[wallColor(event.source.row, event.source.col)] : 'var(--ink)'
+        event.source.kind === 'wall' ? GLAZE_TEXT[wallColor(event.source.row, event.source.col)] : 'var(--ink)'
       flyPiece(node, {
         from,
         to: `pip:${(event.scoreAfter - 1) % 100}`,
@@ -93,6 +125,17 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
   }
 
   const scoring = useScoring(state, onScoringEvent)
+
+  // Tell the host once this screen has seen the count — played out or skipped —
+  // so that when every screen has, the next round is dealt without waiting out
+  // the clock.
+  const seenRound = useRef(-1)
+  useEffect(() => {
+    if (scoring.running || !needsDeal(state) || seenRound.current === state.round) return
+    seenRound.current = state.round
+    onSeen?.(state.round)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoring.running, state.round, state.phase])
 
   // On a narrow screen the board being scored can be below the fold, and then
   // the whole point — watching the pieces travel — happens out of sight. Bring
@@ -254,7 +297,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
   const activeDisplays = state.factories.filter(f => f.length > 0).length
 
   return (
-    <div className="table" ref={root}>
+    <div className="table" ref={root} style={{ '--side-w': `${side}px` } as React.CSSProperties}>
       <div className="table__main">
         <section className="module" aria-label="The displays and the centre">
           <header className="module__head">
@@ -299,6 +342,37 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
           />
         ) : null}
       </div>
+
+      <div
+        className="table__split"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Width of the side column"
+        aria-valuemin={SIDE_MIN}
+        aria-valuemax={SIDE_MAX}
+        aria-valuenow={side}
+        tabIndex={0}
+        data-dragging={dragging}
+        title="Drag to resize · double-click to reset"
+        onPointerDown={event => {
+          event.currentTarget.setPointerCapture(event.pointerId)
+          setDragging(true)
+        }}
+        onPointerMove={event => {
+          if (!dragging || !root.current) return
+          resizeSide(root.current.getBoundingClientRect().right - event.clientX - 5)
+        }}
+        onPointerUp={() => setDragging(false)}
+        onPointerCancel={() => setDragging(false)}
+        onDoubleClick={() => resizeSide(SIDE_DEFAULT)}
+        onKeyDown={event => {
+          if (event.key === 'ArrowLeft') resizeSide(side + 24)
+          else if (event.key === 'ArrowRight') resizeSide(side - 24)
+          else if (event.key === 'Home') resizeSide(SIDE_DEFAULT)
+          else return
+          event.preventDefault()
+        }}
+      />
 
       <aside className="table__side">
         <ScoreBoard

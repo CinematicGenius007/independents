@@ -60,8 +60,12 @@ export const DEFAULT_CONFIG: RoomConfig = { botDelayMs: 2200 }
 
 
 export type CtrlMessage =
-  /** Sent on connect and echoed back, so both ends learn each other's name. */
-  | { t: 'hello'; name: string; joinedAt: number }
+  /**
+   * Sent on connect and echoed back, so both ends learn each other's name.
+   * `fresh` marks a peer that holds no table at all: a first arrival, or the
+   * same browser after a reload that wiped its memory.
+   */
+  | { t: 'hello'; name: string; joinedAt: number; fresh?: boolean }
   /** The host's view of the table. Authoritative; recipients overwrite theirs. */
   | { t: 'roster'; hostId: PeerId; seats: Seat[]; config: RoomConfig; started: boolean }
   /** The game begins with these seats, in this order. */
@@ -80,6 +84,8 @@ export type CtrlMessage =
   | { t: 'intent'; move: Move }
   /** Sent by the surviving peer that has taken over an abandoned game. */
   | { t: 'claim'; hostId: PeerId; at: number }
+  /** "I have finished watching round `round` being scored" — played out or skipped. */
+  | { t: 'seen'; round: number }
 
 /**
  * Transport abstraction.

@@ -53,9 +53,9 @@
   --tile-unit: clamp(30px, calc((100dvh - 440px) / 7), 62px);
   --tile-line: var(--tile-unit);
   --tile-wall: var(--tile-unit);
-  --tile-floor: calc(var(--tile-unit) * 0.72);
-  --tile-pocket: calc(var(--tile-unit) * 0.62);
-  --tile-mini: 16px;
+  --tile-floor: calc((var(--tile-unit) * 5 - 4px) / 7);
+  --tile-pocket: calc(var(--tile-unit) * 0.5);
+  --tile-mini: 18px;
   --tile-gap: 5px;
   --tile-edge: rgba(255, 255, 255, 0.14);
   /* Tiles are rounded the way Apple rounds: a small radius that eases in. */
@@ -426,7 +426,8 @@ kbd {
    anything on a board, because here you only need to see what is on offer. */
 .ring {
   --tile: var(--tile-pocket);
-  width: calc(var(--tile-pocket) * 2 + 30px);
+  /* Four tiles sit in a square; the circle has to clear that square's corners. */
+  width: calc((var(--tile-pocket) * 2 + 4px) * 1.44 + 6px);
   aspect-ratio: 1;
   border-radius: 50%;
   border: 1px solid var(--rule-strong);
@@ -450,7 +451,7 @@ kbd {
 .ring__tiles {
   display: grid;
   grid-template-columns: repeat(2, var(--tile-pocket));
-  gap: 5px;
+  gap: 4px;
 }
 
 .pocket {
@@ -570,6 +571,7 @@ kbd {
 }
 
 .board__progress {
+  min-height: 3.2em;
   font-family: var(--font-figures);
   font-size: 10px;
   line-height: 1.6;
@@ -612,6 +614,7 @@ kbd {
   grid-template-columns: 56px auto 14px;
   align-items: center;
   gap: 10px;
+  height: var(--tile-line);
   text-align: left;
 }
 
@@ -620,13 +623,12 @@ kbd {
   display: flex;
   gap: var(--tile-gap);
   justify-content: flex-end;
-  width: calc(var(--tile-line) * 5 + var(--tile-gap) * 4 + 8px);
-  padding: 3px;
-  border: 1px solid transparent;
+  width: calc(var(--tile-line) * 5 + var(--tile-gap) * 4);
 }
 
 .line--playable .line__slots {
-  border-color: var(--signal);
+  outline: 1px solid var(--signal);
+  outline-offset: 3px;
   background: var(--signal-wash);
 }
 
@@ -736,25 +738,27 @@ kbd {
 /* ----------------------------------------------------------------- floor */
 
 .floor {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  padding-top: 12px;
+  display: grid;
+  grid-template-columns: 56px auto 14px;
+  align-items: end;
+  gap: 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--rule);
 }
 
 .floor__label {
   display: grid;
-  gap: 5px;
-  width: 112px;
-  flex: none;
+  gap: 3px;
   text-align: left;
+  min-width: 0;
 }
 
+/* Seven spaces spanning exactly the width of the pattern lines above. */
 .floor__ruler {
   display: flex;
-  gap: 5px;
+  justify-content: space-between;
   align-items: flex-end;
+  width: calc(var(--tile-line) * 5 + var(--tile-gap) * 4);
 }
 
 .floor__slot {
@@ -886,19 +890,36 @@ kbd {
 }
 
 .deck .displays {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   justify-content: flex-start;
-  gap: 8px 10px;
+  align-content: flex-start;
+  gap: 6px 8px;
 }
 
+/* The pot where free tiles go: the biggest thing in the deck, because it is
+   the one that fills up. Its tiles are drawn a step larger than a display's. */
 .deck .centre {
-  flex: 0 1 190px;
-  min-width: 150px;
+  --tile: calc(var(--tile-unit) * 0.62);
+  flex: 1 1 280px;
+  min-width: 220px;
   flex-direction: column;
   align-items: flex-start;
   align-content: flex-start;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 10px 12px;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.deck .centre .pocket,
+.deck .centre .pocket-tile,
+.deck .centre .tile {
+  --tile: calc(var(--tile-unit) * 0.62);
+}
+
+.deck .centre__tiles {
+  min-height: calc(var(--tile-unit) * 0.62);
+  gap: 5px;
 }
 
 .deck .centre__label {
@@ -913,10 +934,16 @@ kbd {
 
 /* More displays at a bigger table: shrink them so the deck stays one band. */
 .displays[data-count='7'] {
-  --tile-pocket: calc(var(--tile-unit) * 0.52);
+  --tile-pocket: calc(var(--tile-unit) * 0.42);
 }
 .displays[data-count='9'] {
-  --tile-pocket: calc(var(--tile-unit) * 0.44);
+  --tile-pocket: calc(var(--tile-unit) * 0.35);
+}
+
+.board__left {
+  display: grid;
+  gap: 10px;
+  align-content: start;
 }
 
 /* ------------------------------------------------------- the scoreboard */
@@ -1101,6 +1128,10 @@ kbd {
 
 /* ---------------------------------------------------- one screen, if it fits */
 
+.table__split {
+  display: none;
+}
+
 @media (min-width: 1080px) {
   .app--table {
     max-width: none;
@@ -1113,6 +1144,7 @@ kbd {
   .app--table .masthead {
     flex-wrap: nowrap;
     align-items: center;
+    min-height: 46px;
     padding-bottom: 8px;
   }
 
@@ -1126,12 +1158,19 @@ kbd {
     font-size: 22px;
   }
 
+  .app--table .relay {
+    min-width: 150px;
+    justify-content: center;
+  }
+
+  /* Main | handle | side. The side width is the reader's to change. */
   .app--table .table {
     flex: 1;
     min-height: 0;
-    grid-template-columns: minmax(0, 1fr) 400px;
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) 10px var(--side-w, 380px);
     grid-template-rows: minmax(0, 1fr) auto;
-    gap: 10px 12px;
+    gap: 10px 4px;
   }
 
   .app--table .table__main,
@@ -1140,7 +1179,49 @@ kbd {
     gap: 10px;
     overflow-y: auto;
     scrollbar-width: thin;
+    scrollbar-gutter: stable;
     scrollbar-color: var(--rule-strong) transparent;
+  }
+
+  /*
+   * The main column is a size container: tile size is worked out from the
+   * room it actually has, in both directions, so the table fits whatever the
+   * window or the width of the side column. The derived tokens are restated
+   * here because they must be resolved where the container is.
+   */
+  .app--table .table__main {
+    container-type: size;
+    --tile-unit: clamp(
+      28px,
+      min(calc((100cqh - 296px) / 7.2), calc((100cqw - 190px) / 10.9)),
+      68px
+    );
+    --tile-line: var(--tile-unit);
+    --tile-wall: var(--tile-unit);
+    --tile-floor: calc((var(--tile-unit) * 5 - 4px) / 7);
+    --tile-pocket: calc(var(--tile-unit) * 0.5);
+    align-content: start;
+  }
+
+  .app--table .table__split {
+    display: block;
+    position: relative;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  .app--table .table__split::before {
+    content: '';
+    position: absolute;
+    inset: 0 4px;
+    background: var(--rule);
+    transition: background 120ms ease;
+  }
+
+  .app--table .table__split:hover::before,
+  .app--table .table__split:focus-visible::before,
+  .app--table .table__split[data-dragging='true']::before {
+    background: var(--signal);
   }
 
   .app--table .module,
@@ -1165,21 +1246,39 @@ kbd {
   .app--table .board__body {
     flex-wrap: nowrap;
     justify-content: center;
+    align-items: flex-start;
     gap: calc(var(--tile-unit) * 0.8);
   }
 
-  .app--table .floor {
-    padding-top: 8px;
+  /* One ring size from the window height: it must not push the page. */
+  .app--table .track--ring {
+    width: min(100%, calc(100dvh - 400px));
+    min-width: 220px;
+    margin-inline: auto;
   }
 
-  .app--table .ring {
-    width: calc(var(--tile-pocket) * 2 + 30px);
-  }
-
+  /* Fixed-height bar: text changes must not move the table. */
   .app--table .status {
     position: static;
+    height: 44px;
     margin: 0 -20px;
-    padding: 8px 20px;
+    padding: 0 20px;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .app--table .status__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app--table .status__tag,
+  .app--table .status__legend {
+    flex: none;
+    white-space: nowrap;
   }
 }
 

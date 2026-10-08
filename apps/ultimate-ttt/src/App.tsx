@@ -9,6 +9,25 @@ import { ROOMS_URL, useTable } from './net/useTable'
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 const NAME_KEY = 'ultra-ttt:name'
+/** The room this tab is sitting in, so a reload goes straight back to it. */
+const ROOM_KEY = 'ultra-ttt:room'
+
+function storedRoom(): string | null {
+  try {
+    return sessionStorage.getItem(ROOM_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storeRoom(code: string | null): void {
+  try {
+    if (code) sessionStorage.setItem(ROOM_KEY, code)
+    else sessionStorage.removeItem(ROOM_KEY)
+  } catch {
+    // a private window may refuse storage; a reload then asks again
+  }
+}
 
 function newCode(): string {
   const bytes = new Uint8Array(5)
@@ -40,8 +59,12 @@ type Mode = { kind: 'lobby' } | { kind: 'local' } | { kind: 'online'; code: stri
 function App() {
   // A room link is an invitation, not a seat: it opens the lobby with the code
   // filled in, so the visitor can say who they are before sitting down.
-  const [mode, setMode] = useState<Mode>({ kind: 'lobby' })
-  const [invite, setInvite] = useState<string | null>(() => (ROOMS_URL ? codeFromHash() : null))
+  // A tab that was already in this room goes straight back; anyone else is asked.
+  const linked = ROOMS_URL ? codeFromHash() : null
+  const [mode, setMode] = useState<Mode>(() =>
+    linked && storedRoom() === linked ? { kind: 'online', code: linked } : { kind: 'lobby' },
+  )
+  const [invite, setInvite] = useState<string | null>(() => (linked && storedRoom() !== linked ? linked : null))
   const [name, setName] = useState(savedName)
 
   useEffect(() => {
@@ -54,12 +77,14 @@ function App() {
 
   const goOnline = useCallback((code: string) => {
     history.replaceState(null, '', `#room=${code}`)
+    storeRoom(code)
     setInvite(null)
     setMode({ kind: 'online', code })
   }, [])
 
   const toLobby = useCallback(() => {
     history.replaceState(null, '', location.pathname + location.search)
+    storeRoom(null)
     setInvite(null)
     setMode({ kind: 'lobby' })
   }, [])

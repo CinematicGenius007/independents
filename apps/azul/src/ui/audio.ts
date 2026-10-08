@@ -67,13 +67,32 @@ function ensure(): AudioContext | null {
  */
 function unlockOnGesture(): void {
   if (typeof window === 'undefined') return
-  const events = ['pointerdown', 'touchend', 'keydown'] as const
+  const events = ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'] as const
   const unlock = () => {
     const ctx = ensure()
-    if (ctx && ctx.state === 'running') events.forEach(e => window.removeEventListener(e, unlock, true))
-    else void ctx?.resume().catch(() => {})
+    if (!ctx) return
+    // iOS only counts a context as unlocked once something has been played
+    // inside the gesture; a one-sample silence does it.
+    try {
+      const silence = ctx.createBufferSource()
+      silence.buffer = ctx.createBuffer(1, 1, ctx.sampleRate)
+      silence.connect(ctx.destination)
+      silence.start(0)
+    } catch {
+      // nothing to unlock with
+    }
+    void ctx.resume().then(
+      () => {
+        if (ctx.state === 'running') events.forEach(e => window.removeEventListener(e, unlock, true))
+      },
+      () => {},
+    )
   }
   events.forEach(e => window.addEventListener(e, unlock, { capture: true, passive: true }))
+  // A tab that was in the background comes back with its context suspended.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && context?.state === 'suspended') void context.resume().catch(() => {})
+  })
 }
 unlockOnGesture()
 

@@ -101,15 +101,16 @@ function FullBoard(props: BoardProps) {
       </header>
 
       <div className="board__body">
-        <div className="lines">
-          {player.lines.map((line, index) => (
-            <PatternLine key={index} seat={seat} index={index} line={line} pending={pending} onPlace={onPlace} />
-          ))}
+        <div className="board__left">
+          <div className="lines">
+            {player.lines.map((line, index) => (
+              <PatternLine key={index} seat={seat} index={index} line={line} pending={pending} onPlace={onPlace} />
+            ))}
+          </div>
+          <FloorRuler seat={seat} floor={player.floor} pending={pending} penalty={penalty} onPlace={onPlace} />
         </div>
         <Wall player={player} seat={seat} scoring={scoring} />
       </div>
-
-      <FloorRuler seat={seat} floor={player.floor} pending={pending} penalty={penalty} onPlace={onPlace} />
     </section>
   )
 }
