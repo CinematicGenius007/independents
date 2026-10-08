@@ -69,7 +69,7 @@ export default function App() {
   const playing = Boolean(view?.started && view.state)
 
   return (
-    <div className="app">
+    <div className={`app ${playing ? 'app--table' : ''}`}>
       <header className="masthead">
         <div className="masthead__brand">
           <h1 className="wordmark">Azulejo</h1>

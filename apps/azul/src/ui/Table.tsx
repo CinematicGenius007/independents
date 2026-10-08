@@ -22,7 +22,8 @@ import { PIP_FLIGHT_MS } from '../engine/timeline'
 import type { TimelineEvent } from '../engine/timeline'
 import type { Seat } from '../net/protocol'
 import type { LastMove } from '../net/session'
-import { Board, ScoreTrack } from './Board'
+import { Board } from './Board'
+import { ScoreBoard } from './ScoreBoard'
 import type { PendingPlacement, ScoringView } from './Board'
 import { COLOR_NAMES, FirstMarker, GLAZES, Tile } from './Tile'
 import { useScoring } from './useScoring'
@@ -73,7 +74,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
         event.source.kind === 'wall' ? GLAZES[wallColor(event.source.row, event.source.col)] : 'var(--ink)'
       flyPiece(node, {
         from,
-        to: `pip:${event.seat}:${(event.scoreAfter - 1) % 100}`,
+        to: `pip:${(event.scoreAfter - 1) % 100}`,
         tint,
         duration: PIP_FLIGHT_MS,
         size: 10,
@@ -81,7 +82,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
       playPoint(pointsInTile.current++)
     } else {
       flyPiece(node, {
-        from: `pip:${event.seat}:${event.scoreAfter % 100}`,
+        from: `pip:${event.scoreAfter % 100}`,
         to: `floor:${event.seat}:0`,
         tint: 'var(--cost)',
         duration: PIP_FLIGHT_MS,
@@ -258,27 +259,31 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
         <section className="module" aria-label="The displays and the centre">
           <header className="module__head">
             <span className="eyebrow">Displays · {String(activeDisplays).padStart(2, '0')} active</span>
-            <span className="eyebrow eyebrow--faint">Take all of one glaze</span>
+            <span className="eyebrow eyebrow--faint table__key">
+              Take all of one glaze <GlazeKey />
+            </span>
           </header>
-          <div className="displays">
-            {state.factories.map((display, index) => (
-              <Display
-                key={index}
-                index={index}
-                tiles={display}
-                pick={pick}
-                enabled={myTurn}
-                onPick={color => choose(index, color)}
-              />
-            ))}
+          <div className="deck">
+            <div className="displays" data-count={state.factories.length}>
+              {state.factories.map((display, index) => (
+                <Display
+                  key={index}
+                  index={index}
+                  tiles={display}
+                  pick={pick}
+                  enabled={myTurn}
+                  onPick={color => choose(index, color)}
+                />
+              ))}
+            </div>
+            <Centre
+              tiles={state.center}
+              hasFirst={state.centerHasFirst}
+              pick={pick}
+              enabled={myTurn}
+              onPick={color => choose(CENTER, color)}
+            />
           </div>
-          <Centre
-            tiles={state.center}
-            hasFirst={state.centerHasFirst}
-            pick={pick}
-            enabled={myTurn}
-            onPick={color => choose(CENTER, color)}
-          />
         </section>
 
         {mine ? (
@@ -296,8 +301,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove }: Tab
       </div>
 
       <aside className="table__side">
-        <GlazeKey />
-        <Standings
+        <ScoreBoard
           state={state}
           seats={seats}
           seatIndex={seatIndex}
@@ -437,91 +441,16 @@ function Centre({
 
 // ------------------------------------------------------------- side column
 
+/** The five glazes as a row of small tiles, for the displays header. */
 function GlazeKey() {
   return (
-    <section className="module module--key" aria-label="Glaze key">
-      <header className="module__head">
-        <span className="eyebrow">Glaze key</span>
-        <span className="eyebrow eyebrow--faint">Motif = glaze</span>
-      </header>
-      <div className="key">
-        {COLORS.map(color => (
-          <span className="key__item" key={color}>
-            <Tile color={color} className="key__tile" />
-            <span className="eyebrow eyebrow--faint">{COLOR_NAMES[color]}</span>
-          </span>
-        ))}
-        <span className="key__item">
-          <Tile color="cobalt" pounce className="key__tile" />
-          <span className="eyebrow eyebrow--faint">Unfired</span>
+    <span className="key" aria-label="Glaze key">
+      {COLORS.map(color => (
+        <span className="key__item" key={color} title={COLOR_NAMES[color]}>
+          <Tile color={color} className="key__tile" />
         </span>
-      </div>
-    </section>
-  )
-}
-
-function Standings({
-  state,
-  seats,
-  seatIndex,
-  scores,
-  focus,
-  counting,
-}: {
-  state: GameState
-  seats: Seat[]
-  seatIndex: number | null
-  scores: number[]
-  focus: number | null
-  /** While scoring plays out, nobody is "to play" yet. */
-  counting: boolean
-}) {
-  return (
-    <section className="module" aria-label="Standings">
-      <header className="module__head">
-        <span className="eyebrow">Standings</span>
-        <span className="eyebrow eyebrow--faint">Round {String(state.round).padStart(2, '0')}</span>
-      </header>
-      <div className="standings">
-        {state.players.map((player, index) => {
-          const seat = seats[index]
-          const turn = state.current === index && state.phase === 'offer' && !counting
-          const status =
-            index === seatIndex && turn
-              ? 'to play'
-              : seat?.kind === 'bot'
-                ? 'house'
-                : seat && !seat.present
-                  ? 'away'
-                  : turn
-                    ? 'to play'
-                    : state.nextStarter === index && !state.centerHasFirst
-                      ? 'starts next'
-                      : ''
-          return (
-            <div
-              key={player.id}
-              className={['standing', turn ? 'standing--turn' : '', focus === index ? 'standing--scoring' : '']
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <span className={`standing__seat ${index === seatIndex ? 'eyebrow--signal' : ''}`}>
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <span className="standing__name">
-                {player.name}
-                {index === seatIndex ? <span className="eyebrow eyebrow--signal"> you</span> : null}
-              </span>
-              <span className={`standing__status eyebrow ${status === 'to play' ? 'eyebrow--signal' : status === 'starts next' ? 'eyebrow--teal' : 'eyebrow--faint'}`}>
-                {status}
-              </span>
-              <span className="standing__score">{scores[index] ?? player.score}</span>
-              <ScoreTrack seat={index} score={scores[index] ?? player.score} />
-            </div>
-          )
-        })}
-      </div>
-    </section>
+      ))}
+    </span>
   )
 }
 
