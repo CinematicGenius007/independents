@@ -16,20 +16,20 @@ import type { CSSProperties } from 'react'
 import type { Color } from '../engine/types'
 
 export const GLAZES: Record<Color, string> = {
-  cobalt: '#2f62c4',
-  saffron: '#f0b030',
-  crimson: '#d9432f',
-  basalt: '#1f2533',
-  verdigris: '#e9eef2',
+  cobalt: '#2c7fa9',
+  saffron: '#f3b53a',
+  crimson: '#e03b4d',
+  basalt: '#171c25',
+  verdigris: '#f3f6f5',
 }
 
 /** Brighter stand-ins for text and counters, where the tile colour itself would vanish on the dark page. */
 export const GLAZE_TEXT: Record<Color, string> = {
-  cobalt: '#6f98e6',
-  saffron: '#f0b030',
-  crimson: '#ee6a55',
-  basalt: '#8a96ad',
-  verdigris: '#7cc4e8',
+  cobalt: '#5fb4de',
+  saffron: '#f3b53a',
+  crimson: '#f0677a',
+  basalt: '#8a9ab0',
+  verdigris: '#8fd6e2',
 }
 
 export const COLOR_NAMES: Record<Color, string> = {
@@ -38,6 +38,39 @@ export const COLOR_NAMES: Record<Color, string> = {
   crimson: 'Crimson',
   basalt: 'Basalt',
   verdigris: 'Ivory',
+}
+
+/** Points of an n-pointed star as a closed path. */
+function starPath(cx: number, cy: number, outer: number, inner: number, points: number): string {
+  const steps: string[] = []
+  for (let i = 0; i < points * 2; i++) {
+    const radius = i % 2 === 0 ? outer : inner
+    const angle = (Math.PI * i) / points - Math.PI / 2
+    steps.push(`${(cx + radius * Math.cos(angle)).toFixed(2)} ${(cy + radius * Math.sin(angle)).toFixed(2)}`)
+  }
+  return `M${steps.join('L')}Z`
+}
+
+const STAR_OUTER = starPath(12, 12, 9.6, 4.4, 8)
+const STAR_MID = starPath(12, 12, 6.7, 3.1, 8)
+const STAR_INNER = starPath(12, 12, 4, 1.9, 8)
+
+/** One quarter of the yellow tile's floral, rotated into place four times. */
+function Floral() {
+  return (
+    <g>
+      {/* leaf along the vertical axis */}
+      <path d="M12 9.1C10.7 7.6 10.8 5.9 12 4.3 13.2 5.9 13.3 7.6 12 9.1Z" />
+      {/* the scroll curling out along the diagonal */}
+      <path
+        d="M13.7 10.3C15.3 9 16.6 9.5 17.5 8.2 18.3 7 17.3 5.7 16.1 6.3 15.3 6.7 15.5 7.8 16.4 7.8"
+        fill="none"
+      />
+      {/* a small bud at the edge and a stud at the corner */}
+      <path d="M15.6 3.1C16.9 3.3 17.6 4 17.6 5 16.5 4.9 15.8 4.3 15.6 3.1Z" />
+      <circle cx="19.3" cy="4.7" r="0.85" />
+    </g>
+  )
 }
 
 /** The motif as a plain outline, for the dotted unfired space on the wall. */
@@ -53,7 +86,18 @@ function Outline({ color }: { color: Color }) {
         </>
       )
     case 'saffron':
-      return <path d="M12 3.4 13.9 10.1 20.6 12 13.9 13.9 12 20.6 10.1 13.9 3.4 12 10.1 10.1Z" />
+      return (
+        <>
+          {[0, 90, 180, 270].map(angle => (
+            <path
+              key={angle}
+              transform={`rotate(${angle} 12 12)`}
+              d="M12 9.1C10.7 7.6 10.8 5.9 12 4.3 13.2 5.9 13.3 7.6 12 9.1Z M13.7 10.3C15.3 9 16.6 9.5 17.5 8.2"
+            />
+          ))}
+          <circle cx="12" cy="12" r="1.7" />
+        </>
+      )
     case 'crimson':
       return (
         <>
@@ -64,18 +108,13 @@ function Outline({ color }: { color: Color }) {
     case 'basalt':
       return (
         <>
-          <circle cx="12" cy="12" r="7" />
-          <circle cx="12" cy="12" r="2.4" />
-          <path d="M12 5v4.6M12 14.4V19M5 12h4.6M14.4 12H19" />
+          <circle cx="12" cy="12" r="7.4" />
+          <circle cx="12" cy="12" r="4.6" />
+          <circle cx="12" cy="12" r="1.8" />
         </>
       )
     case 'verdigris':
-      return (
-        <>
-          <path d="M12 3.4 20.6 12 12 20.6 3.4 12Z" />
-          <path d="M6 6h12v12H6Z" />
-        </>
-      )
+      return <path d={STAR_OUTER} />
   }
 }
 
@@ -83,9 +122,9 @@ function Outline({ color }: { color: Color }) {
 function Face({ color }: { color: Color }) {
   switch (color) {
     case 'cobalt':
-      // Plain glossy blue, with the faintest quatrefoil so it is never only a colour.
+      // Plain glossy blue; a ghost of a quatrefoil so it is never only a colour.
       return (
-        <g fill="none" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="0.9">
+        <g fill="none" stroke="#ffffff" strokeOpacity="0.2" strokeWidth="0.8">
           <circle cx="12" cy="8.8" r="3" />
           <circle cx="12" cy="15.2" r="3" />
           <circle cx="8.8" cy="12" r="3" />
@@ -93,39 +132,62 @@ function Face({ color }: { color: Color }) {
         </g>
       )
     case 'saffron':
-      // The orange floral: a four-petal flower, leaves between, a dotted ring.
+      // Gold, painted in red-orange: a rosette with a floral in every quarter.
       return (
-        <g fill="none" stroke="#e0541a" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 4.6c1.9 2 1.9 4.2 0 6-1.9-1.8-1.9-4 0-6ZM12 13.4c1.9 1.8 1.9 4 0 6-1.9-2-1.9-4.2 0-6ZM4.6 12c2-1.9 4.2-1.9 6 0-1.8 1.9-4 1.9-6 0ZM13.4 12c1.8-1.9 4-1.9 6 0-2 1.9-4.2 1.9-6 0Z" />
-          <circle cx="12" cy="12" r="1.5" fill="#e0541a" stroke="none" />
-          <path d="M6.2 6.2 8 8M17.8 6.2 16 8M6.2 17.8 8 16M17.8 17.8 16 16" />
+        <g fill="#e2481f" stroke="#e2481f" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round">
+          {[0, 90, 180, 270].map(angle => (
+            <g key={angle} transform={`rotate(${angle} 12 12)`}>
+              <Floral />
+            </g>
+          ))}
+          <circle cx="12" cy="12" r="1.9" stroke="none" />
+          <circle cx="12" cy="12" r="3.3" fill="none" strokeWidth="0.6" strokeDasharray="0.9 1.1" />
         </g>
       )
     case 'crimson':
-      // Plain red, a faint lozenge.
       return (
-        <g fill="none" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="0.9">
+        <g fill="none" stroke="#ffffff" strokeOpacity="0.2" strokeWidth="0.8">
           <path d="M12 4.6 19.4 12 12 19.4 4.6 12Z" />
           <circle cx="12" cy="12" r="2.2" />
         </g>
       )
     case 'basalt':
-      // Black with a white rosette.
+      // Black, with a teal rosette lattice: rings, a ring of beads, corner arcs.
       return (
-        <g fill="none" stroke="#f4f4f8" strokeOpacity="0.9" strokeWidth="1" strokeLinecap="round">
-          <circle cx="12" cy="12" r="7" />
-          <circle cx="12" cy="12" r="2.4" />
-          <path d="M12 5v4.6M12 14.4V19M5 12h4.6M14.4 12H19" />
-          <path d="M7.1 7.1 8.7 8.7M16.9 7.1 15.3 8.7M7.1 16.9 8.7 15.3M16.9 16.9 15.3 15.3" strokeOpacity="0.7" />
+        <g fill="none" stroke="#3aa3bd" strokeWidth="0.75" strokeLinecap="round">
+          <circle cx="12" cy="12" r="7.4" />
+          <circle cx="12" cy="12" r="4.6" />
+          <circle cx="12" cy="12" r="1.8" fill="#3aa3bd" stroke="none" />
+          {Array.from({ length: 12 }, (_, i) => {
+            const angle = (Math.PI * 2 * i) / 12
+            return (
+              <circle
+                key={i}
+                cx={12 + 6 * Math.cos(angle)}
+                cy={12 + 6 * Math.sin(angle)}
+                r="0.7"
+                fill="#3aa3bd"
+                stroke="none"
+              />
+            )
+          })}
+          <path d="M12 4.6V7.4M12 16.6V19.4M4.6 12H7.4M16.6 12H19.4" strokeOpacity="0.8" />
+          <path d="M2.2 6.4A4.2 4.2 0 0 0 6.4 2.2M17.6 2.2A4.2 4.2 0 0 0 21.8 6.4M21.8 17.6A4.2 4.2 0 0 0 17.6 21.8M6.4 21.8A4.2 4.2 0 0 0 2.2 17.6" />
+          <circle cx="3.6" cy="3.6" r="0.6" fill="#3aa3bd" stroke="none" />
+          <circle cx="20.4" cy="3.6" r="0.6" fill="#3aa3bd" stroke="none" />
+          <circle cx="3.6" cy="20.4" r="0.6" fill="#3aa3bd" stroke="none" />
+          <circle cx="20.4" cy="20.4" r="0.6" fill="#3aa3bd" stroke="none" />
         </g>
       )
     case 'verdigris':
-      // Ivory with the sky-blue eight-point star.
+      // Ivory, with a sky-blue star built up in three layers.
       return (
         <g strokeLinejoin="round">
-          <path d="M12 3.4 20.6 12 12 20.6 3.4 12Z M6 6h12v12H6Z" fill="#7cc4e8" fillOpacity="0.35" stroke="#2f9bd0" strokeWidth="1" />
-          <path d="M12 7.6 16.4 12 12 16.4 7.6 12Z" fill="#2f9bd0" fillOpacity="0.55" stroke="none" />
-          <circle cx="12" cy="12" r="1.4" fill="#ffffff" stroke="none" />
+          <path d={STAR_OUTER} fill="#3db5c9" />
+          <path d={STAR_MID} fill="#f3f6f5" />
+          <path d={STAR_INNER} fill="#3db5c9" />
+          <circle cx="12" cy="12" r="0.9" fill="#f3f6f5" />
+          <path d="M3.4 3.4H5.2M3.4 3.4V5.2M20.6 3.4H18.8M20.6 3.4V5.2M3.4 20.6H5.2M3.4 20.6V18.8M20.6 20.6H18.8M20.6 20.6V18.8" fill="none" stroke="#3db5c9" strokeWidth="0.7" />
         </g>
       )
   }
@@ -160,7 +222,7 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
         <path d={SQUIRCLE} transform="translate(0.5 0.5) scale(0.9583)" fill="none" stroke="var(--rule-strong)" strokeWidth="1.04" />
         <g
           fill="none"
-          stroke={GLAZES[color]}
+          stroke={GLAZE_TEXT[color]}
           strokeOpacity="0.55"
           strokeWidth="1"
           strokeDasharray="1.4 1.8"
@@ -177,16 +239,10 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
     <svg viewBox="0 0 24 24" className={classes} style={style} data-flight={flight} role="img" aria-label={label}>
       <path d={SQUIRCLE} fill={GLAZES[color]} />
       <Face color={color} />
-      {/* The glaze: a soft light edge top-left and a darker one bottom-right. */}
-      <path
-        d={SQUIRCLE}
-        transform="translate(0.7 0.7) scale(0.9417)"
-        fill="none"
-        stroke="#ffffff"
-        strokeOpacity={color === 'verdigris' ? 0.9 : 0.22}
-        strokeWidth="0.9"
-      />
-      <path d="M2 21.2c1 .6 2.2.8 3.4.8h13.4c1.9 0 3.2-1.3 3.2-3.2V5.4" fill="none" stroke="#000000" strokeOpacity="0.18" strokeWidth="1" />
+      {/* The glaze: a lit rim top-left, a shaded rim bottom-right, a soft sheen. */}
+      <path d="M2.3 21V5.5C2.3 3.8 3.8 2.3 5.5 2.3H21" fill="none" stroke="#ffffff" strokeOpacity={color === 'verdigris' ? 0 : 0.38} strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M21.7 3V18.5C21.7 20.2 20.2 21.7 18.5 21.7H3" fill="none" stroke="#000000" strokeOpacity={color === 'verdigris' ? 0.1 : 0.28} strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M3 3H21L3 21Z" fill="#ffffff" fillOpacity={color === 'verdigris' ? 0 : 0.06} />
     </svg>
   )
 }
