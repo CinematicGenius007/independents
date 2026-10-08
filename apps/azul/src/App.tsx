@@ -13,12 +13,31 @@ import { Table } from './ui/Table'
 import { COLORS } from './engine/types'
 import type { GameState } from './engine/types'
 import { unseenTiles } from './engine/preview'
-import { GLAZES } from './ui/Tile'
+import { GLAZE_TEXT } from './ui/Tile'
 import { useSession } from './useSession'
 import type { RoomKind } from './useSession'
 import { parseRoomIdFromLocation } from './net/room'
 
 const NAME_KEY = 'azulejo:name'
+/** The room this tab is sitting in, so a reload goes straight back to it. */
+const ROOM_KEY = 'azulejo:room'
+
+function storedRoom(): string | null {
+  try {
+    return sessionStorage.getItem(ROOM_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storeRoom(code: string | null): void {
+  try {
+    if (code) sessionStorage.setItem(ROOM_KEY, code)
+    else sessionStorage.removeItem(ROOM_KEY)
+  } catch {
+    // a private window may refuse storage; a reload then asks again
+  }
+}
 
 const NAMES = ['Amoreira', 'Bicesse', 'Cascais', 'Douro', 'Estremoz', 'Faro', 'Guimarães', 'Lagos']
 
@@ -32,7 +51,12 @@ function initialName(): string {
 
 export default function App() {
   const [name, setName] = useState(initialName)
-  const [room, setRoom] = useState<RoomKind | null>(null)
+  // A tab that was already at this table goes straight back to it; anyone else
+  // arriving by the link is asked who they are first (below).
+  const linked = parseRoomIdFromLocation()
+  const [room, setRoom] = useState<RoomKind | null>(() =>
+    linked && storedRoom() === linked ? { kind: 'join', code: linked } : null,
+  )
   const [rulesOpen, setRulesOpen] = useState(false)
   const [sound, setSound] = useState(soundEnabled)
   const session = useSession(room, name.trim() || 'Anonymous')
@@ -44,7 +68,9 @@ export default function App() {
   // A link with a code in it is an invitation, not a seat: it brings the
   // visitor to the front door with the code filled in, so they can say who
   // they are before sitting down.
-  const [invite, setInvite] = useState<string | null>(parseRoomIdFromLocation)
+  const [invite, setInvite] = useState<string | null>(() =>
+    linked && storedRoom() !== linked ? linked : null,
+  )
 
   useEffect(() => {
     const onHash = () => setInvite(parseRoomIdFromLocation())
@@ -57,7 +83,31 @@ export default function App() {
     if (location.hash) history.replaceState(null, '', location.pathname + location.search)
   }, [])
 
+  // Remember the room, and keep it in the address bar, so a reload — by the
+  // host too — comes back to the same table without a prompt.
+  const roomCode = session?.code ?? null
+  useEffect(() => {
+    if (!roomCode) return
+    storeRoom(roomCode)
+    if (parseRoomIdFromLocation() !== roomCode) history.replaceState(null, '', `#room=${roomCode}`)
+  }, [roomCode])
+
+  // A link to a table nobody is hosting — its host left for good, or the only
+  // player reloaded — would wait for ever. Offer to open it instead.
+  const [stranded, setStranded] = useState(false)
+  const hostless = Boolean(session && room?.kind === 'join' && !session.view.hostId)
+  const linkStatus = session?.status
+  useEffect(() => {
+    if (!hostless || linkStatus !== 'connected') {
+      setStranded(false)
+      return
+    }
+    const timer = setTimeout(() => setStranded(true), 3000)
+    return () => clearTimeout(timer)
+  }, [hostless, linkStatus])
+
   const leave = useCallback(() => {
+    storeRoom(null)
     setRoom(null)
     setInvite(null)
     if (typeof location !== 'undefined' && location.hash) {
@@ -151,6 +201,15 @@ export default function App() {
           onJoin={code => setRoom({ kind: 'join', code })}
         />
       ) : !playing ? (
+        <>
+        {stranded ? (
+          <p className="prompt prompt--quiet">
+            Nobody is hosting this table right now.{' '}
+            <button type="button" className="button button--small" onClick={() => session!.session.becomeHost()}>
+              Open it here
+            </button>
+          </p>
+        ) : null}
         <Lobby
           code={session.code}
           url={session.url}
@@ -162,6 +221,7 @@ export default function App() {
           onStart={() => session.session.start()}
           onLeave={leave}
         />
+        </>
       ) : (
         <>
           <Table
@@ -171,6 +231,7 @@ export default function App() {
             onPlay={session.play}
             notice={view!.notice}
             lastMove={view!.lastMove}
+            onSeen={round => session.session.seen(round)}
           />
           {view!.state!.phase === 'over' ? (
             <div className="row">
@@ -193,7 +254,7 @@ function Unseen({ state }: { state: GameState }) {
       <span className="eyebrow eyebrow--faint">Unseen by glaze</span>
       <span className="unseen__counts">
         {COLORS.map(color => (
-          <span key={color} style={{ color: GLAZES[color] }} title={color}>
+          <span key={color} style={{ color: GLAZE_TEXT[color] }} title={color}>
             {String(unseen[color]).padStart(2, '0')}
           </span>
         ))}

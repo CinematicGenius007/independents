@@ -38,7 +38,7 @@ export function prefersReducedMotion(): boolean {
 }
 
 /** Display tiles are this fraction of a pattern-line tile; flights grow from one to the other. */
-const POCKET_SCALE = 0.62
+const POCKET_SCALE = 0.5
 
 export interface PieceFlight {
   from: string

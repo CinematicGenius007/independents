@@ -3,7 +3,7 @@ import { MemoryHub, settle } from './memory-transport'
 import { Session } from './session'
 import { isRoomCode, generateRoomCode, parseRoomIdFromHash } from './room'
 import { createRng } from '../engine/rng'
-import { legalMoves } from '../engine/rules'
+import { legalMoves, needsDeal } from '../engine/rules'
 import type { GameState } from '../engine/types'
 
 /**
@@ -257,5 +257,101 @@ describe('a solo game', () => {
     }
     expect(session.view().state?.phase).toBe('over')
     expect(session.view().seats).toHaveLength(3)
+  })
+})
+
+describe('between rounds', () => {
+  it('deals as soon as everyone present has seen the count, not when the clock runs out', async () => {
+    const hub = new MemoryHub()
+    const delays: number[] = []
+    const queue: { id: number; fn: () => void }[] = []
+    let nextId = 1
+    const clock = {
+      schedule: (fn: () => void, ms: number) => {
+        delays.push(ms)
+        queue.push({ id: nextId, fn })
+        return nextId++
+      },
+      cancel: (handle: unknown) => {
+        const index = queue.findIndex(item => item.id === handle)
+        if (index !== -1) queue.splice(index, 1)
+      },
+    }
+    const make = (id: string, name: string, host: boolean) => {
+      const session = new Session({ transport: hub.join(id), name, host, seed: 7, ...clock })
+      return session
+    }
+    const host = make('a-host', 'Ana', true)
+    const guest = make('b-guest', 'Bo', false)
+    await settle()
+    host.start()
+    await settle()
+
+    let guard = 0
+    while (!needsDeal(host.view().state!) && guard++ < 400) {
+      const state = host.view().state!
+      if (state.phase === 'offer') {
+        const actor = state.current === 0 ? host : guest
+        actor.play(legalMoves(state)[0])
+      } else {
+        queue.shift()?.fn()
+      }
+      await settle()
+    }
+    const state = host.view().state!
+    expect(needsDeal(state)).toBe(true)
+    expect(queue).toHaveLength(1)
+
+    // One of two has seen it: still waiting.
+    const before = delays.length
+    host.seen(state.round)
+    await settle()
+    expect(delays.length).toBe(before)
+
+    guest.seen(state.round)
+    await settle()
+    expect(delays.at(-1)).toBeLessThan(1000)
+    queue.shift()!.fn()
+    await settle()
+    expect(needsDeal(host.view().state!)).toBe(false)
+    expect(guest.view().state).toEqual(host.view().state)
+  })
+})
+
+describe('when a player reloads', () => {
+  it('a reloaded host rejoins its own seat and the table carries on', async () => {
+    const hub = new MemoryHub()
+    const clock = fakeClock()
+    const { session: host } = sessionFor(hub, 'a-host', 'Ana', true, clock)
+    const { session: guest } = sessionFor(hub, 'b-guest', 'Bo', false, clock)
+    await settle()
+    host.addBot('artisan')
+    await settle()
+    host.start()
+    await clock.run(6)
+    await settle()
+    const before = guest.view().state!
+
+    // Same browser id, empty memory: what a page reload does.
+    const { session: reloaded } = sessionFor(hub, 'a-host', 'Ana', false, clock)
+    await settle()
+    await clock.run(2)
+    await settle()
+
+    expect(guest.view().isHost).toBe(true)
+    expect(reloaded.view().hostId).toBe('b-guest')
+    expect(reloaded.view().seatIndex).toBe(0)
+    expect(reloaded.view().state).toEqual(guest.view().state)
+    expect(reloaded.view().state!.round).toBeGreaterThanOrEqual(before.round)
+  })
+
+  it('a lone player who reloads can take the head of an empty table', async () => {
+    const hub = new MemoryHub()
+    const { session } = sessionFor(hub, 'a-host', 'Ana', false)
+    await settle()
+    expect(session.view().hostId).toBe('')
+    session.becomeHost()
+    expect(session.view().isHost).toBe(true)
+    expect(session.view().seats).toHaveLength(1)
   })
 })

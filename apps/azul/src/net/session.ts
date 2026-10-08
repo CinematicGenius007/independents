@@ -87,6 +87,9 @@ const MIN_DEAL_PAUSE_MS = 900
  */
 const DEAL_MARGIN_MS = 2000
 
+/** Pause before dealing once every player present has finished the count. */
+const SEEN_DEAL_PAUSE_MS = 500
+
 export class Session {
   private transport: Transport
   private listeners = new Set<(view: SessionView) => void>()
@@ -110,6 +113,13 @@ export class Session {
   private seq = 0
   private lastMove: LastMove | null = null
   private moveSerial = 0
+
+  /** Host only: the round whose scoring the table is currently being shown. */
+  private awaiting: number | null = null
+  /** Host only: who has finished watching that scoring. */
+  private seenBy = new Set<PeerId>()
+  /** Host only: the early deal is already scheduled. */
+  private dealingSoon = false
 
   constructor(options: SessionOptions) {
     this.transport = options.transport
@@ -270,11 +280,15 @@ export class Session {
    */
   private drive(): void {
     if (!this.isHost || !this.game) return
+    const state = this.game.state
+    if (needsDeal(state) && state.phase !== 'over' && this.awaiting === state.round && this.timer !== null) {
+      this.checkSeen()
+      return
+    }
     if (this.timer !== null) {
       this.cancel(this.timer)
       this.timer = null
     }
-    const state = this.game.state
     if (state.phase === 'over') return
 
     if (needsDeal(state)) {
@@ -282,17 +296,19 @@ export class Session {
       // fired, every point carried to the track — so nobody has a new round
       // land on the table while they are still counting the last one. Every
       // screen plays the same timeline, computed from the same reports.
+      //
+      // The timer is a ceiling, not a schedule: once every player present
+      // has said they have seen the count (or skipped it) the deal comes at
+      // once. Re-entering for some unrelated change must not restart it, which
+      // the guard at the top of this method takes care of.
+      this.awaiting = state.round
+      this.seenBy = new Set()
+      this.dealingSoon = false
       const playback = scoringTimeline(state).total
-      this.after(playback === 0 ? MIN_DEAL_PAUSE_MS : playback + DEAL_MARGIN_MS, () => {
-        if (!this.game) return
-        const { factories } = this.game.deal()
-        this.state = this.game.state
-        this.broadcast({ t: 'deal', seq: ++this.seq, factories })
-        this.drive()
-        this.emit()
-      })
+      this.after(playback === 0 ? MIN_DEAL_PAUSE_MS : playback + DEAL_MARGIN_MS, () => this.dealNow())
       return
     }
+    this.awaiting = null
 
     if (state.phase === 'tiling') {
       this.after(TILING_PAUSE_MS, () => {
@@ -325,6 +341,56 @@ export class Session {
     })
   }
 
+  private dealNow(): void {
+    if (!this.game || !needsDeal(this.game.state)) return
+    this.awaiting = null
+    this.dealingSoon = false
+    const { factories } = this.game.deal()
+    this.state = this.game.state
+    this.broadcast({ t: 'deal', seq: ++this.seq, factories })
+    this.drive()
+    this.emit()
+  }
+
+  /** Deals early once everyone present has seen the count. */
+  private checkSeen(): void {
+    if (!this.isHost || !this.game || this.awaiting === null || this.dealingSoon) return
+    const watchers = this.seats.filter(s => s.kind === 'human' && s.present)
+    if (!watchers.every(s => this.seenBy.has(s.id))) return
+    this.dealingSoon = true
+    if (this.timer !== null) this.cancel(this.timer)
+    this.after(SEEN_DEAL_PAUSE_MS, () => this.dealNow())
+  }
+
+  /**
+   * This browser has finished watching round `round` being scored, whether it
+   * played out or was skipped. The host collects these so a table that has
+   * all seen the count does not sit waiting out the clock.
+   */
+  seen(round: number): void {
+    if (!this.started) return
+    if (this.isHost) {
+      if (this.awaiting === round) {
+        this.seenBy.add(this.transport.selfId)
+        this.checkSeen()
+      }
+    } else if (this.hostId) {
+      this.transport.send({ t: 'seen', round }, this.hostId)
+    }
+  }
+
+  /**
+   * Opens the table when the link led to a room nobody is hosting — the host
+   * closed it, or a lone player reloaded and lost the game. Only valid for a
+   * peer that holds no table of its own.
+   */
+  becomeHost(): void {
+    if (this.hostId !== '' || this.started) return
+    this.hostId = this.transport.selfId
+    this.seats = [seatFor(this.transport.selfId, this.name, 'human')]
+    this.broadcastRoster()
+  }
+
   private after(ms: number, fn: () => void): void {
     this.timer = this.schedule(() => {
       this.timer = null
@@ -350,7 +416,8 @@ export class Session {
   }
 
   private peerJoined(id: PeerId): void {
-    this.transport.send({ t: 'hello', name: this.name, joinedAt: Date.now() }, id)
+    const fresh = this.hostId === '' && this.state === null
+    this.transport.send({ t: 'hello', name: this.name, joinedAt: Date.now(), ...(fresh ? { fresh } : {}) }, id)
     if (this.isHost) {
       this.broadcastRoster()
     } else if (id === this.hostId && this.started) {
@@ -385,8 +452,9 @@ export class Session {
    * derived from what is on the table. The survivors elect deterministically
    * (lowest id present) so two of them cannot both claim the room.
    */
-  private considerClaim(): void {
+  private considerClaim(exclude?: PeerId): void {
     const candidates = [this.transport.selfId, ...this.transport.peers()]
+      .filter(id => id !== exclude)
       .filter(id => this.seats.some(s => s.id === id && s.present) || id === this.transport.selfId)
       .sort()
     if (candidates[0] !== this.transport.selfId) return
@@ -411,7 +479,13 @@ export class Session {
   private receive(msg: CtrlMessage, from: PeerId): void {
     switch (msg.t) {
       case 'hello':
-        this.onHello(msg.name, from)
+        this.onHello(msg.name, from, msg.fresh === true)
+        return
+      case 'seen':
+        if (this.isHost && this.awaiting === msg.round && this.seats.some(s => s.id === from)) {
+          this.seenBy.add(from)
+          this.checkSeen()
+        }
         return
       case 'roster':
         if (from !== this.hostId && this.hostId !== '') return
@@ -457,7 +531,11 @@ export class Session {
     }
   }
 
-  private onHello(name: string, from: PeerId): void {
+  private onHello(name: string, from: PeerId, fresh: boolean): void {
+    // The host itself says hello with nothing in memory: it was reloaded, and
+    // the table it was holding is gone. The rest still believe in it, so the
+    // survivors elect a new host from what they hold — without it.
+    if (fresh && !this.isHost && from === this.hostId) this.considerClaim(from)
     if (!this.isHost) return
     const known = this.seats.find(s => s.id === from)
     if (known) {
