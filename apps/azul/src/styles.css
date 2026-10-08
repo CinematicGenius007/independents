@@ -12,16 +12,16 @@
 
 :root {
   /* Paper and rules */
-  --paper: #0d1116;
-  --paper-sunk: #090c10;
-  --panel: #131920;
-  --rule: #252d36;
-  --rule-strong: #3a4552;
+  --paper: #0a0b10;
+  --paper-sunk: #07080c;
+  --panel: #0f1019;
+  --rule: #23253a;
+  --rule-strong: #34374f;
 
   /* Ink */
-  --ink: #e4e9ee;
-  --ink-dim: #9ba6b1;
-  --ink-faint: #67727d;
+  --ink: #e9e8f5;
+  --ink-dim: #8b89b0;
+  --ink-faint: #5d5b7d;
   --ink-bright: #ffffff;
 
   /* The one colour that points */
@@ -50,12 +50,13 @@
    * are where you act, the wall is what you read, the displays are what you
    * choose from at a glance.
    */
-  --tile-line: 54px;
-  --tile-wall: 48px;
-  --tile-floor: 44px;
-  --tile-pocket: 34px;
-  --tile-mini: 20px;
-  --tile-gap: 6px;
+  --tile-unit: clamp(30px, calc((100dvh - 440px) / 7), 62px);
+  --tile-line: var(--tile-unit);
+  --tile-wall: var(--tile-unit);
+  --tile-floor: calc(var(--tile-unit) * 0.72);
+  --tile-pocket: calc(var(--tile-unit) * 0.62);
+  --tile-mini: 16px;
+  --tile-gap: 5px;
   --tile-edge: rgba(255, 255, 255, 0.14);
   /* Tiles are rounded the way Apple rounds: a small radius that eases in. */
   --tile-radius: 14%;
@@ -68,33 +69,18 @@
   color: var(--ink);
 }
 
+/* Below the two-column layout the page scrolls, so tiles follow the width. */
 @media (max-width: 1079px) {
   :root {
-    --tile-line: 46px;
-    --tile-wall: 41px;
-    --tile-floor: 38px;
-    --tile-pocket: 30px;
-    --tile-mini: 18px;
-  }
-}
-
-@media (max-width: 760px) {
-  :root {
-    --tile-line: 40px;
-    --tile-wall: 36px;
-    --tile-floor: 34px;
-    --tile-pocket: 27px;
+    --tile-unit: clamp(30px, calc((100vw - 96px) / 11.6), 50px);
     --tile-mini: 15px;
   }
 }
 
 @media (max-width: 480px) {
   :root {
-    --tile-line: 36px;
-    --tile-wall: 31px;
-    --tile-floor: 30px;
-    --tile-pocket: 25px;
-    --tile-mini: 13px;
+    --tile-unit: clamp(24px, calc((100vw - 64px) / 11.6), 34px);
+    --tile-mini: 12px;
   }
 }
 
@@ -115,7 +101,7 @@ body {
  */
 body {
   background-color: var(--paper);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='900' viewBox='0 0 1440 900' fill='none'%3E%3Cg stroke='%232A323B' stroke-width='1' opacity='.55'%3E%3Cpath d='M0 120H1440M0 300H1440M0 480H1440M0 660H1440M0 840H1440M180 0V900M360 0V900M540 0V900M720 0V900M900 0V900M1080 0V900M1260 0V900'/%3E%3C/g%3E%3Cg stroke='%232A323B' stroke-width='1' opacity='.9'%3E%3Ccircle cx='1180' cy='300' r='360'/%3E%3Ccircle cx='1180' cy='300' r='520'/%3E%3Ccircle cx='1180' cy='300' r='700'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='900' viewBox='0 0 1440 900' fill='none'%3E%3Cg stroke='%2323253A' stroke-width='1' opacity='.55'%3E%3Cpath d='M0 120H1440M0 300H1440M0 480H1440M0 660H1440M0 840H1440M180 0V900M360 0V900M540 0V900M720 0V900M900 0V900M1080 0V900M1260 0V900'/%3E%3C/g%3E%3Cg stroke='%2323253A' stroke-width='1' opacity='.9'%3E%3Ccircle cx='1180' cy='300' r='360'/%3E%3Ccircle cx='1180' cy='300' r='520'/%3E%3Ccircle cx='1180' cy='300' r='700'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 1440px 900px;
   background-position: top left;
   background-attachment: fixed;
@@ -440,7 +426,7 @@ kbd {
    anything on a board, because here you only need to see what is on offer. */
 .ring {
   --tile: var(--tile-pocket);
-  width: calc(var(--tile-pocket) * 2 + 46px);
+  width: calc(var(--tile-pocket) * 2 + 30px);
   aspect-ratio: 1;
   border-radius: 50%;
   border: 1px solid var(--rule-strong);
@@ -871,46 +857,188 @@ kbd {
   position: relative;
 }
 
-/* ------------------------------------------------------------- glaze key */
+/* ------------------------------------------------------- glaze key, deck */
 
 .key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 12px;
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 10px;
+  vertical-align: middle;
 }
 
 .key__item {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
+  display: inline-flex;
 }
 
 .key__tile {
-  --tile: 34px;
+  --tile: 16px;
 }
 
-.key__item .eyebrow {
+.table__key {
+  display: inline-flex;
+  align-items: center;
+}
+
+.deck {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.deck .displays {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  gap: 8px 10px;
+}
+
+.deck .centre {
+  flex: 0 1 190px;
+  min-width: 150px;
+  flex-direction: column;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.deck .centre__label {
+  width: auto;
+}
+
+.deck .centre__hint {
+  padding-left: 0;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* More displays at a bigger table: shrink them so the deck stays one band. */
+.displays[data-count='7'] {
+  --tile-pocket: calc(var(--tile-unit) * 0.52);
+}
+.displays[data-count='9'] {
+  --tile-pocket: calc(var(--tile-unit) * 0.44);
+}
+
+/* ------------------------------------------------------- the scoreboard */
+
+.scoreboard__switch {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.scoreboard__switch button {
+  padding: 2px 8px;
+  border: 1px solid var(--rule);
+  color: var(--ink-faint);
+}
+
+.scoreboard__switch button[aria-pressed='true'] {
+  color: var(--paper);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.track--snake {
+  display: grid;
+  grid-template-columns: repeat(20, minmax(0, 1fr));
+  gap: 2px;
+  padding: 4px 4px 0;
+}
+
+.track--ring {
+  display: grid;
+  grid-template-columns: repeat(26, minmax(0, 1fr));
+  grid-template-rows: repeat(26, minmax(0, 1fr));
+  gap: 1px;
+  aspect-ratio: 1;
+  padding: 4px;
+}
+
+.track__inner {
+  grid-area: 2 / 2 / 26 / 26;
+  display: grid;
+  align-content: center;
+  padding: 6px 10px;
+}
+
+.cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: end start;
+  padding: 1px 2px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-family: var(--font-figures);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--ink-faint);
+}
+
+.track--ring .cell {
+  font-size: 7px;
+  padding: 0 1px;
+}
+
+.cell--five {
+  border-color: var(--rule-strong);
+  color: var(--ink-dim);
+}
+
+.cell--lit {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.pawn {
+  position: absolute;
+  inset: -2px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 35%;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-weight: 500;
   font-size: 9px;
-  letter-spacing: 0.1em;
+  line-height: 1;
+  color: #0a0b10;
+  animation: hop 420ms ease-out;
 }
 
-/* ------------------------------------------------- standings, score track */
+.pawn--1 {
+  inset: -5px 3px 3px -5px;
+}
+.pawn--2 {
+  inset: 3px -5px -5px 3px;
+}
+.pawn--3 {
+  inset: -5px -5px 3px 3px;
+}
+
+@keyframes hop {
+  from {
+    transform: translateY(-6px) scale(1.25);
+  }
+}
 
 .standings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
 }
 
 .standing {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto 36px;
+  grid-template-columns: 22px 12px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px 10px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--rule);
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--rule);
 }
 
-.standing:last-child {
-  border-bottom: none;
+.standing:first-child {
+  border-top: none;
 }
 
 .standing--scoring {
@@ -918,76 +1046,141 @@ kbd {
   padding-left: 8px;
 }
 
-.standing__seat {
-  font-family: var(--font-figures);
-  font-size: 10px;
-  color: var(--ink-faint);
+.standing__rank {
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-dim);
+}
+
+.standing__pawn {
+  width: 12px;
+  height: 12px;
+  border-radius: 35%;
 }
 
 .standing__name {
-  font-size: 15px;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 17px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-bright);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.standing--turn .standing__name {
+  color: var(--signal);
+}
+
 .standing__status {
   font-size: 9px;
-  text-align: right;
+  letter-spacing: 0.1em;
 }
 
 .standing__score {
-  font-family: var(--font-figures);
-  font-size: 15px;
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: 28px;
+  line-height: 1;
+  min-width: 34px;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  color: var(--ink-bright);
 }
 
-/*
- * A hundred cells, one per point, ten to a group. Points fly in one at a time
- * during scoring, so the score is something you watch accumulate.
- */
-.track {
-  grid-column: 2 / -1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.track__cells {
-  display: grid;
-  grid-template-columns: repeat(20, 8px);
-  gap: 2px;
-}
-
-.track__cell {
-  width: 8px;
-  height: 8px;
-  border: 1px solid var(--rule);
-}
-
-.track__cell--ten {
-  border-color: var(--rule-strong);
-}
-
-.track__cell--on {
-  background: var(--ink);
-  border-color: var(--ink);
-  animation: tick 420ms ease-out;
-}
-
-@keyframes tick {
-  from {
-    background: var(--signal);
-    border-color: var(--signal);
-    transform: scale(1.5);
-  }
-}
-
-.track__lap {
+.standing__score small {
+  margin-left: 4px;
   font-family: var(--font-figures);
   font-size: 10px;
   color: var(--signal);
+}
+
+/* ---------------------------------------------------- one screen, if it fits */
+
+@media (min-width: 1080px) {
+  .app--table {
+    max-width: none;
+    height: 100dvh;
+    min-height: 0;
+    padding: 10px 20px 0;
+    gap: 10px;
+  }
+
+  .app--table .masthead {
+    flex-wrap: nowrap;
+    align-items: center;
+    padding-bottom: 8px;
+  }
+
+  .app--table .masthead__brand {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+  }
+
+  .app--table .wordmark {
+    font-size: 22px;
+  }
+
+  .app--table .table {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 10px 12px;
+  }
+
+  .app--table .table__main,
+  .app--table .table__side {
+    min-height: 0;
+    gap: 10px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-strong) transparent;
+  }
+
+  .app--table .module,
+  .app--table .board {
+    padding: 10px 14px 12px;
+    gap: 10px;
+  }
+
+  .app--table .module__head,
+  .app--table .board__head {
+    padding-bottom: 8px;
+  }
+
+  .app--table .board__name {
+    font-size: 22px;
+  }
+
+  .app--table .board__score {
+    font-size: 40px;
+  }
+
+  .app--table .board__body {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: calc(var(--tile-unit) * 0.8);
+  }
+
+  .app--table .floor {
+    padding-top: 8px;
+  }
+
+  .app--table .ring {
+    width: calc(var(--tile-pocket) * 2 + 30px);
+  }
+
+  .app--table .status {
+    position: static;
+    margin: 0 -20px;
+    padding: 8px 20px;
+  }
 }
 
 /* ------------------------------------------------------------- result */
@@ -1038,7 +1231,7 @@ kbd {
   margin: 4px calc(-1 * clamp(14px, 3.4vw, 48px)) 0;
   padding: 14px clamp(14px, 3.4vw, 48px);
   border-top: 1px solid var(--rule);
-  background: rgba(13, 17, 22, 0.94);
+  background: rgba(10, 11, 16, 0.94);
   backdrop-filter: blur(4px);
 }
 
@@ -1376,7 +1569,7 @@ kbd {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgba(6, 8, 11, 0.8);
+  background: rgba(5, 6, 9, 0.82);
   backdrop-filter: blur(2px);
   animation: fade 200ms ease;
 }
@@ -1437,5 +1630,18 @@ kbd {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .deck {
+    flex-direction: column;
+  }
+
+  .deck .centre {
+    flex: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
   }
 }

@@ -326,35 +326,6 @@ function FloorRuler({
   )
 }
 
-/**
- * A player's score as a track of a hundred cells, one per point.
- *
- * During scoring, each point flies into its own cell, so the score is
- * something you watch accumulate rather than a number that changes. Past a
- * hundred, the track starts over and says so, like the lap marker on a
- * physical score track.
- */
-export function ScoreTrack({ seat, score }: { seat: number; score: number }) {
-  const laps = Math.floor(score / 100)
-  const onTrack = score % 100
-  return (
-    <div className="track" aria-label={`${score} points`}>
-      <div className="track__cells">
-        {Array.from({ length: 100 }, (_, i) => (
-          <span
-            key={i}
-            className={['track__cell', i < onTrack ? 'track__cell--on' : '', i % 10 === 9 ? 'track__cell--ten' : '']
-              .filter(Boolean)
-              .join(' ')}
-            {...flightId(`pip:${seat}:${i}`)}
-          />
-        ))}
-      </div>
-      {laps > 0 ? <span className="track__lap">+{laps * 100}</span> : null}
-    </div>
-  )
-}
-
 /** A miniature wall for the home screen: some spaces fired, the rest unfired. */
 export function WallSampler() {
   return (

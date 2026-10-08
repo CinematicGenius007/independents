@@ -37,12 +37,8 @@ export function prefersReducedMotion(): boolean {
   return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-/** A size token in pixels, read from the document so flights match the CSS. */
-function tokenPx(name: string, fallback: number): number {
-  if (typeof getComputedStyle === 'undefined') return fallback
-  const value = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name))
-  return Number.isFinite(value) ? value : fallback
-}
+/** Display tiles are this fraction of a pattern-line tile; flights grow from one to the other. */
+const POCKET_SCALE = 0.62
 
 export interface PieceFlight {
   from: string
@@ -54,6 +50,8 @@ export interface PieceFlight {
   size?: 'from' | 'to' | number
   /** Width the piece starts at, when it should grow or shrink on the way. */
   startSize?: number
+  /** Starting width as a fraction of the end width, for pieces leaving a smaller thing. */
+  startScale?: number
   /**
    * Draw the piece as a copy of the tile already drawn at the target, motif
    * and all, and keep that tile hidden until the copy arrives — so the tile
@@ -78,7 +76,7 @@ export function flyPiece(root: ParentNode, flight: PieceFlight): boolean {
   const to = tileNode.getBoundingClientRect()
 
   const endSize = typeof flight.size === 'number' ? flight.size : flight.size === 'from' ? from.width : to.width
-  const startSize = flight.startSize ?? endSize
+  const startSize = flight.startSize ?? (flight.startScale ? endSize * flight.startScale : endSize)
   const x0 = from.left + from.width / 2 - startSize / 2
   const y0 = from.top + from.height / 2 - startSize / 2
   const lx = flight.lands?.x ?? 0.5
@@ -178,7 +176,6 @@ export interface FlightRequest {
 
 /** Flies every tile of a handful from its pile to the slots it lands in. */
 export function flyTiles(root: ParentNode, request: FlightRequest, tint: string): void {
-  const pocket = tokenPx('--tile-pocket', 24)
   request.to.forEach((to, index) =>
     flyPiece(root, {
       from: request.from,
@@ -186,7 +183,7 @@ export function flyTiles(root: ParentNode, request: FlightRequest, tint: string)
       tint,
       duration: FLIGHT_MS,
       delay: index * FLIGHT_STAGGER_MS,
-      startSize: pocket,
+      startScale: POCKET_SCALE,
       size: 'to',
       carry: true,
     }),
@@ -199,7 +196,7 @@ export function flyTiles(root: ParentNode, request: FlightRequest, tint: string)
       tint: 'transparent',
       duration: FLIGHT_MS,
       delay: base + index * FLIGHT_STAGGER_MS,
-      startSize: pocket,
+      startScale: POCKET_SCALE,
       size: 'to',
       carry: true,
     }),
@@ -211,7 +208,7 @@ export function flyTiles(root: ParentNode, request: FlightRequest, tint: string)
       tint: 'transparent',
       duration: FLIGHT_MS,
       delay: 0,
-      startSize: pocket,
+      startScale: POCKET_SCALE,
       size: 'to',
       carry: true,
     })
