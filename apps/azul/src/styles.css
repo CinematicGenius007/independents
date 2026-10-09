@@ -55,7 +55,7 @@
   --tile-wall: var(--tile-unit);
   --tile-floor: calc((var(--tile-unit) * 5 - 4px) / 7);
   --tile-pocket: calc(var(--tile-unit) * 0.5);
-  --tile-mini: 18px;
+  --tile-mini: 16px;
   --tile-gap: 5px;
   --tile-edge: rgba(255, 255, 255, 0.14);
   /* Tiles are rounded the way Apple rounds: a small radius that eases in. */
@@ -809,7 +809,7 @@ kbd {
 
 .board--compact {
   --tile: var(--tile-mini);
-  grid-template-columns: minmax(110px, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 14px;
   padding: 14px 16px;
@@ -829,6 +829,7 @@ kbd {
 }
 
 .line--compact {
+  height: auto;
   display: flex;
   justify-content: flex-end;
   gap: 2px;

@@ -59,16 +59,36 @@ const STAR_INNER = starPath(12, 12, 4, 1.9, 8)
 function Floral() {
   return (
     <g>
-      {/* leaf along the vertical axis */}
-      <path d="M12 9.1C10.7 7.6 10.8 5.9 12 4.3 13.2 5.9 13.3 7.6 12 9.1Z" />
-      {/* the scroll curling out along the diagonal */}
+      {/* the long leaf on the axis, with its midrib knocked out in gold */}
+      <path d="M12 8.1C10.2 6.5 10.3 4.5 12 2.9 13.7 4.5 13.8 6.5 12 8.1Z" />
+      <path d="M12 7.3V4.2" fill="none" stroke="#f3b53a" strokeWidth="0.45" />
+      {/* the main scroll, curling out along the diagonal to a bead */}
       <path
-        d="M13.7 10.3C15.3 9 16.6 9.5 17.5 8.2 18.3 7 17.3 5.7 16.1 6.3 15.3 6.7 15.5 7.8 16.4 7.8"
+        d="M14.1 9.9C15.9 8.5 17.6 8.9 18.4 7.5 19.2 6.1 18 4.8 16.7 5.4 15.8 5.8 15.9 7 16.9 7"
         fill="none"
       />
-      {/* a small bud at the edge and a stud at the corner */}
-      <path d="M15.6 3.1C16.9 3.3 17.6 4 17.6 5 16.5 4.9 15.8 4.3 15.6 3.1Z" />
-      <circle cx="19.3" cy="4.7" r="0.85" />
+      <circle cx="16.85" cy="6.15" r="0.5" stroke="none" />
+      {/* a tendril going the other way, ending in a small leaf */}
+      <path d="M10.1 9.7C8.5 8.9 7.5 7.5 7.7 5.9" fill="none" strokeWidth="0.7" />
+      <path d="M7.7 5.9C6.6 5.6 6.1 4.8 6.2 3.9 7.3 4.1 7.9 4.8 7.7 5.9Z" />
+      {/* a half-petal at the edge between them, and studs in the corner */}
+      <path d="M14.9 2.5C16.2 2.6 17.1 3.3 17.2 4.4 16 4.5 15.2 3.8 14.9 2.5Z" />
+      <circle cx="19.7" cy="4.3" r="0.8" stroke="none" />
+      <circle cx="21.3" cy="2.7" r="0.4" stroke="none" />
+      <circle cx="19.1" cy="12" r="0.5" stroke="none" />
+    </g>
+  )
+}
+
+/** Eight petals around a centre, for the middle of the yellow tile. */
+function Rosette() {
+  return (
+    <g stroke="none">
+      {Array.from({ length: 8 }, (_, i) => (
+        <ellipse key={i} cx="12" cy="9.3" rx="0.95" ry="2" transform={`rotate(${i * 45} 12 12)`} />
+      ))}
+      <circle cx="12" cy="12" r="1.15" fill="#f3b53a" />
+      <circle cx="12" cy="12" r="0.55" />
     </g>
   )
 }
@@ -122,72 +142,94 @@ function Outline({ color }: { color: Color }) {
 function Face({ color }: { color: Color }) {
   switch (color) {
     case 'cobalt':
-      // Plain glossy blue; a ghost of a quatrefoil so it is never only a colour.
+      // Plain glossy blue: a pale inner frame, faint corner arcs, a ghost quatrefoil.
       return (
-        <g fill="none" stroke="#ffffff" strokeOpacity="0.2" strokeWidth="0.8">
-          <circle cx="12" cy="8.8" r="3" />
-          <circle cx="12" cy="15.2" r="3" />
-          <circle cx="8.8" cy="12" r="3" />
-          <circle cx="15.2" cy="12" r="3" />
+        <g fill="none" stroke="#ffffff" strokeLinecap="round">
+          <path d={SQUIRCLE} transform="translate(2.4 2.4) scale(0.8)" strokeOpacity="0.16" strokeWidth="0.6" />
+          <g strokeOpacity="0.22" strokeWidth="0.8">
+            <circle cx="12" cy="8.8" r="3" />
+            <circle cx="12" cy="15.2" r="3" />
+            <circle cx="8.8" cy="12" r="3" />
+            <circle cx="15.2" cy="12" r="3" />
+          </g>
+          <path d="M4.2 7.4A3.2 3.2 0 0 1 7.4 4.2M16.6 4.2A3.2 3.2 0 0 1 19.8 7.4M19.8 16.6A3.2 3.2 0 0 1 16.6 19.8M7.4 19.8A3.2 3.2 0 0 1 4.2 16.6" strokeOpacity="0.2" strokeWidth="0.7" />
+          <g fill="#ffffff" fillOpacity="0.14" stroke="none">
+            <circle cx="6.1" cy="17.2" r="0.35" />
+            <circle cx="17.6" cy="6.6" r="0.3" />
+            <circle cx="18.2" cy="17.9" r="0.3" />
+            <circle cx="5.6" cy="7.2" r="0.3" />
+          </g>
         </g>
       )
     case 'saffron':
-      // Gold, painted in red-orange: a rosette with a floral in every quarter.
+      // Gold, painted in red-orange: a framed filigree, a rosette and a floral in every quarter.
       return (
-        <g fill="#e2481f" stroke="#e2481f" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round">
+        <g fill="#e2481f" stroke="#e2481f" strokeWidth="0.85" strokeLinecap="round" strokeLinejoin="round">
+          <path d={SQUIRCLE} transform="translate(1.9 1.9) scale(0.8417)" fill="none" strokeWidth="0.45" strokeOpacity="0.75" />
           {[0, 90, 180, 270].map(angle => (
             <g key={angle} transform={`rotate(${angle} 12 12)`}>
               <Floral />
             </g>
           ))}
-          <circle cx="12" cy="12" r="1.9" stroke="none" />
-          <circle cx="12" cy="12" r="3.3" fill="none" strokeWidth="0.6" strokeDasharray="0.9 1.1" />
+          <Rosette />
+          <circle cx="12" cy="12" r="4.4" fill="none" strokeWidth="0.5" strokeDasharray="0.8 1" />
         </g>
       )
     case 'crimson':
       return (
-        <g fill="none" stroke="#ffffff" strokeOpacity="0.2" strokeWidth="0.8">
-          <path d="M12 4.6 19.4 12 12 19.4 4.6 12Z" />
-          <circle cx="12" cy="12" r="2.2" />
+        <g fill="none" stroke="#ffffff" strokeLinecap="round">
+          <path d={SQUIRCLE} transform="translate(2.4 2.4) scale(0.8)" strokeOpacity="0.16" strokeWidth="0.6" />
+          <g strokeOpacity="0.22" strokeWidth="0.8">
+            <path d="M12 4.6 19.4 12 12 19.4 4.6 12Z" />
+            <circle cx="12" cy="12" r="2.2" />
+          </g>
+          <path d="M4.2 7.4A3.2 3.2 0 0 1 7.4 4.2M16.6 4.2A3.2 3.2 0 0 1 19.8 7.4M19.8 16.6A3.2 3.2 0 0 1 16.6 19.8M7.4 19.8A3.2 3.2 0 0 1 4.2 16.6" strokeOpacity="0.2" strokeWidth="0.7" />
+          <g fill="#ffffff" fillOpacity="0.14" stroke="none">
+            <circle cx="6.4" cy="17.4" r="0.35" />
+            <circle cx="17.3" cy="6.4" r="0.3" />
+            <circle cx="17.9" cy="17.6" r="0.3" />
+          </g>
         </g>
       )
     case 'basalt':
-      // Black, with a teal rosette lattice: rings, a ring of beads, corner arcs.
+      // Black, with a teal rosette lattice: rings, overlapping petals, a ring of beads, corner arcs.
       return (
-        <g fill="none" stroke="#3aa3bd" strokeWidth="0.75" strokeLinecap="round">
-          <circle cx="12" cy="12" r="7.4" />
-          <circle cx="12" cy="12" r="4.6" />
-          <circle cx="12" cy="12" r="1.8" fill="#3aa3bd" stroke="none" />
-          {Array.from({ length: 12 }, (_, i) => {
-            const angle = (Math.PI * 2 * i) / 12
+        <g fill="none" stroke="#3aa3bd" strokeWidth="0.7" strokeLinecap="round">
+          <path d={SQUIRCLE} transform="translate(1.7 1.7) scale(0.8583)" strokeWidth="0.4" strokeOpacity="0.6" />
+          <circle cx="12" cy="12" r="8.2" strokeOpacity="0.9" />
+          <circle cx="12" cy="12" r="6.6" strokeWidth="0.45" strokeOpacity="0.7" />
+          {Array.from({ length: 8 }, (_, i) => {
+            const angle = (Math.PI * 2 * i) / 8
+            return <circle key={i} cx={12 + 3.6 * Math.cos(angle)} cy={12 + 3.6 * Math.sin(angle)} r="2.2" strokeOpacity="0.85" />
+          })}
+          <circle cx="12" cy="12" r="1.6" fill="#3aa3bd" stroke="none" />
+          {Array.from({ length: 16 }, (_, i) => {
+            const angle = (Math.PI * 2 * i) / 16
             return (
-              <circle
-                key={i}
-                cx={12 + 6 * Math.cos(angle)}
-                cy={12 + 6 * Math.sin(angle)}
-                r="0.7"
-                fill="#3aa3bd"
-                stroke="none"
-              />
+              <circle key={i} cx={12 + 7.4 * Math.cos(angle)} cy={12 + 7.4 * Math.sin(angle)} r="0.5" fill="#3aa3bd" stroke="none" />
             )
           })}
-          <path d="M12 4.6V7.4M12 16.6V19.4M4.6 12H7.4M16.6 12H19.4" strokeOpacity="0.8" />
-          <path d="M2.2 6.4A4.2 4.2 0 0 0 6.4 2.2M17.6 2.2A4.2 4.2 0 0 0 21.8 6.4M21.8 17.6A4.2 4.2 0 0 0 17.6 21.8M6.4 21.8A4.2 4.2 0 0 0 2.2 17.6" />
-          <circle cx="3.6" cy="3.6" r="0.6" fill="#3aa3bd" stroke="none" />
-          <circle cx="20.4" cy="3.6" r="0.6" fill="#3aa3bd" stroke="none" />
-          <circle cx="3.6" cy="20.4" r="0.6" fill="#3aa3bd" stroke="none" />
-          <circle cx="20.4" cy="20.4" r="0.6" fill="#3aa3bd" stroke="none" />
+          <path d="M2.2 7.2A5 5 0 0 0 7.2 2.2M16.8 2.2A5 5 0 0 0 21.8 7.2M21.8 16.8A5 5 0 0 0 16.8 21.8M7.2 21.8A5 5 0 0 0 2.2 16.8" />
+          <path d="M2.2 5A2.8 2.8 0 0 0 5 2.2M19 2.2A2.8 2.8 0 0 0 21.8 5M21.8 19A2.8 2.8 0 0 0 19 21.8M5 21.8A2.8 2.8 0 0 0 2.2 19" strokeWidth="0.45" strokeOpacity="0.7" />
         </g>
       )
     case 'verdigris':
-      // Ivory, with a sky-blue star built up in three layers.
+      // Ivory, with a sky-blue star in layers over a faint ground of crossed lines.
       return (
-        <g strokeLinejoin="round">
+        <g strokeLinejoin="round" strokeLinecap="round">
+          <path d={SQUIRCLE} transform="translate(1.6 1.6) scale(0.8667)" fill="none" stroke="#3db5c9" strokeWidth="0.45" strokeOpacity="0.55" />
+          <path d="M12 2.4V21.6M2.4 12H21.6M5.2 5.2 18.8 18.8M18.8 5.2 5.2 18.8" stroke="#3db5c9" strokeWidth="0.35" strokeOpacity="0.35" fill="none" />
           <path d={STAR_OUTER} fill="#3db5c9" />
           <path d={STAR_MID} fill="#f3f6f5" />
+          <path d={STAR_MID} fill="none" stroke="#3db5c9" strokeWidth="0.45" strokeOpacity="0.8" transform="translate(12 12) scale(0.72) translate(-12 -12)" />
           <path d={STAR_INNER} fill="#3db5c9" />
-          <circle cx="12" cy="12" r="0.9" fill="#f3f6f5" />
-          <path d="M3.4 3.4H5.2M3.4 3.4V5.2M20.6 3.4H18.8M20.6 3.4V5.2M3.4 20.6H5.2M3.4 20.6V18.8M20.6 20.6H18.8M20.6 20.6V18.8" fill="none" stroke="#3db5c9" strokeWidth="0.7" />
+          <circle cx="12" cy="12" r="0.95" fill="#f3f6f5" />
+          <g fill="#3db5c9">
+            <circle cx="4.1" cy="4.1" r="0.7" />
+            <circle cx="19.9" cy="4.1" r="0.7" />
+            <circle cx="4.1" cy="19.9" r="0.7" />
+            <circle cx="19.9" cy="19.9" r="0.7" />
+          </g>
         </g>
       )
   }
