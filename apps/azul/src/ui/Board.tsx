@@ -50,6 +50,8 @@ export interface BoardProps {
   score?: number
   /** Short status words for the eyebrow, e.g. "house" or "away". */
   badge?: string
+  /** Show the beginner's aids: previews, the reckoning, bonus progress, points as they fire. */
+  learning?: boolean
   onPlace?: (line: number) => void
 }
 
@@ -66,14 +68,20 @@ function eyebrow({ seat, mine, active, badge }: BoardProps): string {
 }
 
 function FullBoard(props: BoardProps) {
-  const { player, seat, active, pending, scoring, score, onPlace } = props
+  const { player, seat, active, pending, scoring, score, onPlace, learning = true } = props
   const progress = bonusProgress(player)
   const shown = score ?? player.score
   const penalty = FLOOR_PENALTIES.slice(0, player.floor.length).reduce((a, b) => a + b, 0)
 
   return (
     <section
-      className={['board', 'board--mine', active ? 'board--active' : '', scoring?.focus ? 'board--scoring' : '']
+      className={[
+        'board',
+        'board--mine',
+        learning ? 'board--learning' : '',
+        active ? 'board--active' : '',
+        scoring?.focus ? 'board--scoring' : '',
+      ]
         .filter(Boolean)
         .join(' ')}
       aria-label={`${player.name}'s board`}
@@ -85,6 +93,7 @@ function FullBoard(props: BoardProps) {
           <h3 className="board__name">{player.name}</h3>
         </div>
         <div className="board__tally">
+          {learning ? (
           <span className="board__progress">
             rows {progress.rows} · cols {progress.columns} · sets {progress.colors}
             {progress.nearestRow ? (
@@ -94,6 +103,7 @@ function FullBoard(props: BoardProps) {
               </>
             ) : null}
           </span>
+          ) : null}
           <span className="board__score" aria-label={`${shown} points`}>
             {shown}
           </span>
@@ -104,19 +114,34 @@ function FullBoard(props: BoardProps) {
         <div className="board__left">
           <div className="lines">
             {player.lines.map((line, index) => (
-              <PatternLine key={index} seat={seat} index={index} line={line} pending={pending} onPlace={onPlace} />
+              <PatternLine
+                key={index}
+                seat={seat}
+                index={index}
+                line={line}
+                pending={pending}
+                learning={learning}
+                onPlace={onPlace}
+              />
             ))}
           </div>
-          <FloorRuler seat={seat} floor={player.floor} pending={pending} penalty={penalty} onPlace={onPlace} />
+          <FloorRuler
+            seat={seat}
+            floor={player.floor}
+            pending={pending}
+            penalty={penalty}
+            learning={learning}
+            onPlace={onPlace}
+          />
         </div>
-        <Wall player={player} seat={seat} scoring={scoring} />
+        <Wall player={player} seat={seat} scoring={scoring} learning={learning} />
       </div>
     </section>
   )
 }
 
 function CompactBoard(props: BoardProps) {
-  const { player, seat, active, scoring, score } = props
+  const { player, seat, active, scoring, score, learning = true } = props
   const shown = score ?? player.score
   const penalty = FLOOR_PENALTIES.slice(0, player.floor.length).reduce((a, b) => a + b, 0)
   return (
@@ -152,7 +177,7 @@ function CompactBoard(props: BoardProps) {
             </div>
           ))}
         </div>
-        <Wall player={player} seat={seat} scoring={scoring} />
+        <Wall player={player} seat={seat} scoring={scoring} learning={learning} />
       </div>
       {/* Floor slots exist for flights to land in, even though they are not drawn. */}
       <div className="floor-anchors" aria-hidden="true">
@@ -164,7 +189,17 @@ function CompactBoard(props: BoardProps) {
   )
 }
 
-function Wall({ player, seat, scoring }: { player: PlayerState; seat: number; scoring?: ScoringView }) {
+function Wall({
+  player,
+  seat,
+  scoring,
+  learning,
+}: {
+  player: PlayerState
+  seat: number
+  scoring?: ScoringView
+  learning: boolean
+}) {
   return (
     <div className="wall" role="grid" aria-label="Wall">
       {player.wall.map((row, r) =>
@@ -182,7 +217,7 @@ function Wall({ player, seat, scoring }: { player: PlayerState; seat: number; sc
                 flight={`wall:${id}`}
                 title={shown ? `${color}, row ${r + 1}, column ${c + 1}` : `space for ${color}, row ${r + 1}, column ${c + 1}`}
               />
-              {counting ? <span className="wall__points">+{scoring!.counting!.points}</span> : null}
+              {counting && learning ? <span className="wall__points">+{scoring!.counting!.points}</span> : null}
             </div>
           )
         }),
@@ -196,12 +231,14 @@ function PatternLine({
   index,
   line,
   pending,
+  learning,
   onPlace,
 }: {
   seat: number
   index: number
   line: PlayerState['lines'][number]
   pending?: PendingPlacement
+  learning: boolean
   onPlace?: (line: number) => void
 }) {
   const capacity = index + 1
@@ -212,7 +249,7 @@ function PatternLine({
 
   const slots = Array.from({ length: capacity }, (_, slot) => {
     const filled = slot >= capacity - line.count
-    const incoming = playable && !filled && slot >= capacity - line.count - willTake
+    const incoming = learning && playable && !filled && slot >= capacity - line.count - willTake
     const name = `slot:${seat}:${index}:${slot}`
     if (filled && line.color) return <Tile key={slot} flight={name} color={line.color} className="slot" />
     if (incoming && pending) {
@@ -224,7 +261,9 @@ function PatternLine({
   // The reckoning: what this line would earn, what spills would cost, or how
   // far short it would stay. Said before the click, in its own lane.
   let reckoning: React.ReactNode = <span className="reckon reckon--idle">—</span>
-  if (preview) {
+  if (!learning) {
+    reckoning = null
+  } else if (preview) {
     reckoning = (
       <span className="reckon">
         {preview.completes ? <b className="reckon--gain">+{preview.points}</b> : null}
@@ -236,7 +275,9 @@ function PatternLine({
     )
   }
 
-  const label = playable
+  const label = playable && !learning
+    ? `Line ${capacity}`
+    : playable
     ? `Line ${capacity}: ${preview?.completes ? `fires for ${preview.points}` : 'stays short'}${
         preview && preview.penalty < 0 ? `, ${preview.overflow} to the floor for ${preview.penalty}` : ''
       }`
@@ -269,15 +310,17 @@ function FloorRuler({
   floor,
   pending,
   penalty,
+  learning,
   onPlace,
 }: {
   seat: number
   floor: PlayerState['floor']
   pending?: PendingPlacement
   penalty: number
+  learning: boolean
   onPlace?: (line: number) => void
 }) {
-  const preview = pending?.floorPreview
+  const preview = learning ? pending?.floorPreview : undefined
   const ruler = (
     <div className="floor">
       <div className="floor__label">
@@ -319,7 +362,9 @@ function FloorRuler({
       type="button"
       className="floor--playable"
       onClick={() => onPlace?.(-1)}
-      aria-label={`Drop all ${pending.count} on the floor for ${preview?.penalty ?? 0}`}
+      aria-label={
+        preview ? `Drop all ${pending.count} on the floor for ${preview.penalty}` : `Drop all ${pending.count} on the floor`
+      }
       title={`Drop all ${pending.count} on the floor (key 0)`}
     >
       {ruler}

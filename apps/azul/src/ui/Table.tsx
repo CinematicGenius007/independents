@@ -16,7 +16,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Color, GameState, Move } from '../engine/types'
 import { CENTER, COLORS, FLOOR, WALL_SIZE, wallColor } from '../engine/types'
 import { moveError, needsDeal } from '../engine/rules'
-import { previewFloor, previewLine } from '../engine/preview'
+import { previewFloor, previewLine, unseenTiles } from '../engine/preview'
 import type { LinePreview } from '../engine/preview'
 import { PIP_FLIGHT_MS } from '../engine/timeline'
 import type { TimelineEvent } from '../engine/timeline'
@@ -58,9 +58,11 @@ export interface TableProps {
   lastMove: LastMove | null
   /** This screen has finished watching round `round` being scored. */
   onSeen?: (round: number) => void
+  /** Show the beginner's aids: previews, hints, bonus progress, the tile count. */
+  learning?: boolean
 }
 
-export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSeen }: TableProps) {
+export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSeen, learning = true }: TableProps) {
   const [pick, setPick] = useState<Pick | null>(null)
   const root = useRef<HTMLDivElement>(null)
 
@@ -302,9 +304,11 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
         <section className="module" aria-label="The displays and the centre">
           <header className="module__head">
             <span className="eyebrow">Displays · {String(activeDisplays).padStart(2, '0')} active</span>
-            <span className="eyebrow eyebrow--faint table__key">
-              Take all of one glaze <GlazeKey />
-            </span>
+            {learning ? (
+              <span className="eyebrow eyebrow--faint table__key">
+                Take all of one colour <GlazeKey />
+              </span>
+            ) : null}
           </header>
           <div className="deck">
             <div className="displays" data-count={state.factories.length}>
@@ -324,6 +328,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
               hasFirst={state.centerHasFirst}
               pick={pick}
               enabled={myTurn}
+              learning={learning}
               onPick={color => choose(CENTER, color)}
             />
           </div>
@@ -338,6 +343,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
             pending={pending}
             scoring={scoringFor(seatIndex!)}
             score={scoring.scores[seatIndex!]}
+            learning={learning}
             onPlace={line => place(line === -1 ? FLOOR : line)}
           />
         ) : null}
@@ -384,6 +390,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
           counting={scoring.running}
         />
         {finished ? <Result state={state} /> : null}
+        {learning && !finished ? <Remaining state={state} /> : null}
         {others.map(({ player, index }) => (
           <Board
             key={player.id}
@@ -394,6 +401,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
             active={state.current === index && state.phase === 'offer' && !scoring.running}
             scoring={scoringFor(index)}
             score={scoring.scores[index]}
+            learning={learning}
             badge={seats[index]?.kind === 'bot' ? 'house' : seats[index]?.present ? undefined : 'away'}
           />
         ))}
@@ -407,6 +415,7 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
         pending={pending}
         notice={notice}
         scoring={scoring}
+        learning={learning}
       />
     </div>
   )
@@ -467,12 +476,14 @@ function Centre({
   hasFirst,
   pick,
   enabled,
+  learning,
   onPick,
 }: {
   tiles: Color[]
   hasFirst: boolean
   pick: Pick | null
   enabled: boolean
+  learning: boolean
   onPick: (color: Color) => void
 }) {
   const groups = COLORS.map(color => ({ color, count: tiles.filter(t => t === color).length })).filter(g => g.count > 0)
@@ -501,7 +512,9 @@ function Centre({
       )}
       </span>
       <span className="centre__hint">
-        {groups.length === 0
+        {!learning
+          ? ''
+          : groups.length === 0
           ? hasFirst
             ? 'Leftovers slide in here. The first hand taken from here carries the marker.'
             : 'Leftovers slide in here.'
@@ -525,6 +538,34 @@ function GlazeKey() {
         </span>
       ))}
     </span>
+  )
+}
+
+/**
+ * The tiles still to come, by colour: everything not on a wall, a line, a
+ * floor, a display or the centre is in the bag or the lid. Counting this is
+ * ordinary play at a real table; here it is done for you.
+ */
+function Remaining({ state }: { state: GameState }) {
+  const unseen = unseenTiles(state)
+  const total = COLORS.reduce((sum, color) => sum + unseen[color], 0)
+  return (
+    <section className="module" aria-label="Tiles remaining">
+      <header className="module__head">
+        <span className="eyebrow">Remaining tiles</span>
+        <span className="eyebrow eyebrow--faint">{total} in bag &amp; lid</span>
+      </header>
+      <div className="remaining">
+        {COLORS.map(color => (
+          <span className="remaining__item" key={color} title={`${unseen[color]} ${COLOR_NAMES[color]} still to come`}>
+            <Tile color={color} className="remaining__tile" />
+            <span className="remaining__count" style={{ color: GLAZE_TEXT[color] }}>
+              {unseen[color]}
+            </span>
+          </span>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -566,6 +607,7 @@ function StatusBar({
   pending,
   notice,
   scoring,
+  learning,
 }: {
   state: GameState
   seats: Seat[]
@@ -574,6 +616,7 @@ function StatusBar({
   pending?: PendingPlacement
   notice: string | null
   scoring: ReturnType<typeof useScoring>
+  learning: boolean
 }) {
   let tag = ''
   let tone: 'signal' | 'quiet' | 'warn' | 'win' = 'quiet'
@@ -627,7 +670,7 @@ function StatusBar({
   } else {
     tone = 'signal'
     tag = 'Your turn'
-    text = 'Take every tile of one glaze from a display, or from the centre.'
+    text = 'Take every tile of one colour from a display, or from the centre.'
   }
 
   return (
@@ -635,12 +678,12 @@ function StatusBar({
       <span className="status__tag">{tag}</span>
       <span className="status__text">{text}</span>
       <span className="status__legend">
-        {action ?? (
+        {action ?? (learning ? (
           <>
             <span className="eyebrow reckon--gain">+N earns if it fires</span>
             <span className="eyebrow reckon--cost">−N costs on the floor</span>
           </>
-        )}
+        ) : null)}
       </span>
     </footer>
   )

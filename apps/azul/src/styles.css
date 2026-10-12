@@ -626,14 +626,18 @@ kbd {
   width: calc(var(--tile-line) * 5 + var(--tile-gap) * 4);
 }
 
-.line--playable .line__slots {
+.board--learning .line--playable .line__slots {
   outline: 1px solid var(--signal);
   outline-offset: 3px;
   background: var(--signal-wash);
 }
 
+/* Without learning mode nothing is marked in advance; the line under the
+   pointer is the only one that answers. */
 .line--playable:hover .line__slots,
 .line--playable:focus-visible .line__slots {
+  outline: 1px solid var(--signal);
+  outline-offset: 3px;
   background: rgba(255, 106, 61, 0.16);
 }
 
@@ -653,7 +657,7 @@ kbd {
   color: var(--ink-faint);
 }
 
-.line--playable .line__index {
+.board--learning .line--playable .line__index {
   color: var(--signal);
 }
 
@@ -800,9 +804,35 @@ kbd {
   text-align: left;
 }
 
-.floor--playable .floor__ruler {
+.board--learning .floor--playable .floor__ruler,
+.floor--playable:hover .floor__ruler,
+.floor--playable:focus-visible .floor__ruler {
   outline: 1px solid var(--signal);
   outline-offset: 3px;
+}
+
+/* ------------------------------------------------------ remaining tiles */
+
+.remaining {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.remaining__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.remaining__tile {
+  --tile: 22px;
+}
+
+.remaining__count {
+  font-family: var(--font-figures);
+  font-size: 13px;
+  min-width: 2ch;
 }
 
 /* -------------------------------------------------------- compact boards */
