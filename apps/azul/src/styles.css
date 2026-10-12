@@ -350,15 +350,18 @@ kbd {
   border-radius: var(--tile-radius);
 }
 
-/* A tile is a thick, glossy piece: a soft contact shadow under it. */
+/* A tile is a flat glaze piece: a faint edge and a soft contact shadow under it. */
 .tile--ink,
 .tile--first {
+  outline: 1px solid var(--tile-edge);
+  outline-offset: -1px;
   filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.45));
 }
 
 /* An empty wall space is its sign dotted in its own glaze: flat, matte, unmistakably unfired. */
 .tile--pounce .tile__print {
   opacity: 0.85;
+}
 }
 
 @keyframes land {

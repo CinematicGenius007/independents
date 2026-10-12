@@ -11,6 +11,10 @@ import { Rules } from './ui/Rules'
 import { setSoundEnabled, soundEnabled } from './ui/audio'
 import { learningEnabled, setLearningEnabled } from './ui/learning'
 import { Table } from './ui/Table'
+import { COLORS } from './engine/types'
+import type { GameState } from './engine/types'
+import { unseenTiles } from './engine/preview'
+import { GLAZE_TEXT } from './ui/Tile'
 import { useSession } from './useSession'
 import type { RoomKind } from './useSession'
 import { parseRoomIdFromLocation } from './net/room'
@@ -132,11 +136,13 @@ export default function App() {
                     : `Round ${String(view!.state!.round).padStart(2, '0')}`}
                 </span>
                 <span>Seats {String(view!.state!.players.length).padStart(2, '0')}</span>
+                <span>Bag {Object.values(unseenTiles(view!.state!)).reduce((a, b) => a + b, 0)}</span>
               </>
             )}
           </p>
         </div>
         <div className="masthead__aside">
+          {playing ? <Unseen state={view!.state!} /> : null}
           {session ? (
             <span className="relay" data-status={session.status}>
               {session.code ? session.code : 'Solo'} ·{' '}
@@ -255,6 +261,23 @@ export default function App() {
           ) : null}
         </>
       )}
+    </div>
+  )
+}
+
+/** Tiles of each glaze nobody has seen yet — the bag, read off the table. */
+function Unseen({ state }: { state: GameState }) {
+  const unseen = unseenTiles(state)
+  return (
+    <div className="unseen" aria-label="Tiles not yet seen, by glaze">
+      <span className="eyebrow eyebrow--faint">Unseen by glaze</span>
+      <span className="unseen__counts">
+        {COLORS.map(color => (
+          <span key={color} style={{ color: GLAZE_TEXT[color] }} title={color}>
+            {String(unseen[color]).padStart(2, '0')}
+          </span>
+        ))}
+      </span>
     </div>
   )
 }
