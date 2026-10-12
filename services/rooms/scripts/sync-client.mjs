@@ -18,7 +18,7 @@ const root = join(here, '..', '..', '..')
 const source = join(here, '..', 'client', 'rooms-client.ts')
 
 /** Every app that talks to the rooms service, and where its copy lives. */
-const TARGETS = ['apps/azul/src/net/rooms-client.ts', 'apps/ultimate-ttt/src/net/rooms-client.ts']
+const TARGETS = ['apps/azul/src/net/rooms-client.ts', 'apps/ultimate-ttt/src/net/rooms-client.ts', 'apps/pictionary/src/net/rooms-client.ts']
 
 const canonical = readFileSync(source, 'utf8')
 const check = process.argv.includes('--check')

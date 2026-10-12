@@ -96,7 +96,7 @@ export function RoomView({ roomId, profile, database, onLeave }: RoomViewProps) 
 
   useEffect(() => {
     let disposed = false
-    const room = joinRoom(roomId)
+    const room = joinRoom(roomId, profile.nickname)
     const transport = room.transport
     const mesh = createMesh(transport)
     const roster = createRoomRoster(transport, profile)

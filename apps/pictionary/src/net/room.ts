@@ -8,6 +8,7 @@
 import type { RoomId } from '../shared/types'
 import type { RoomHandle } from './protocol'
 import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from './protocol'
+import { createRoomsHandle, ROOMS_URL } from './rooms-transport'
 import { createTrysteroTransport } from './trystero-transport'
 
 const ROOM_HASH_KEY = 'room'
@@ -46,7 +47,13 @@ export function parseRoomIdFromLocation(): RoomId | null {
   return parseRoomIdFromHash(location.hash)
 }
 
-function buildRoomHandle(roomId: RoomId): RoomHandle {
+function buildRoomHandle(roomId: RoomId, name: string): RoomHandle {
+  // Rooms first (always-on server, reconnects, stable seats), Trystero as the
+  // no-infrastructure fallback. Name travels to rooms for the roster; Trystero
+  // learns it through the hello handshake instead.
+  if (ROOMS_URL) {
+    return createRoomsHandle({ baseUrl: ROOMS_URL, roomId, name, url: buildRoomUrl(roomId) })
+  }
   const connection = createTrysteroTransport(roomId)
   return {
     transport: connection.transport,
@@ -57,11 +64,11 @@ function buildRoomHandle(roomId: RoomId): RoomHandle {
 }
 
 /** Creates a fresh room with a newly generated code. */
-export function createRoom(random?: () => number): RoomHandle {
-  return buildRoomHandle(generateRoomCode(random))
+export function createRoom(name: string, random?: () => number): RoomHandle {
+  return buildRoomHandle(generateRoomCode(random), name)
 }
 
 /** Joins an existing room by its code. */
-export function joinRoom(code: string): RoomHandle {
-  return buildRoomHandle(normalizeRoomCode(code))
+export function joinRoom(code: string, name: string): RoomHandle {
+  return buildRoomHandle(normalizeRoomCode(code), name)
 }

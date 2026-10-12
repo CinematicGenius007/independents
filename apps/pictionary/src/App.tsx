@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Database } from './db/types'
 import { Showcase } from './design/Showcase'
-import { createRoom, normalizeRoomCode } from './net/room'
+import { generateRoomCode, normalizeRoomCode } from './net/room'
 import { usePracticeSession, type PracticePrompt } from './practice'
 import { AVATAR_COLORS, type PlayerProfile, type PlayerStats } from './shared/types'
 import { HomeScreen, OnboardingScreen, PracticeScreen, StatsScreen } from './screens'
@@ -162,9 +162,7 @@ export function App() {
     roomCode={roomCode}
     onRoomCodeChange={setRoomCode}
     onCreateRoom={() => {
-      const room = createRoom()
-      room.transport.leave()
-      navigate(`room=${room.transport.roomId}`)
+      navigate(`room=${generateRoomCode()}`)
     }}
     onJoinRoom={() => navigate(`room=${normalizeRoomCode(roomCode)}`)}
     onPractice={() => navigate('practice')}

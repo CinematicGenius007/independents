@@ -35,6 +35,14 @@ export const GAMES: Record<string, GameConfig> = {
   // log must stay whole: a game is at most ~85 entries, and this keeps about
   // twenty of them. Rooms are wiped hours after they empty in any case.
   'ultimate-ttt': { maxPeers: 10, log: true, logLimit: 2000 },
+
+  // Host-sequenced: the elected host stamps revisions and serves snapshots,
+  // and secret words travel directed to the drawer only. No log: broadcasts
+  // must never replay to late joiners (they can carry word-adjacent state),
+  // so joins catch up via an explicit sync_request/serveSyncState instead.
+  // Ink frames and snapshots travel as base64 JSON with batching/chunking
+  // (rooms frames are 64 KiB JSON text, ~8 msgs/s sustained).
+  pictionary: { maxPeers: 8, log: false, logLimit: 0 },
 }
 
 export function gameConfig(game: string): GameConfig | null {

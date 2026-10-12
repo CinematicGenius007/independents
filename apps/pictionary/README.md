@@ -29,6 +29,16 @@ The development component showcase is available at `#kit`.
 
 ## Rooms and multiplayer
 
+With `VITE_ROOMS_URL` set, rooms go through the independents rooms service
+(`services/rooms` — one Cloudflare Worker, sequenced relay, presence with
+reconnect grace) instead of peer-to-peer signaling. On rooms, control traffic
+is plain JSON, ink frames travel base64-batched (~8 envelopes/s sustained) and
+snapshots chunked under the 64 KiB frame limit; ping/pong is dropped because
+the service keeps its own keepalive. Secret words still travel directed to the
+drawer only, and the room keeps no log — late joiners catch up through an
+explicit sync, as before. Without the variable, the game signals peer to peer
+over public relays as described below.
+
 A room uses a six-character, ambiguity-free code such as `ABCD23`. Its shareable URL is the current origin and path followed by a hash fragment:
 
 ```text
