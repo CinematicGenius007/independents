@@ -265,8 +265,8 @@ export default function App() {
         <div>
           <h1 className="wordmark">Sealed Orders</h1>
           <p className="tagline">
-            Two players, one board, no server. Nobody moves second, because nobody can see the other
-            move.
+            A 2-player strategy duel. Program 3 moves in secret each turn and race
+            to claim wells — no server, the match travels in links you pass each other.
           </p>
         </div>
         <div className="modes">
@@ -278,6 +278,24 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      <section className="howto" aria-label="how to play">
+        <div className="howto-card">
+          <b><span className="n">1</span>Program 3 steps</b>
+          Pick N / E / S / W or wait, 3 times. Your opponent does the same without
+          seeing yours. Seal (hash) → they play open → you reveal.
+        </div>
+        <div className="howto-card">
+          <b><span className="n">2</span>Race to the wells</b>
+          A well (circle) goes to whoever <i>sits on it first</i> and stays there
+          that turn. Same well, same beat = neither gets it.
+        </div>
+        <div className="howto-card">
+          <b><span className="n">3</span>Hold 3, or most water</b>
+          You are the black square, they are red. Hold 3 wells at once to win now,
+          else most water after 12 turns wins. Centre well pays double.
+        </div>
+      </section>
 
       <section className="table">
         <BoardView board={board} position={state.position} you={you} preview={preview} />

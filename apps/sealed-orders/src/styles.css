@@ -30,23 +30,9 @@ body {
   margin: 0;
   min-height: 100dvh;
   color: var(--ink);
-  background: var(--paper);
-}
-
-/* The cyan block behind the play area, with a torn cloud edge along the top. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: 32rem;
   background: var(--sky);
-  z-index: 0;
-  -webkit-mask:
-    radial-gradient(2.6rem at 50% 0, transparent 99%, #000) 0 100% / 5.2rem 2.6rem repeat-x,
-    linear-gradient(#000, #000) 0 0 / 100% calc(100% - 2.6rem) no-repeat;
-  mask:
-    radial-gradient(2.6rem at 50% 0, transparent 99%, #000) 0 100% / 5.2rem 2.6rem repeat-x,
-    linear-gradient(#000, #000) 0 0 / 100% calc(100% - 2.6rem) no-repeat;
+  background-image: radial-gradient(#ffffff2a 1.1px, transparent 1.1px);
+  background-size: 18px 18px;
 }
 
 button,
@@ -510,4 +496,52 @@ button {
 *:focus-visible {
   outline: 3px solid var(--red);
   outline-offset: 2px;
+}
+
+/* ---------- how to play ---------- */
+
+.howto {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+@media (max-width: 46rem) {
+  .howto {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.howto-card {
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  padding: 0.65rem 0.8rem;
+  box-shadow: 4px 4px 0 var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.howto-card b {
+  display: block;
+  color: var(--ink);
+  font-size: 0.85rem;
+  margin-bottom: 0.15rem;
+}
+
+.howto-card .n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-right: 0.35rem;
+  vertical-align: -0.2rem;
 }
