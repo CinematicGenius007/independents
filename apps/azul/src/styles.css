@@ -356,10 +356,9 @@ kbd {
   filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.45));
 }
 
-/* An empty wall space is the tile's face printed flat and faded into the board. */
+/* An empty wall space is its sign dotted in its own glaze: flat, matte, unmistakably unfired. */
 .tile--pounce .tile__print {
-  opacity: 0.52;
-  filter: saturate(0.75);
+  opacity: 0.85;
 }
 
 @keyframes land {

@@ -1,62 +1,40 @@
 /**
  * One tile, and the space printed on the board where a tile will go.
  *
- * The five tiles are drawn after the real set, from scratch, as flat vector:
+ * The tiles speak the Astral design language from the Paper glaze key: five
+ * flat glaze grounds, each carrying its own light line-drawn sign — orbit
+ * rings, compass star, rose diamond, chevrons, waves — built on one shared
+ * grid in {@link glazeMotif}. An empty wall space is the same sign dotted,
+ * so the wall says what belongs where before a single tile has landed.
  *
- * - blue — plain, glossy royal blue;
- * - yellow — warm gold with a red damask: on each axis a pair of facing
- *   curls hooking either side of a diamond finial, eyes out towards the
- *   diagonals, slim tails running back to the centre, ragged serrated
- *   flames into the corners, and a four-pointed star at the heart;
- * - red — plain, glossy red;
- * - black — near-black with a teal lattice set on the diagonal: dotted
- *   rosettes at the middle of each side, laced together by pairs of slim
- *   arcs, thin bars running corner to corner through the centre with
- *   arrow heads pointing in, and moths of wedges and diamonds at the corners;
- * - turquoise — a white field inside a turquoise border, bearing a turquoise
- *   eight-pointed star of separate rhombi.
- *
- * Every tile is a thick piece of resin: a darker side shows below and to the
- * right of the face, and the face carries a soft sheen from the top left.
- *
- * An empty wall space is the same face printed flat and faded, the way the
- * board itself is printed — so the wall says what belongs where before a
- * single tile has landed, and it says it in the tile's own design.
- *
- * Gradients and the face clip live once in {@link TileDefs}, mounted at the
- * root, because a flying tile is a clone of the SVG it left and must still
- * find them after the original has gone.
+ * Gradients stay out of the way: there are none. Tiles are flat ink with a
+ * soft contact shadow (in CSS) and one faint lit rim. {@link TileDefs} is
+ * still mounted at the root for anything else that needs the shared defs.
  */
 
 import type { CSSProperties } from 'react'
 import type { Color } from '../engine/types'
-import { chamferedSquare, damask, lattice, lemoyneStar } from './tileGeometry'
+import { glazeMotif, markerDial, type GlazeKind } from './tileGeometry'
 
-/** The face colour of each tile. */
+/**
+ * The glaze grounds. These match the `--glaze-*` tokens in styles.css —
+ * flat mid-tone inks, so the near-white line work reads on every one.
+ */
 export const GLAZES: Record<Color, string> = {
-  cobalt: '#1e63b8',
-  saffron: '#f4b30f',
-  crimson: '#e42344',
-  basalt: '#0a0d11',
-  verdigris: '#40bcd2',
-}
-
-/** The side of each tile, seen below and right of the face. */
-const EDGES: Record<Color, string> = {
-  cobalt: '#12437c',
-  saffron: '#c47f0f',
-  crimson: '#991329',
-  basalt: '#030509',
-  verdigris: '#1f8599',
+  cobalt: '#4472c0',
+  saffron: '#d29b2c',
+  crimson: '#c9493a',
+  basalt: '#56647c',
+  verdigris: '#3a9486',
 }
 
 /** Brighter stand-ins for text and counters, where the tile colour itself would vanish on the dark page. */
 export const GLAZE_TEXT: Record<Color, string> = {
-  cobalt: '#5d9cf2',
-  saffron: '#f6b62b',
-  crimson: '#f0677a',
+  cobalt: '#7ba5ea',
+  saffron: '#e8b84b',
+  crimson: '#ec7a6b',
   basalt: '#8a9ab0',
-  verdigris: '#6fd6e8',
+  verdigris: '#6fc2b4',
 }
 
 export const COLOR_NAMES: Record<Color, string> = {
@@ -67,16 +45,12 @@ export const COLOR_NAMES: Record<Color, string> = {
   verdigris: 'Turquoise',
 }
 
-const DAMASK = '#ea3817'
-const LATTICE = '#3ac2d6'
-const STAR = '#f6fcfd'
+/** The near-white ink every sign is drawn in. */
+const MOTIF_INK = '#f5f7ff'
 
 /** A square with Apple-style continuous corners, in a 24-unit box. */
 const SQUIRCLE =
   'M5.2 0H18.8C22.6 0 24 1.4 24 5.2V18.8C24 22.6 22.6 24 18.8 24H5.2C1.4 24 0 22.6 0 18.8V5.2C0 1.4 1.4 0 5.2 0Z'
-
-/** The face sits up and to the left of the tile's footprint, so its side shows bottom-right. */
-const FACE_TRANSFORM = 'translate(0.8 0.6) scale(0.905)'
 
 /**
  * Shared definitions for every tile on the page. Mount once; it draws nothing.
@@ -86,95 +60,44 @@ export function TileDefs() {
     <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
       <defs>
         <clipPath id="azt-face" clipPathUnits="userSpaceOnUse">
-          <path d={SQUIRCLE} transform={FACE_TRANSFORM} />
+          <path d={SQUIRCLE} />
         </clipPath>
-        {/* Light from the top left, falling away across the face. */}
-        <linearGradient id="azt-sheen" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.34" />
-          <stop offset="0.32" stopColor="#ffffff" stopOpacity="0.08" />
-          <stop offset="0.6" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="1" stopColor="#000000" stopOpacity="0.16" />
-        </linearGradient>
-        {/* The bright spot where a lamp catches the resin. */}
-        <radialGradient id="azt-spec" cx="0.3" cy="0.22" r="0.42">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.32" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
-        </radialGradient>
-        {/* The tile's side: lighter where it meets the face, darker at the foot. */}
-        <linearGradient id="azt-side" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.12" />
-          <stop offset="1" stopColor="#000000" stopOpacity="0.35" />
-        </linearGradient>
       </defs>
     </svg>
   )
 }
 
-const DAMASK_PATHS = damask()
+export interface MotifProps {
+  color: Color
+  /** Dots the sign instead of drawing it solid: an empty wall space. */
+  dotted?: boolean
+}
 
-/** The yellow tile's red-orange damask; see {@link damask} for its construction. */
-function Damask() {
+/** One glaze's sign, solid or dotted. See {@link glazeMotif} for the geometry. */
+export function Motif({ color, dotted = false }: MotifProps) {
+  const motif = glazeMotif(color as GlazeKind)
+  const ink = dotted ? GLAZES[color] : MOTIF_INK
+  const dash = dotted ? { strokeDasharray: '1.2 2.2' } : {}
   return (
-    <g fill={DAMASK}>
-      {DAMASK_PATHS.fills.map((d, i) => (
-        <path key={i} d={d} />
+    <g
+      fill="none"
+      stroke={ink}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity={dotted ? 0.62 : 1}
+    >
+      {motif.main.map((d, i) => (
+        <path key={i} d={d} strokeWidth={dotted ? 1.3 : 1.15} strokeOpacity={dotted ? 1 : 0.92} {...dash} />
       ))}
-    </g>
-  )
-}
-
-const LATTICE_PATHS = lattice()
-
-/** The black tile's teal lattice; see {@link lattice} for its construction. */
-function Lattice() {
-  // The lattice is built square to the axes and laid on the tile turned 45°:
-  // rosettes at the middle of each side, fleurs at the corners and centre.
-  return (
-    <g transform="rotate(45 12 12)">
-      <g fill={LATTICE}>
-        {LATTICE_PATHS.fills.map((d, i) => (
-          <path key={i} d={d} />
-        ))}
-      </g>
-      <g fill={GLAZES.basalt}>
-        {LATTICE_PATHS.holes.map((d, i) => (
-          <path key={i} d={d} />
+      {motif.hair.map((d, i) => (
+        <path key={`h${i}`} d={d} strokeWidth={0.55} strokeOpacity={dotted ? 1 : 0.6} {...dash} />
+      ))}
+      <g fill={ink} stroke="none" opacity={dotted ? 1 : 0.92}>
+        {motif.dots.map((dot, i) => (
+          <circle key={`d${i}`} cx={dot.x} cy={dot.y} r={dot.r} />
         ))}
       </g>
     </g>
-  )
-}
-
-const STAR_FIELD = chamferedSquare(10.1, 2.7)
-const STAR_RHOMBI = lemoyneStar(9.9, 0.3)
-
-/**
- * The turquoise tile: a thin turquoise border round a white field with its
- * corners cut, and on it a turquoise eight-pointed star of separate rhombi.
- */
-function Star({ print = false }: { print?: boolean }) {
-  return (
-    <g>
-      {/* the board prints this space plain white, without the tile's border */}
-      <path d={print ? SQUIRCLE : STAR_FIELD} fill={STAR} />
-      <g fill={GLAZES.verdigris}>
-        {STAR_RHOMBI.map((d, i) => (
-          <path key={i} d={d} />
-        ))}
-      </g>
-    </g>
-  )
-}
-
-/** The face: the tile's colour and, for three of the five, its painted pattern. */
-function Face({ color, print = false }: { color: Color; print?: boolean }) {
-  return (
-    <>
-      <path d={SQUIRCLE} fill={GLAZES[color]} />
-      {color === 'saffron' ? <Damask /> : null}
-      {color === 'basalt' ? <Lattice /> : null}
-      {color === 'verdigris' ? <Star print={print} /> : null}
-    </>
   )
 }
 
@@ -198,38 +121,29 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
   const label = title ?? `${COLOR_NAMES[color]}${pounce ? ' space' : ' tile'}`
 
   if (pounce) {
-    // The board's print: the face, flat and faded, in a recessed square.
+    // The board's print: the sign dotted in its own glaze, inside a hairline
+    // recessed square. Flat, matte, unmistakably unfired.
     return (
       <svg viewBox="0 0 24 24" className={classes} style={style} data-flight={flight} role="img" aria-label={label}>
         <g className="tile__print">
-          <Face color={color} print />
-          {/* the paper showing through the ink */}
-          <path d={SQUIRCLE} fill="#ffffff" fillOpacity="0.22" />
+          <path d={SQUIRCLE} fill="none" stroke="#5d5b7d" strokeWidth="0.7" />
+          <Motif color={color} dotted />
         </g>
-        <path d={SQUIRCLE} transform="translate(0.5 0.5) scale(0.9583)" fill="none" stroke="#000000" strokeOpacity="0.35" strokeWidth="1" />
       </svg>
     )
   }
 
   return (
     <svg viewBox="0 0 24 24" className={classes} style={style} data-flight={flight} role="img" aria-label={label}>
-      {/* the side of the tile */}
-      <path d={SQUIRCLE} fill={EDGES[color]} />
-      <path d={SQUIRCLE} fill="url(#azt-side)" />
-      {/* the face, its pattern, and the glaze over it */}
-      <g transform={FACE_TRANSFORM}>
-        <Face color={color} />
-      </g>
-      <g clipPath="url(#azt-face)">
-        <rect width="24" height="24" fill="url(#azt-sheen)" opacity={color === 'verdigris' || color === 'saffron' ? 0.75 : 1} />
-        <rect width="24" height="24" fill="url(#azt-spec)" />
-      </g>
-      {/* a lit rim along the top and left of the face */}
+      {/* the flat glaze ground */}
+      <path d={SQUIRCLE} fill={GLAZES[color]} />
+      <Motif color={color} />
+      {/* a faint lit rim along the top and left, for touch */}
       <path
         d="M1.9 18.3V5.6C1.9 3.1 3.1 1.7 5.6 1.7H18.2"
         fill="none"
         stroke="#ffffff"
-        strokeOpacity="0.35"
+        strokeOpacity="0.22"
         strokeWidth="0.6"
         strokeLinecap="round"
       />
@@ -237,9 +151,12 @@ export function Tile({ color, pounce = false, fresh = false, className = '', sty
   )
 }
 
+const DIAL = markerDial()
+
 /**
- * The starting-player tile: cream, edged in blue, with a bold "1" — the number
- * of the player who goes first next round — and four small orange studs.
+ * The starting-player tile: an observatory plate — dark ink ground, hairline
+ * instrument ring with ticks at the cardinals, and a white "1", the number of
+ * the player who goes first next round.
  */
 export function FirstMarker({ className = '', flight }: { className?: string; flight?: string }) {
   return (
@@ -250,32 +167,34 @@ export function FirstMarker({ className = '', flight }: { className?: string; fl
       role="img"
       aria-label="Starting player marker"
     >
-      <path d={SQUIRCLE} fill="#b9ab8c" />
-      <g transform={FACE_TRANSFORM}>
-        <path d={SQUIRCLE} fill="#f4ead2" />
-        <path d={SQUIRCLE} transform="translate(1.3 1.3) scale(0.8917)" fill="none" stroke="#2f4a9a" strokeWidth="1.3" />
-        <path d={SQUIRCLE} transform="translate(2.6 2.6) scale(0.7833)" fill="none" stroke="#2f4a9a" strokeWidth="0.5" strokeOpacity="0.6" />
-        <text
-          x="12"
-          y="17.2"
-          textAnchor="middle"
-          fontSize="14.5"
-          fontWeight="700"
-          fontFamily="Georgia, 'Times New Roman', serif"
-          fill="#1f3a8a"
-        >
-          1
-        </text>
-        <g fill="#e0541a">
-          <circle cx="5.2" cy="5.2" r="0.9" />
-          <circle cx="18.8" cy="5.2" r="0.9" />
-          <circle cx="5.2" cy="18.8" r="0.9" />
-          <circle cx="18.8" cy="18.8" r="0.9" />
-        </g>
+      <path d={SQUIRCLE} fill="#161824" />
+      <g fill="none" stroke="#8b89b0" strokeLinecap="round">
+        {DIAL.rings.map((d, i) => (
+          <path key={i} d={d} strokeWidth="0.55" strokeOpacity="0.8" />
+        ))}
+        {DIAL.ticks.map((d, i) => (
+          <path key={`t${i}`} d={d} strokeWidth="0.55" strokeOpacity="0.8" />
+        ))}
       </g>
-      <g clipPath="url(#azt-face)">
-        <rect width="24" height="24" fill="url(#azt-spec)" />
-      </g>
+      <text
+        x="12"
+        y="17.4"
+        textAnchor="middle"
+        fontSize="13.5"
+        fontWeight="300"
+        fontFamily="'Saira Condensed','Arial Narrow',sans-serif"
+        fill="#ffffff"
+      >
+        1
+      </text>
+      <path
+        d="M1.9 18.3V5.6C1.9 3.1 3.1 1.7 5.6 1.7H18.2"
+        fill="none"
+        stroke="#ffffff"
+        strokeOpacity="0.14"
+        strokeWidth="0.6"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }
