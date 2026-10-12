@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { analyseTurn } from './engine/analysis'
 import { generateBoard } from './engine/board'
 import { botOrders } from './engine/bot'
@@ -250,6 +250,38 @@ export default function App() {
   const waiting = stage.kind !== 'over' && stage.side !== you
   const preview = yourTurn && stage.kind !== 'reveal' ? routeOf(board, state.position.pieces[you], draft) : []
 
+  // Physical keyboard support: the pad buttons are mouse-only otherwise.
+  // N/E/S/W (or arrow keys) append a step, Backspace undoes one, Enter acts.
+  const actRef = useRef(act)
+  actRef.current = act
+  useEffect(() => {
+    if (!yourTurn || stage.kind === 'reveal') return
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return
+      const k = e.key.toUpperCase()
+      const arrow: Record<string, Step> = {
+        ARROWUP: 'N', ARROWDOWN: 'S', ARROWLEFT: 'W', ARROWRIGHT: 'E',
+      }
+      if (k === 'N' || k === 'E' || k === 'S' || k === 'W' || k === '.' || k === ' ') {
+        e.preventDefault()
+        setDraft((d) => (d.length >= 3 ? d : [...d, (k === ' ' ? '.' : k) as Step]))
+      } else if (arrow[e.key.toUpperCase()]) {
+        e.preventDefault()
+        const step = arrow[e.key.toUpperCase()]
+        setDraft((d) => (d.length >= 3 ? d : [...d, step]))
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault()
+        setDraft((d) => d.slice(0, -1))
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        void actRef.current()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [yourTurn, stage.kind])
+
   const stageWord =
     stage.kind === 'commit'
       ? 'Seal your orders'
@@ -373,18 +405,28 @@ export default function App() {
                         className="key"
                         disabled={draft.length >= 3}
                         onClick={() => setDraft([...draft, step])}
+                        title={step === '.' ? 'wait (spacebar)' : step}
                       >
                         {step === '.' ? 'wait' : step}
                       </button>
                     ))}
                   </div>
+                  <p className="note">
+                    Pick {3 - draft.length > 0 ? `${3 - draft.length} more` : 'done'} — click,
+                    or type N / E / S / W (arrow keys work), Backspace to undo, Enter to{' '}
+                    {stage.kind === 'commit' ? 'seal' : 'play'}.
+                  </p>
                 </>
               )}
 
               <div className="rack">
                 {yourTurn && (
                   <button className="chip solid" onClick={act}>
-                    {stage.kind === 'commit' ? 'Seal' : stage.kind === 'open' ? 'Play' : 'Reveal'}
+                    {stage.kind === 'commit'
+                      ? `Seal (${draft.length}/3)`
+                      : stage.kind === 'open'
+                        ? `Play (${draft.length}/3)`
+                        : 'Reveal'}
                   </button>
                 )}
                 {mode === 'link' && (
