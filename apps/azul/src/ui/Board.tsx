@@ -37,6 +37,12 @@ export interface ScoringView {
   counting: { row: number; col: number; points: number } | null
   /** This board is the one being scored right now. */
   focus: boolean
+  /**
+   * Pattern rows still holding their tiles: row -> colour. A complete line
+   * stays full until its own wall tile fires, so the stack empties one tile
+   * at a time as each piece travels to the wall — never all at once up front.
+   */
+  holds?: Map<number, Color>
 }
 
 export interface BoardProps {
@@ -122,6 +128,7 @@ function FullBoard(props: BoardProps) {
                 pending={pending}
                 learning={learning}
                 onPlace={onPlace}
+                hold={scoring?.holds?.get(index)}
               />
             ))}
           </div>
@@ -163,19 +170,23 @@ function CompactBoard(props: BoardProps) {
       </div>
       <div className="board__body board__body--compact">
         <div className="lines lines--compact" aria-label="Pattern lines">
-          {player.lines.map((line, index) => (
+          {player.lines.map((line, index) => {
+            const hold = scoring?.holds?.get(index)
+            const shownLine = hold ? { color: hold, count: index + 1 } : line
+            return (
             <div className="line line--compact" key={index}>
               {Array.from({ length: index + 1 }, (_, slot) => {
-                const filled = slot >= index + 1 - line.count
+                const filled = slot >= index + 1 - shownLine.count
                 const name = `slot:${seat}:${index}:${slot}`
-                return filled && line.color ? (
-                  <Tile key={slot} flight={name} color={line.color} className="slot" />
+                return filled && shownLine.color ? (
+                  <Tile key={slot} flight={name} color={shownLine.color} className="slot" />
                 ) : (
                   <span key={slot} {...flightId(name)} className="slot" />
                 )
               })}
             </div>
-          ))}
+            )
+          })}
         </div>
         <Wall player={player} seat={seat} scoring={scoring} learning={learning} />
       </div>
@@ -233,6 +244,7 @@ function PatternLine({
   pending,
   learning,
   onPlace,
+  hold,
 }: {
   seat: number
   index: number
@@ -240,18 +252,23 @@ function PatternLine({
   pending?: PendingPlacement
   learning: boolean
   onPlace?: (line: number) => void
+  /** When scoring holds this row, show it full in this colour until its wall tile fires. */
+  hold?: Color
 }) {
   const capacity = index + 1
+  // During scoring the post-tiling state is already empty; hold reconstructs
+  // the pre-tiling full line until its own placement fires.
+  const shownLine = hold ? { color: hold, count: capacity } : line
   const playable = pending?.legal.has(index) ?? false
   const refusal = pending?.refusals[index]
   const preview = pending?.previews[index]
-  const willTake = pending ? Math.min(pending.count, capacity - line.count) : 0
+  const willTake = pending ? Math.min(pending.count, capacity - shownLine.count) : 0
 
   const slots = Array.from({ length: capacity }, (_, slot) => {
-    const filled = slot >= capacity - line.count
-    const incoming = learning && playable && !filled && slot >= capacity - line.count - willTake
+    const filled = slot >= capacity - shownLine.count
+    const incoming = learning && playable && !filled && slot >= capacity - shownLine.count - willTake
     const name = `slot:${seat}:${index}:${slot}`
-    if (filled && line.color) return <Tile key={slot} flight={name} color={line.color} className="slot" />
+    if (filled && shownLine.color) return <Tile key={slot} flight={name} color={shownLine.color} className="slot" />
     if (incoming && pending) {
       return <Tile key={slot} flight={name} color={pending.color} className="slot slot--incoming" pounce />
     }
@@ -269,7 +286,7 @@ function PatternLine({
         {preview.completes ? <b className="reckon--gain">+{preview.points}</b> : null}
         {preview.penalty < 0 ? <b className="reckon--cost">{preview.penalty}</b> : null}
         {!preview.completes && preview.penalty === 0 ? (
-          <span className="reckon--short">{capacity - line.count - pending!.count} short</span>
+          <span className="reckon--short">{capacity - shownLine.count - pending!.count} short</span>
         ) : null}
       </span>
     )

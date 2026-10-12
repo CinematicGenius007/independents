@@ -18,7 +18,7 @@ import { CENTER, COLORS, FLOOR, WALL_SIZE, wallColor } from '../engine/types'
 import { moveError, needsDeal } from '../engine/rules'
 import { previewFloor, previewLine, unseenTiles } from '../engine/preview'
 import type { LinePreview } from '../engine/preview'
-import { PIP_FLIGHT_MS } from '../engine/timeline'
+import { PIP_FLIGHT_MS, PLACE_MS } from '../engine/timeline'
 import type { TimelineEvent } from '../engine/timeline'
 import type { Seat } from '../net/protocol'
 import type { LastMove } from '../net/session'
@@ -151,6 +151,43 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
     const offscreen = box.bottom < 0 || box.top > window.innerHeight - 80
     if (offscreen) board.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
   }, [focusSeat])
+
+  // Each wall tile flies in from its own pattern line as it fires — one piece
+  // at a time, stack to board — rather than the lines emptying up front and
+  // the wall filling on its own. Runs after the frame renders (so the wall
+  // tile is already drawn and can be carried) and skips when the count is
+  // skipped or done, where a burst of flights would be noise.
+  const firedKeys = scoring.frame.fired
+  const frameDone = scoring.frame.done
+  const flownTiles = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (frameDone) {
+      flownTiles.current = new Set(firedKeys)
+      return
+    }
+    const node = root.current
+    if (!node || prefersReducedMotion()) {
+      flownTiles.current = new Set(firedKeys)
+      return
+    }
+    for (const key of firedKeys) {
+      if (flownTiles.current.has(key)) continue
+      const sep = key.indexOf(':')
+      const seat = Number(key.slice(0, sep))
+      const row = Number(key.slice(sep + 1).split('-')[0])
+      if (!Number.isInteger(seat) || !Number.isInteger(row)) continue
+      flyPiece(node, {
+        from: `slot:${seat}:${row}:${row}`,
+        to: `wall:${key}`,
+        tint: 'transparent',
+        duration: PLACE_MS,
+        size: 'to',
+        carry: true,
+      })
+    }
+    flownTiles.current = new Set(firedKeys)
+  }, [firedKeys, frameDone])
+
   const myTurn =
     seatIndex !== null && state.current === seatIndex && state.phase === 'offer' && !scoring.running
 
@@ -284,15 +321,26 @@ export function Table({ state, seats, seatIndex, onPlay, notice, lastMove, onSee
     setPick({ source, color })
   }
 
-  const scoringFor = (seat: number): ScoringView => ({
-    pending: scoring.frame.pending,
-    fired: scoring.frame.fired,
-    counting:
-      scoring.frame.current && scoring.frame.current.seat === seat
-        ? { row: scoring.frame.current.row, col: scoring.frame.current.col, points: scoring.frame.current.points }
-        : null,
-    focus: scoring.frame.focus === seat,
-  })
+  const scoringFor = (seat: number): ScoringView => {
+    const holds = new Map<number, Color>()
+    const report = state.lastRound?.find(r => r.playerIndex === seat)
+    if (report) {
+      for (const placement of report.placements) {
+        const key = `${seat}:${placement.row}-${placement.col}`
+        if (!scoring.frame.fired.has(key)) holds.set(placement.row, placement.color)
+      }
+    }
+    return {
+      pending: scoring.frame.pending,
+      fired: scoring.frame.fired,
+      counting:
+        scoring.frame.current && scoring.frame.current.seat === seat
+          ? { row: scoring.frame.current.row, col: scoring.frame.current.col, points: scoring.frame.current.points }
+          : null,
+      focus: scoring.frame.focus === seat,
+      holds,
+    }
+  }
 
   const mine = seatIndex === null ? null : state.players[seatIndex]
   const others = state.players.map((player, index) => ({ player, index })).filter(p => p.index !== seatIndex)
