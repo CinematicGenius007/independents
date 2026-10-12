@@ -607,20 +607,24 @@ export class Session {
       this.transport.send({ t: 'sync' }, this.hostId)
       return
     }
-    this.seq = msg.seq
-    switch (msg.t) {
-      case 'deal':
-        this.state = startRound(this.state, msg.factories)
-        this.lastMove = null
-        break
-      case 'move':
-        this.state = applyMove(this.state, msg.move).state
-        this.noteMove(msg.seat, msg.move)
-        break
-      case 'tile':
-        this.state = tileWall(this.state).state
-        break
+    // An event this copy cannot apply means it has drifted from the host's —
+    // throwing here would take the whole table down. Ask for the position.
+    let next: GameState
+    try {
+      if (msg.t === 'deal') next = startRound(this.state, msg.factories)
+      else if (msg.t === 'tile') next = tileWall(this.state).state
+      else if (msg.t === 'move') {
+        if (msg.seat !== this.state.current) throw new Error('Move from the wrong seat.')
+        next = applyMove(this.state, msg.move).state
+      } else return
+    } catch {
+      this.transport.send({ t: 'sync' }, this.hostId)
+      return
     }
+    this.seq = msg.seq
+    this.state = next
+    if (msg.t === 'deal') this.lastMove = null
+    if (msg.t === 'move') this.noteMove(msg.seat, msg.move)
     this.notice = null
     this.emit()
   }

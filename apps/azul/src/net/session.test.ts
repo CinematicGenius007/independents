@@ -144,6 +144,28 @@ describe('a hosted room', () => {
     expect(JSON.stringify(host.view().state)).toBe(before)
   })
 
+  it('resyncs a peer whose copy cannot apply the host’s move, instead of throwing', async () => {
+    const hub = new MemoryHub()
+    const clock = fakeClock()
+    const { session: host } = sessionFor(hub, 'a-host', 'Ana', true, clock)
+    const { session: guest } = sessionFor(hub, 'b-guest', 'Bo', false, clock)
+    await settle()
+    host.start()
+    await clock.run(3)
+    await settle()
+
+    // Drift the guest's copy: its displays are emptied, so no move applies.
+    const internal = guest as unknown as { state: GameState }
+    internal.state = { ...internal.state, factories: internal.state.factories.map(() => []), center: [] }
+
+    const state = host.view().state!
+    host.play(legalMoves(state)[0])
+    await settle()
+    await settle()
+
+    expect(guest.view().state).toEqual(host.view().state)
+  })
+
   it('catches up a peer that arrives after the first round', async () => {
     const hub = new MemoryHub()
     const clock = fakeClock()
