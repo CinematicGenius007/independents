@@ -362,7 +362,6 @@ kbd {
 .tile--pounce .tile__print {
   opacity: 0.85;
 }
-}
 
 @keyframes land {
   from {
