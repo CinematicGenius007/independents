@@ -350,9 +350,16 @@ kbd {
   border-radius: var(--tile-radius);
 }
 
-.tile--ink {
-  outline: 1px solid var(--tile-edge);
-  outline-offset: -1px;
+/* A tile is a thick, glossy piece: a soft contact shadow under it. */
+.tile--ink,
+.tile--first {
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.45));
+}
+
+/* An empty wall space is the tile's face printed flat and faded into the board. */
+.tile--pounce .tile__print {
+  opacity: 0.52;
+  filter: saturate(0.75);
 }
 
 @keyframes land {
@@ -684,13 +691,20 @@ kbd {
   display: block;
   width: var(--tile);
   height: var(--tile);
-  border: 1px solid var(--rule);
   border-radius: var(--tile-radius);
   flex: none;
+  /* The board's own stone square, a little recessed: where a tile will sit. */
+  background:
+    radial-gradient(120% 90% at 30% 20%, rgba(236, 224, 198, 0.1), transparent 70%),
+    rgba(236, 224, 198, 0.05);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(236, 224, 198, 0.12);
 }
 
 .tile.slot {
-  border: none;
+  background: none;
+  box-shadow: none;
 }
 
 .slot--incoming {
@@ -785,16 +799,21 @@ kbd {
   --tile: var(--tile-floor);
   width: var(--tile-floor);
   height: var(--tile-floor);
-  border: 1px solid var(--rule);
   border-radius: var(--tile-radius);
+  background: rgba(236, 224, 198, 0.05);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(236, 224, 198, 0.12);
 }
 
 .tile.floor__box {
-  border: none;
+  background: none;
+  box-shadow: none;
 }
 
 .floor__slot--incoming .floor__box {
-  border: 1px dashed var(--cost);
+  outline: 1px dashed var(--cost);
+  outline-offset: -1px;
   background: rgba(242, 121, 106, 0.1);
 }
 

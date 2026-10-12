@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import { Crash } from './ui/Crash'
+import { TileDefs } from './ui/Tile'
 // Self-hosted, latin subsets only: no third-party requests, and only the
 // weights the design uses.
 import '@fontsource/saira-condensed/latin-200.css'
@@ -14,6 +15,7 @@ import './styles.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <TileDefs />
     <Crash>
       <App />
     </Crash>
