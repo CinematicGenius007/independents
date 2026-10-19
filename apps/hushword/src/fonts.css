@@ -1,0 +1,68 @@
+/*
+ * The two typefaces, self-hosted.
+ *
+ * Both are SIL Open Font License 1.1, which permits redistribution; the licence
+ * texts sit beside the files rather than in a registry somewhere.
+ *
+ * These are the latin subsets, which is the whole of what this app draws — and
+ * that is worth stating, because "latin" is doing more work than its name
+ * suggests. The ranges cover Latin-1, so the middot in the readout (U+00B7) is
+ * there, and they also carry a few non-Latin-1 characters that typography
+ * reaches for constantly, including the minus sign the steppers use (U+2212).
+ * The sets were read out of the shipped font tables rather than assumed; each
+ * covers all 230-odd glyphs this app can render.
+ *
+ * Only the weights the design uses are here — 400, 600 and 700 for the display
+ * face, 400 and 700 for the mono. The stylesheet previously asked Google for
+ * Space Grotesk 500 as well, which nothing ever rendered.
+ *
+ * There is deliberately no `.woff` fallback beside the `.woff2` files. WOFF2 has
+ * been supported by every browser for a decade, and everything that can run this
+ * app can read it.
+ *
+ * These are copied in rather than installed from `@fontsource/*`, which is how
+ * the other apps in this repository do it. That is a considered difference: this
+ * app's documentation promises "no dependency beyond React", and taking a
+ * package to ship two files would make that sentence false. It also means the
+ * font and its licence travel with the artefact rather than with a lockfile.
+ */
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('./assets/fonts/space-grotesk-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url('./assets/fonts/space-grotesk-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('./assets/fonts/space-grotesk-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('./assets/fonts/space-mono-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url('./assets/fonts/space-mono-latin-700-normal.woff2') format('woff2');
+}
