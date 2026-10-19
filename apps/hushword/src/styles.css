@@ -1,0 +1,872 @@
+/*
+ * A room at night, lit by its own data.
+ *
+ * The reference is a wet asphalt arcade: a near-black ground under a magenta
+ * wash, scanlines across everything, and hard lit tiles that glow because they
+ * are the only things on screen carrying meaning. Chrome is a hairline;
+ * nothing is boxed that does not have to be.
+ *
+ * The rule the whole palette obeys: green, amber and slate are *data* — they
+ * mean exact, shifted and absent, and the setter can reassign all three per
+ * link. Pink and cyan are *chrome* — they mean "you can touch this". The two
+ * sets never swap roles, because a brand colour that collided with a hint would
+ * be a bug rather than a taste problem.
+ */
+
+:root {
+  --ground: #0b0c11;
+  --panel: #101219;
+  --panel-2: #141721;
+  --raise: #171a24;
+  --rule: #20253260;
+  --rule-2: #2c3346;
+
+  --ink: #e8edf5;
+  --body: #a3aec0;
+  --dim: #7e8a9e;
+  --faint: #4e5769;
+
+  --pink: #ff3d8b;
+  --cyan: #4de1ff;
+  --dark: #14161a;
+
+  /* The house ink. Every one of these is a role, not a colour. */
+  --hit: #1f8a55;
+  --near: #d9a21a;
+  --miss: #333a4d;
+
+  --display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --mono: 'Space Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--mono);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The room: scanlines over a magenta wash that only reaches the top. */
+.ground {
+  min-height: 100dvh;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0px, rgba(255, 255, 255, 0.028) 1px, transparent 1px, transparent 3px),
+    radial-gradient(70% 40% at 50% 0%, rgba(255, 61, 139, 0.15) 0%, rgba(11, 12, 17, 0) 65%);
+  background-color: var(--ground);
+  display: flex;
+  flex-direction: column;
+}
+
+.shell {
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+/* ---------------------------------------------------------------- chrome -- */
+
+.eyebrow {
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.eyebrow--pink {
+  color: var(--pink);
+}
+
+.rule {
+  height: 1px;
+  background: var(--rule);
+}
+
+.rule--wide {
+  height: 2px;
+  background-image: linear-gradient(90deg, var(--pink), var(--cyan));
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.row--between {
+  justify-content: space-between;
+}
+
+/* For rows whose two halves cannot both shrink: the map and its steppers, where
+   a twelve-letter board next to a labelled stepper does not fit a phone. */
+.row--wrap {
+  flex-wrap: wrap;
+  row-gap: 0.75rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prose {
+  font-size: 0.6875rem;
+  line-height: 1.85;
+  color: var(--body);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+}
+
+.wordmark::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--pink);
+  box-shadow: 0 0 0.75rem var(--pink);
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- tiles --- */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.board__row {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.tile {
+  position: relative;
+  width: var(--tile, 3.375rem);
+  height: var(--tile, 3.375rem);
+  flex-shrink: 0;
+  border-radius: 0.25rem;
+  border: 1px dashed var(--rule-2);
+  background: transparent;
+  padding: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: calc(var(--tile, 3.375rem) * 0.42);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* The row you are filling in is a row of the grid, not a separate field. */
+.tile--pending {
+  border-style: solid;
+}
+
+.tile--pending.tile--active {
+  border-color: var(--dim);
+}
+
+.tile--pending .tile__letter {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  animation: pop 110ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.7);
+    opacity: 0.2;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/*
+ * The reveal, as a card turning over.
+ *
+ * Two faces with `backface-visibility: hidden` and the front pre-rotated a half
+ * turn: the tile turns, and the colour swaps at the moment the tile is edge-on
+ * and invisible. A wipe or a fade would show the change happening, which is
+ * exactly what the original hides.
+ */
+.tile--flip {
+  border: none;
+  background: none;
+  perspective: 40rem;
+  animation: flip 540ms cubic-bezier(0.4, 0.75, 0.4, 1) both;
+  animation-delay: var(--delay, calc(var(--i, 0) * 90ms));
+}
+
+.tile--flip .tile__letter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  border-radius: 0.25rem;
+  border: 1px solid var(--rule-2);
+}
+
+.tile--flip .tile__face {
+  transform: rotateX(180deg);
+  border-color: var(--fill, transparent);
+  background: var(--fill, transparent);
+  box-shadow: 0 0 0.875rem var(--glow, transparent);
+}
+
+.tile--flip.tile--barred .tile__face {
+  background: #0f1119;
+  border: 1px solid var(--pink);
+  border-top: 3px solid var(--pink);
+  box-shadow: 0 0 0.75rem rgba(255, 61, 139, 0.28);
+  color: var(--body);
+}
+
+@keyframes flip {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(180deg);
+  }
+}
+
+.tile--liftable .tile__face {
+  cursor: pointer;
+}
+
+.tile--liftable:hover .tile__face {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0.75rem rgba(77, 225, 255, 0.35);
+}
+
+/* A solved board lifts its rows one after another, once the last one has landed. */
+.board--won .board__row {
+  animation: rise 620ms cubic-bezier(0.3, 0.9, 0.4, 1) both;
+  animation-delay: calc(var(--row, 0) * 110ms + 320ms);
+}
+
+@keyframes rise {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-14%);
+  }
+  72% {
+    transform: translateY(3%);
+  }
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-3px);
+  }
+  40%,
+  60% {
+    transform: translateX(3px);
+  }
+}
+
+.board__row--shake {
+  animation: shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* ------------------------------------------------------------- keyboard --- */
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.keyboard__row {
+  display: flex;
+  gap: var(--key-gap, 0.3125rem);
+  justify-content: center;
+}
+
+.key {
+  width: var(--key, 2.125rem);
+  height: 2.875rem;
+  flex-shrink: 0;
+  border-radius: 0.25rem;
+  background: var(--raise);
+  border: 1px solid var(--rule-2);
+  color: var(--ink);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, transform 90ms ease;
+}
+
+.key:hover {
+  border-color: var(--cyan);
+}
+
+.key:active {
+  transform: translateY(1px);
+}
+
+.key--wide {
+  width: calc(var(--key, 2.125rem) + 1.125rem);
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+}
+
+.key--action {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--dark);
+  box-shadow: 0 0 1rem rgba(255, 61, 139, 0.45);
+}
+
+.key:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Role states. The letter colour is chosen against its ink, never once for the
+   whole board — see palette.ts. */
+.ink-hit {
+  background-color: var(--hit);
+  border-color: var(--hit);
+  color: #ffffff;
+  box-shadow: 0 0 0.875rem rgba(43, 196, 107, 0.4);
+}
+
+.ink-near {
+  background-color: var(--near);
+  border-color: var(--near);
+  color: var(--dark);
+  box-shadow: 0 0 0.875rem rgba(255, 195, 61, 0.4);
+}
+
+.ink-miss {
+  background-color: var(--miss);
+  border-color: var(--miss);
+  color: #a9b4c6;
+}
+
+/* ---------------------------------------------------------------- inputs -- */
+
+.chip {
+  height: 1.75rem;
+  padding: 0 0.6875rem;
+  border-radius: 0.25rem;
+  background: var(--panel-2);
+  border: 1px solid var(--rule-2);
+  color: var(--body);
+  font-family: var(--mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  border-color: var(--cyan);
+}
+
+.chip--on {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--dark);
+}
+
+.chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4375rem;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3125rem;
+  justify-content: flex-end;
+}
+
+/* Three colours, chosen by hand. The roles never change; only what they wear. */
+.swatch {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex-shrink: 0;
+  border-radius: 0.1875rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0;
+  cursor: pointer;
+}
+
+.swatch:hover {
+  border-color: var(--cyan);
+}
+
+.swatch--on {
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 0.75rem rgba(77, 225, 255, 0.45);
+}
+
+.field {
+  height: 2rem;
+  padding: 0 0.625rem;
+  border-radius: 0.25rem;
+  background: var(--panel-2);
+  border: 1px solid var(--rule-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.field--word {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  letter-spacing: 0.34em;
+  text-align: center;
+  height: 3rem;
+}
+
+.field:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0.875rem rgba(77, 225, 255, 0.25);
+}
+
+/* Nearly everything here is a button, so focus has to be visible. */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.toggle {
+  width: 2.875rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  background: var(--panel-2);
+  border: 1px solid var(--rule-2);
+  padding: 0.125rem;
+  display: flex;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.toggle span {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: var(--faint);
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.toggle--on {
+  background: var(--pink);
+  border-color: var(--pink);
+  justify-content: flex-end;
+}
+
+.toggle--on span {
+  background: var(--dark);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+}
+
+.stepper button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.1875rem;
+  background: var(--raise);
+  border: 1px solid var(--rule-2);
+  color: var(--body);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stepper button:hover {
+  border-color: var(--cyan);
+}
+
+.stepper button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stepper__value {
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.1875rem;
+  background: var(--panel-2);
+  border: 1px solid var(--pink);
+  color: var(--pink);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn {
+  height: 2.875rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--rule-2);
+  background: var(--panel-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0 1rem;
+}
+
+.btn:hover {
+  border-color: var(--cyan);
+}
+
+.btn--primary {
+  background: var(--pink);
+  border-color: var(--pink);
+  color: var(--dark);
+  box-shadow: 0 0 1.375rem rgba(255, 61, 139, 0.45);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------- redaction -- */
+
+.map {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+}
+
+.map__row {
+  display: flex;
+  gap: 0.1875rem;
+}
+
+.cell {
+  width: var(--cell, 1.9375rem);
+  height: var(--cell, 1.9375rem);
+  border-radius: 0.1875rem;
+  border: 1px dashed var(--rule-2);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.cell--barred {
+  background: #0f1119;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--pink);
+  border-top-width: 3px;
+  box-shadow: 0 0 0.625rem rgba(255, 61, 139, 0.28);
+}
+
+.cell--static {
+  cursor: default;
+}
+
+/* ----------------------------------------------------------------- stamp -- */
+
+.stamp {
+  display: inline-flex;
+  border: 2px solid var(--pink);
+  border-radius: 0.1875rem;
+  padding: 0.375rem 0.75rem;
+  color: var(--pink);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  transform: rotate(4deg) scale(0.5);
+  opacity: 0;
+  animation: stamp 240ms cubic-bezier(0.3, 1.6, 0.5, 1) forwards;
+}
+
+@keyframes stamp {
+  60% {
+    transform: rotate(5deg) scale(1.07);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(4deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ----------------------------------------------------------------- layout -- */
+
+.layout {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 60rem) {
+  .layout--play {
+    grid-template-columns: 14.5rem minmax(0, 1fr) 15rem;
+  }
+  .layout--two {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.centre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.sheet {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  line-height: 1.9;
+  color: var(--body);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule-2);
+  border-radius: 0.25rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.panel--cyan {
+  border-color: rgba(77, 225, 255, 0.6);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--pink);
+  border-radius: 0.25rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  z-index: 20;
+  max-width: min(90vw, 28rem);
+  animation: toast 200ms ease both;
+}
+
+@keyframes toast {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.5rem);
+  }
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--rule);
+  padding-top: 1rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+}
+
+/* ----------------------------------------------------------------- theme -- */
+
+/*
+ * Daylight.
+ *
+ * The same room with the lights on: pure white ground, ink black, and the same
+ * two chrome colours darkened until they carry on paper. The three inks do not
+ * change — ink is ink, and it is the only thing on the page that is data — but
+ * everything that glowed stops glowing, because a glow on white is a smudge. The
+ * barred cell stays a black bar, which is what a redaction looks like on paper.
+ */
+html[data-theme='light'] {
+  --ground: #ffffff;
+  --panel: #f5f6f8;
+  --panel-2: #edeff2;
+  --raise: #f7f8fa;
+  --rule: #e4e7eb;
+  --rule-2: #d2d7dd;
+
+  --ink: #14161a;
+  --body: #4c545e;
+  --dim: #6b7480;
+  --faint: #9ba3ad;
+
+  --pink: #ce1f6a;
+  --cyan: #0b6fa4;
+  --dark: #ffffff;
+
+  color-scheme: light;
+}
+
+html[data-theme='light'] .ground {
+  background-image: none;
+}
+
+html[data-theme='light'] .tile--flip .tile__face,
+html[data-theme='light'] .tile--barred,
+html[data-theme='light'] .cell--barred,
+html[data-theme='light'] .key--action,
+html[data-theme='light'] .btn--primary,
+html[data-theme='light'] .chip--on,
+html[data-theme='light'] .swatch--on,
+html[data-theme='light'] .stepper__value,
+html[data-theme='light'] .stamp,
+html[data-theme='light'] .toast,
+html[data-theme='light'] .tile--liftable:hover .tile__face {
+  box-shadow: none;
+}
+
+html[data-theme='light'] .field:focus {
+  box-shadow: none;
+}
+
+html[data-theme='light'] .key {
+  background: #ffffff;
+}
+
+html[data-theme='light'] .chip,
+html[data-theme='light'] .stepper button {
+  background: #ffffff;
+}
+
+html[data-theme='light'] .chip--on,
+html[data-theme='light'] .stepper__value,
+html[data-theme='light'] .key--action,
+html[data-theme='light'] .btn--primary {
+  background: var(--pink);
+  color: #ffffff;
+}
+
+html[data-theme='light'] .swatch {
+  border-color: rgba(20, 22, 26, 0.16);
+}
+
+html[data-theme='light'] .wordmark::before {
+  box-shadow: none;
+}
+
+/* Everything above is decoration on top of a state that is already correct. */
+@media (prefers-reduced-motion: reduce) {
+  .tile--flip,
+  .tile--pending .tile__letter,
+  .board__row--shake,
+  .board--won .board__row,
+  .toast {
+    animation: none;
+  }
+  .tile--flip {
+    transform: rotateX(180deg);
+  }
+  .stamp {
+    animation: none;
+    transform: rotate(4deg);
+    opacity: 1;
+  }
+}
