@@ -16,6 +16,7 @@ service, no game server, no hosted database.
 | [Azulejo](apps/azul) | The tile-laying game *Azul* for two to four, played peer to peer over WebRTC |
 | [Sudoku Solver](apps/sudoku-solver) | A solver and playable grid |
 | [Ultimate Tic-Tac-Toe](apps/ultimate-ttt) | Tic-tac-toe nested inside tic-tac-toe |
+| [Hushword](apps/hushword) | Wordle, except every link carries its own colour code and its own redacted cells. No server; the whole case travels in the URL. |
 
 Design notes for the newer batch are in [docs/CONCEPTS.md](docs/CONCEPTS.md), including
 why each concept was chosen and what its playtests changed.
