@@ -132,16 +132,16 @@ What is left to do on the server side, once:
    The first deploy creates the Durable Object class from the `v1` migration. Note the
    `https://independents-rooms.<subdomain>.workers.dev` URL it prints.
 
-3. **Optional: your own domain.** If the zone is on that Cloudflare account, uncomment the
-   `routes` block in `wrangler.jsonc` (for example `rooms.cinematicgenius007.com`) and
-   deploy again. Cloudflare creates the DNS record and certificate.
+3. **Custom domain.** `wrangler.jsonc` serves the Worker from `rooms.cinematicgenius007.com`
+   (the zone is on the same Cloudflare account), so the deploy in step 2 creates the DNS
+   record and certificate. The old `workers.dev` URL stays enabled (`workers_dev: true`) so already-built apps keep working.
 
 4. **Point the apps at it.** In each app's Vercel project, add an environment variable
    and redeploy:
 
    | project | variable | value |
    | --- | --- | --- |
-   | Azulejo | `VITE_ROOMS_URL` | the Worker URL from step 2 or 3 |
+   | Azulejo | `VITE_ROOMS_URL` | `https://rooms.cinematicgenius007.com` |
    | Ultimate TTT | `VITE_ROOMS_URL` | the same URL |
 
    It is read at build time, so it takes effect on the next deployment.

@@ -16,9 +16,11 @@
   "vars": {
     // Comma-separated origins allowed to open rooms. Empty = public.
     "ALLOWED_ORIGINS": ""
-  }
+  },
 
-  // To serve from your own domain instead of *.workers.dev, add the zone to
-  // Cloudflare and uncomment:
-  // "routes": [{ "pattern": "rooms.cinematicgenius007.com", "custom_domain": true }]
+  // The cinematicgenius007.com zone lives on this same account, so Cloudflare
+  // creates the DNS record and certificate on deploy.
+  // Keep the old *.workers.dev URL alive so already-built apps keep working.
+  "workers_dev": true,
+  "routes": [{ "pattern": "rooms.cinematicgenius007.com", "custom_domain": true }]
 }

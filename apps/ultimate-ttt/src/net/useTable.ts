@@ -23,7 +23,7 @@ export const GAME_ID = 'ultimate-ttt'
  * or another deployment); otherwise the shared production Worker is used. The
  * address is public by design — the API is open — so it is safe to ship.
  */
-export const DEFAULT_ROOMS_URL = 'https://independents-rooms.cloudflareworkers-unsafe064.workers.dev'
+export const DEFAULT_ROOMS_URL = 'https://rooms.cinematicgenius007.com'
 export const ROOMS_URL: string | null = (import.meta.env.VITE_ROOMS_URL ?? '').trim() || DEFAULT_ROOMS_URL
 
 export interface OnlineTable {
