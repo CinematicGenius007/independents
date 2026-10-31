@@ -90,4 +90,23 @@ describe('an online table', () => {
     const hijack = reduceTable(t, B, { k: 'rematch', seats: { X: B, O: C } })
     expect(hijack.seats).toEqual({ X: B, O: A })
   })
+
+  it('keeps the moves of the current game, ignoring refused ones, and clears them on rematch', () => {
+    const seated = [
+      { from: A, data: { k: 'claim', side: 'X' } },
+      { from: B, data: { k: 'claim', side: 'O' } },
+    ]
+    const t = replay([
+      ...seated,
+      { from: A, data: { k: 'move', board: 4, cell: 0 } },
+      { from: A, data: { k: 'move', board: 4, cell: 1 } }, // not A's turn
+      { from: B, data: { k: 'move', board: 5, cell: 0 } }, // wrong board
+      { from: B, data: { k: 'move', board: 0, cell: 8 } },
+    ])
+    expect(t.moves).toEqual([
+      { board: 4, cell: 0 },
+      { board: 0, cell: 8 },
+    ])
+    expect(t.moves.length).toBe(t.game.moveCount)
+  })
 })

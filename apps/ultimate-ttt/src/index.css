@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+@import '@fontsource-variable/space-grotesk/wght.css';
+@import '@fontsource/jetbrains-mono/latin-400.css';
+@import '@fontsource/jetbrains-mono/latin-500.css';
 
 *, *::before, *::after {
   margin: 0;
@@ -7,46 +9,57 @@
 }
 
 :root {
-  --bg: #08080f;
-  --surface: #0f0f1a;
-  --surface-2: #16162a;
-  --surface-3: #1e1e35;
-  --border: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.12);
+  color-scheme: dark;
 
-  --x-accent: #60a5fa;
-  --x-glow: rgba(96, 165, 250, 0.3);
-  --x-dim: rgba(96, 165, 250, 0.12);
+  --bg: #0b0d10;
+  --panel: #14181d;
+  --panel-2: #191e24;
+  --line: #2a3038;
+  --line-soft: #1c2127;
+  --text: #e8e6df;
+  --dim: #8a919b;
+  --signal: #ff5a36;
+  --signal-soft: rgba(255, 90, 54, 0.1);
+  --signal-line: rgba(255, 90, 54, 0.42);
+  --x: #7fd6e8;
+  --x-soft: rgba(127, 214, 232, 0.12);
 
-  --o-accent: #f87171;
-  --o-glow: rgba(248, 113, 113, 0.3);
-  --o-dim: rgba(248, 113, 113, 0.12);
+  --heading: 'Space Grotesk Variable', 'Space Grotesk', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --active-accent: #34d399;
-  --active-glow: rgba(52, 211, 153, 0.2);
-  --active-dim: rgba(52, 211, 153, 0.08);
-
-  --text-primary: #eeeef8;
-  --text-secondary: #7878a0;
-  --text-muted: #44445a;
-
-  --font-display: 'Syne', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
-  width: 100%;
-  min-height: 100vh;
+  min-height: 100%;
   background: var(--bg);
-  color: var(--text-primary);
-  font-family: var(--font-body);
+  color: var(--text);
+  font-family: var(--heading);
 }
 
 #root {
-  width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+button, input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--x);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

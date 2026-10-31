@@ -11,6 +11,18 @@ Tic-tac-toe nested inside tic-tac-toe, for two players on one screen or online.
 5. Sent to a board that is already decided? Play anywhere.
 6. If every small board is decided and nobody has three in a row, it is a draw.
 
+## Ways to play
+
+- **Challenge a friend** — one tap makes a room and a link; no sign-up.
+- **Versus the machine** — Rookie, Tactician or Grandmaster (`src/ai.ts`, run in a Web Worker).
+- **Pass & play** — two players, one screen.
+
+Every finished game gets a **match number** (such as `7QK-4M2`) and a replay link
+(`#m=…`). The link carries the whole game, bit-packed (`src/record.ts`), so there is no backend
+involved; opening it replays the game and checks the number. The last three matches are kept in
+`localStorage` (`src/history.ts`). *Share result* draws a PNG card in the browser.
+See [DESIGN.md](DESIGN.md) for the design system and the plan.
+
 ## Playing online
 
 Online play goes through the repository's rooms service

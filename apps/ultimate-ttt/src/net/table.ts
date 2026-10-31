@@ -18,7 +18,7 @@
  */
 
 import { applyMove, initialState } from '../game'
-import type { GameState, Player } from '../game'
+import type { GameState, Move, Player } from '../game'
 
 export type TableMessage =
   /** Take a side. Ignored if it is taken or the sender already has one. */
@@ -43,10 +43,12 @@ export interface Table {
   game: GameState
   /** How many games this table has started, so the UI can tell them apart. */
   round: number
+  /** The moves of the current game, in order, for the timeline and for sharing. */
+  moves: Move[]
 }
 
 export function emptyTable(): Table {
-  return { seats: { X: null, O: null }, game: initialState('X'), round: 1 }
+  return { seats: { X: null, O: null }, game: initialState('X'), round: 1, moves: [] }
 }
 
 /** The side a client sits on, or null for a spectator. */
@@ -82,13 +84,13 @@ export function reduceTable(table: Table, from: string, data: unknown): Table {
       if (sideOf(table, from) !== table.game.current) return table
       if (!table.seats.X || !table.seats.O) return table // no moves until both sit
       const game = applyMove(table.game, { board: data.board, cell: data.cell })
-      return game ? { ...table, game } : table
+      return game ? { ...table, game, moves: [...table.moves, { board: data.board, cell: data.cell }] } : table
     }
     case 'rematch': {
       // Only a seated player, and only once the game is over: nobody can reset
       // a game in progress or reseat anyone.
       if (sideOf(table, from) === null || table.game.winner === null) return table
-      return { seats: { X: table.seats.O, O: table.seats.X }, game: initialState('X'), round: table.round + 1 }
+      return { seats: { X: table.seats.O, O: table.seats.X }, game: initialState('X'), round: table.round + 1, moves: [] }
     }
   }
 }
