@@ -125,9 +125,9 @@ export function decodeRecord(text: string): MatchRecord | null {
     moves.push(move)
     state = next
   }
-  // Only padding may follow the last move.
-  if (reader.remaining >= 8) return null
-  return { starter, moves }
+  // Only zero padding may follow, so every game has exactly one spelling.
+  const record = { starter, moves }
+  return encodeRecord(record) === text ? record : null
 }
 
 /** The position after the first `count` moves of a record. */

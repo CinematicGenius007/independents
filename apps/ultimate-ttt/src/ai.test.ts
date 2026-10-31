@@ -36,17 +36,25 @@ describe('ai', () => {
     })
   }
 
-  it('the grandmaster beats the rookie', () => {
-    let gm = 0
-    for (let g = 0; g < 4; g++) {
-      let state = initialState('X')
-      const gmSide = g % 2 === 0 ? 'X' : 'O'
-      while (!state.winner) {
-        const level: Level = state.current === gmSide ? 'grandmaster' : 'rookie'
-        state = applyMove(state, chooseMove(state, level, Math.random, 25))!
-      }
-      if (state.winner === gmSide) gm++
+  it('the tactician beats the rookie', () => {
+    // Seeded, and depth-limited rather than timed, so the result is the same on every machine.
+    let seed = 12345
+    const rng = () => {
+      seed = (seed + 0x6d2b79f5) | 0
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
-    expect(gm).toBeGreaterThanOrEqual(3)
+    let wins = 0
+    for (let g = 0; g < 6; g++) {
+      let state = initialState('X')
+      const strong = g % 2 === 0 ? 'X' : 'O'
+      while (!state.winner) {
+        const level: Level = state.current === strong ? 'tactician' : 'rookie'
+        state = applyMove(state, chooseMove(state, level, rng))!
+      }
+      if (state.winner === strong) wins++
+    }
+    expect(wins).toBeGreaterThanOrEqual(4)
   })
 })

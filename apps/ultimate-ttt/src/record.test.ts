@@ -45,6 +45,13 @@ describe('record', () => {
     expect(decodeRecord(text + 'AAAA')).toBeNull()
   })
 
+  it('accepts only the canonical spelling of a game', () => {
+    const text = encodeRecord(game(10))
+    // flip a padding bit in the last character, if there is one to flip
+    const bumped = text.slice(0, -1) + (text.endsWith('A') ? 'B' : 'A')
+    if (bumped !== text) expect(decodeRecord(bumped)).toBeNull()
+  })
+
   it('refuses to encode an illegal game', () => {
     expect(() => encodeRecord({ starter: 'X', moves: [{ board: 0, cell: 0 }, { board: 5, cell: 0 }] })).toThrow()
   })

@@ -4,7 +4,7 @@ import { LEVELS } from './ai'
 import type { Level } from './ai'
 import { applyMove, initialState } from './game'
 import type { GameState, Move, Player } from './game'
-import { codename, loadHistory, loadTally } from './history'
+import { codename } from './history'
 import { Lobby } from './Lobby'
 import { InvitePanel, MatchView } from './Match'
 import type { SeatInfo } from './Match'
@@ -66,11 +66,11 @@ type Mode =
   | { kind: 'local' }
   | { kind: 'ai'; level: Level }
   | { kind: 'online'; code: string }
-  | { kind: 'replay'; record: MatchRecord; claimed: string | null }
+  | { kind: 'replay'; record: MatchRecord; claimed: string | null; hash: string }
 
 function replayFromHash(): Mode | null {
   const parsed = parseReplayHash(location.hash)
-  return parsed ? { kind: 'replay', ...parsed } : null
+  return parsed ? { kind: 'replay', ...parsed, hash: location.hash } : null
 }
 
 /** The game so far: the moves are the truth, the position is a fold over them. */
@@ -106,7 +106,8 @@ function App() {
   useEffect(() => {
     const onHash = () => {
       const replay = replayFromHash()
-      if (replay) setMode(replay)
+      // Only the lobby and another replay give way to a replay link; a live game must not be dropped by one.
+      if (replay) setMode(m => (m.kind === 'lobby' || m.kind === 'replay' ? replay : m))
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
@@ -141,14 +142,12 @@ function App() {
           onAi={level => setMode({ kind: 'ai', level })}
           onCreate={() => goOnline(newCode())}
           onJoin={goOnline}
-          history={loadHistory()}
-          tally={loadTally()}
         />
       )}
       {mode.kind === 'local' && <LocalGame onLeave={toLobby} />}
       {mode.kind === 'ai' && <AiGame level={mode.level} name={me} onLeave={toLobby} />}
       {mode.kind === 'online' && <OnlineGame code={mode.code} name={me} onLeave={toLobby} />}
-      {mode.kind === 'replay' && <ReplayGame record={mode.record} claimed={mode.claimed} onLeave={toLobby} />}
+      {mode.kind === 'replay' && <ReplayGame key={mode.hash} record={mode.record} claimed={mode.claimed} onLeave={toLobby} />}
     </div>
   )
 }

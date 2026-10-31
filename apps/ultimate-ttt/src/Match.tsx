@@ -79,18 +79,14 @@ export function MatchView(p: MatchViewProps) {
 
   useEffect(() => {
     if (!autoplay) return
-    const id = setInterval(() => {
-      setCursor(c => {
-        const next = (c ?? 0) + 1
-        if (next >= count) {
-          setAutoplay(false)
-          return null
-        }
-        return next
-      })
-    }, 520)
+    const id = setInterval(() => setCursor(c => ((c ?? 0) + 1 >= count ? null : (c ?? 0) + 1)), 520)
     return () => clearInterval(id)
   }, [autoplay, count])
+
+  // Reaching the end hands the board back to the live game.
+  useEffect(() => {
+    if (autoplay && cursor === null) setAutoplay(false)
+  }, [autoplay, cursor])
 
   const viewIndex = cursor ?? count
   const view = states[Math.min(viewIndex, states.length - 1)]
@@ -247,7 +243,7 @@ export function MatchView(p: MatchViewProps) {
 
         {p.replayBadge}
 
-        {p.history.length > 0 && <History entries={p.history} />}
+        {p.history.length > 0 && <History entries={p.history} newTab={!p.replayBadge} />}
         <span className="hatch hatch-foot" aria-hidden="true" />
       </div>
     </div>
@@ -279,9 +275,12 @@ function ResultPanel({
   const headline = winner === 'tie' ? 'Nobody blinked.' : youWon ? 'You took it.' : `${winnerSeat!.name} took it.`
   const eyebrow = `${winner === 'tie' ? 'Draw' : `${winner} wins`} · ${moves} moves`
 
+  const timer = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => () => clearTimeout(timer.current), [])
   const flash = (text: string) => {
+    clearTimeout(timer.current)
     setFeedback(text)
-    setTimeout(() => setFeedback(null), 1800)
+    timer.current = setTimeout(() => setFeedback(null), 1800)
   }
 
   const share = async () => {
@@ -338,7 +337,16 @@ function ResultPanel({
 
 // ─── History ───────────────────────────────────────────────────────────────────
 
-export function History({ entries, title = 'Last 3 matches · this device' }: { entries: HistoryEntry[]; title?: string }) {
+export function History({
+  entries,
+  title = 'Last 3 matches · this device',
+  newTab = false,
+}: {
+  entries: HistoryEntry[]
+  title?: string
+  /** Open replays in a new tab, so a live game is not left behind. */
+  newTab?: boolean
+}) {
   return (
     <div className="history">
       <span className="eyebrow">{title}</span>
@@ -347,7 +355,11 @@ export function History({ entries, title = 'Last 3 matches · this device' }: { 
           const outcome = e.winner === 'tie' ? 'draw' : e.me === null ? 'played' : e.winner === e.me ? 'won' : 'lost'
           return (
             <li key={`${e.n}-${e.at}`}>
-              <a className={`history-item history-${outcome}`} href={replayHash(e.code, e.n)}>
+              <a
+                className={`history-item history-${outcome}`}
+                href={replayHash(e.code, e.n)}
+                {...(newTab ? { target: '_blank', rel: 'noopener' } : {})}
+              >
                 <i aria-hidden="true" />
                 <span className="history-main">
                   <b>

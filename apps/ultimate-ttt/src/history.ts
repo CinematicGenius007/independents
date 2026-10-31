@@ -74,11 +74,12 @@ export function loadTally(): Tally {
   return { w: num(data?.w), l: num(data?.l), d: num(data?.d) }
 }
 
-/** Adds a match, newest first. The same match number is kept once. Returns the new list. */
+/** Adds a match, newest first. A match number already on file is ignored. Returns the new list. */
 export function addMatch(entry: HistoryEntry): HistoryEntry[] {
   const current = loadHistory()
-  if (current.some(e => e.n === entry.n && e.at === entry.at)) return current
-  const next = [entry, ...current.filter(e => e.n !== entry.n)].slice(0, HISTORY_SIZE)
+  // The same moves are the same match: a reload that folds the log again must not count twice.
+  if (current.some(e => e.n === entry.n)) return current
+  const next = [entry, ...current].slice(0, HISTORY_SIZE)
   write(HISTORY_KEY, next)
 
   if (entry.me) {

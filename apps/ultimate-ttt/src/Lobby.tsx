@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { LEVELS } from './ai'
 import type { Level } from './ai'
 import { History } from './Match'
+import { loadHistory, loadTally } from './history'
 import type { HistoryEntry, Tally } from './history'
 
 export function Lobby({
@@ -14,8 +15,6 @@ export function Lobby({
   onAi,
   onCreate,
   onJoin,
-  history,
-  tally,
 }: {
   name: string
   /** The device codename, shown until the player types their own. */
@@ -27,9 +26,10 @@ export function Lobby({
   onAi: (level: Level) => void
   onCreate: () => void
   onJoin: (code: string) => void
-  history: HistoryEntry[]
-  tally: Tally
 }) {
+  // Read once per visit to the lobby, not on every keystroke in the name field.
+  const [history] = useState<HistoryEntry[]>(loadHistory)
+  const [tally] = useState<Tally>(loadTally)
   const [code, setCode] = useState('')
   const valid = /^[A-Z0-9]{4,12}$/.test(code)
 
