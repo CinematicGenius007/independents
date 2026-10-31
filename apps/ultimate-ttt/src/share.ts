@@ -83,7 +83,19 @@ function drawBoard(ctx: CanvasRenderingContext2D, state: GameState, x0: number, 
 function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const lines: string[] = []
   let line = ''
+  const pieces: string[] = []
   for (const word of text.split(' ')) {
+    // A word wider than the column is broken so it cannot run off the card.
+    let rest = word
+    while (rest.length > 1 && ctx.measureText(rest).width > maxWidth) {
+      let cut = rest.length - 1
+      while (cut > 1 && ctx.measureText(rest.slice(0, cut)).width > maxWidth) cut--
+      pieces.push(rest.slice(0, cut))
+      rest = rest.slice(cut)
+    }
+    pieces.push(rest)
+  }
+  for (const word of pieces) {
     const test = line ? `${line} ${word}` : word
     if (line && ctx.measureText(test).width > maxWidth) {
       lines.push(line)
@@ -123,7 +135,9 @@ export async function renderResultCard(details: CardDetails): Promise<Blob> {
 
   ctx.fillStyle = C.text
   ctx.font = `700 60px ${HEADING}`
-  wrap(ctx, details.title, 480).slice(0, 4).forEach((line, i) => ctx.fillText(line, left, 215 + i * 68))
+  wrap(ctx, details.title, 480)
+    .slice(0, 4)
+    .forEach((line, i) => ctx.fillText(line, left, 215 + i * 68))
 
   ctx.fillStyle = C.signal
   ctx.fillRect(left, 480, 44, 4)
@@ -169,6 +183,18 @@ export async function copyText(text: string): Promise<boolean> {
     await navigator.clipboard.writeText(text)
     return true
   } catch {
-    return false
+    // Plain-HTTP pages have no clipboard API; fall back to the old selection trick.
+    try {
+      const box = document.createElement('textarea')
+      box.value = text
+      box.style.cssText = 'position:fixed;opacity:0'
+      document.body.appendChild(box)
+      box.select()
+      const ok = document.execCommand('copy')
+      box.remove()
+      return ok
+    } catch {
+      return false
+    }
   }
 }

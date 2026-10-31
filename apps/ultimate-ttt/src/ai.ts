@@ -150,7 +150,7 @@ function fixedDepth(state: GameState, depth: number, rng: () => number): Move {
 function timed(state: GameState, budgetMs: number, rng: () => number): Move {
   const me = state.current
   const budget: Budget = { deadline: Date.now() + budgetMs, nodes: 0 }
-  const root = ordered(state, me)
+  let root = ordered(state, me)
   let answer = pickRandom(root, rng).move
   for (let depth = 1; depth <= 14; depth++) {
     let best = -Infinity
@@ -168,6 +168,9 @@ function timed(state: GameState, budgetMs: number, rng: () => number): Move {
       throw e
     }
     answer = pickRandom(bestMoves, rng)
+    // The next, deeper pass tries this pass's choice first, which is what lets alpha-beta prune.
+    const chosen = answer
+    root = [...root].sort((p, q) => Number(q.move === chosen) - Number(p.move === chosen))
     if (Math.abs(best) >= WIN - 20) break // forced win or loss; deeper changes nothing
   }
   return answer

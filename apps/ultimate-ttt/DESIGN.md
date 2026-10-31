@@ -21,7 +21,7 @@ Type: Space Grotesk 700 for headings, JetBrains Mono for labels, numbers and cod
 self-hosted and subset to Latin through `@fontsource`, so there is no render-blocking request to
 Google Fonts.
 
-Motion is transform and opacity only, 120–420 ms, and switched off under
+Motion is transform and opacity (plus stroke-dashoffset for drawn marks and the win line), 120–700 ms, and switched off under
 `prefers-reduced-motion`.
 
 ## Screens
@@ -50,7 +50,7 @@ Motion is transform and opacity only, 120–420 ms, and switched off under
   round, so online games can be recorded, replayed and shared without any new message type.
 - **Versus the machine** (`src/ai.ts`). Three levels over the existing `legalMoves` and
   `applyMove`: Rookie (takes wins, blocks, otherwise random), Tactician (alpha-beta, depth 3),
-  Grandmaster (iterative deepening alpha-beta on a 600 ms budget). Runs in a Web Worker so the
+  Grandmaster (iterative deepening alpha-beta on a 700 ms budget). Runs in a Web Worker so the
   interface never stalls.
 - **Share result.** The result card is drawn on a canvas, exported as PNG, and passed to
   `navigator.share` with the replay link; where files cannot be shared it downloads.

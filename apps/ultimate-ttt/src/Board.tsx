@@ -128,7 +128,7 @@ const SmallGrid = ({
       onKeyDown={onSelect ? e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelect()) : undefined}
       aria-label={`${BOARD_NAMES[index]} board${winner ? (winner === 'tie' ? ', drawn' : `, won by ${winner}`) : ''}`}
     >
-      <div className="cell-grid">
+      <div className="cell-grid" aria-hidden={onSelect ? true : undefined}>
         {cells.map((cell, idx) => {
           const playable = canPlay && isActive && !cell && !winner
           const isLast = last?.board === index && last.cell === idx

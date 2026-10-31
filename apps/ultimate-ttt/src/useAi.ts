@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { chooseMove } from './ai'
 import type { Level } from './ai'
+import { legalMoves } from './game'
 import type { GameState, Move } from './game'
+
+const WATCHDOG_MS = 6000
+
+/** A move worked out on the page; if even that throws, any legal move keeps the game going. */
+function fallbackMove(state: GameState, level: Level): Move {
+  try {
+    return chooseMove(state, level, Math.random, 300)
+  } catch {
+    return legalMoves(state)[0]
+  }
+}
 
 interface Pending {
   resolve: (move: Move) => void
@@ -37,7 +49,7 @@ export function useAi() {
         worker.current = null
         for (const [id, p] of [...pending]) {
           pending.delete(id)
-          p.resolve(chooseMove(p.state, p.level, Math.random, 300))
+          p.resolve(fallbackMove(p.state, p.level))
         }
       }
       w.onerror = fail
@@ -53,9 +65,16 @@ export function useAi() {
 
   return useCallback((state: GameState, level: Level) => {
     return new Promise<Move>(resolve => {
-      if (!worker.current) return resolve(chooseMove(state, level, Math.random, 300))
+      if (!worker.current) return resolve(fallbackMove(state, level))
       const id = ++counter.current
       waiting.current.set(id, { resolve, state, level })
+      // A worker that never answers must not freeze the game: after a while, think on the page instead.
+      setTimeout(() => {
+        const p = waiting.current.get(id)
+        if (!p) return
+        waiting.current.delete(id)
+        p.resolve(fallbackMove(state, level))
+      }, WATCHDOG_MS)
       worker.current.postMessage({ id, state, level })
     })
   }, [])

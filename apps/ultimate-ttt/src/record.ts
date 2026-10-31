@@ -11,6 +11,7 @@
  * label, not a registry: nothing stops someone inventing a legal game.
  */
 
+import { sha256 } from './sha256'
 import { applyMove, initialState } from './game'
 import type { GameState, Move, Player } from './game'
 
@@ -64,7 +65,10 @@ class BitReader {
 }
 
 function toBase64Url(bytes: number[]): string {
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
 }
 
 function fromBase64Url(text: string): Uint8Array | null {
@@ -142,7 +146,10 @@ export function stateAt(record: MatchRecord, count: number): GameState {
 /** A short label for a record, such as `7QK-4M2`. */
 export async function matchNumber(record: MatchRecord): Promise<string> {
   const canonical = `${record.starter}:${record.moves.map(m => m.board * 9 + m.cell).join(',')}`
-  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical)))
+  const bytes = new TextEncoder().encode(canonical)
+  const digest = globalThis.crypto?.subtle
+    ? new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
+    : sha256(bytes)
   let bits = 0
   let acc = 0
   let text = ''

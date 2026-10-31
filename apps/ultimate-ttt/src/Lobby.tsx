@@ -47,20 +47,24 @@ export function Lobby({
       </h1>
       <p className="lede">A board inside a board. Where you play decides where they must.</p>
 
-      <label className="namecard">
-        <span className="eyebrow">Playing as</span>
-        <input
-          className="namefield"
-          value={name}
-          maxLength={24}
-          placeholder={placeholder}
-          onChange={e => onName(e.target.value)}
-          aria-label="Your name"
-          spellCheck={false}
-          autoComplete="nickname"
-        />
-        <span className="eyebrow namehint">{name.trim() ? 'Saved on this device' : 'Type a name · your rival sees it'}</span>
-      </label>
+      {!invite && (
+        <label className="namecard">
+          <span className="eyebrow">Playing as</span>
+          <input
+            className="namefield"
+            value={name}
+            maxLength={24}
+            placeholder={placeholder}
+            onChange={e => onName(e.target.value)}
+            aria-label="Your name"
+            spellCheck={false}
+            autoComplete="nickname"
+          />
+          <span className="eyebrow namehint">
+            {name.trim() ? 'Saved on this device' : 'Type a name · your rival sees it'}
+          </span>
+        </label>
+      )}
 
       {invite && (
         <section className="card card-invite" aria-label="Invitation">
@@ -73,7 +77,6 @@ export function Lobby({
             value={name}
             maxLength={24}
             placeholder={placeholder}
-            autoFocus
             onChange={e => onName(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') onJoin(invite)

@@ -108,6 +108,8 @@ function App() {
       const replay = replayFromHash()
       // Only the lobby and another replay give way to a replay link; a live game must not be dropped by one.
       if (replay) setMode(m => (m.kind === 'lobby' || m.kind === 'replay' ? replay : m))
+      // Back out of a replay: the hash is gone, so is the screen.
+      else if (!location.hash) setMode(m => (m.kind === 'replay' ? { kind: 'lobby' } : m))
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
@@ -147,12 +149,20 @@ function App() {
       {mode.kind === 'local' && <LocalGame onLeave={toLobby} />}
       {mode.kind === 'ai' && <AiGame level={mode.level} name={me} onLeave={toLobby} />}
       {mode.kind === 'online' && <OnlineGame code={mode.code} name={me} onLeave={toLobby} />}
-      {mode.kind === 'replay' && <ReplayGame key={mode.hash} record={mode.record} claimed={mode.claimed} onLeave={toLobby} />}
+      {mode.kind === 'replay' && (
+        <ReplayGame key={mode.hash} record={mode.record} claimed={mode.claimed} onLeave={toLobby} />
+      )}
     </div>
   )
 }
 
-const seat = (side: Player, name: string, you: boolean, here = true, role?: string): SeatInfo => ({ side, name, you, here, role })
+const seat = (side: Player, name: string, you: boolean, here = true, role?: string): SeatInfo => ({
+  side,
+  name,
+  you,
+  here,
+  role,
+})
 
 // ─── Same screen ──────────────────────────────────────────────────────────────
 
@@ -252,7 +262,13 @@ function AiGame({ level, name, onLeave }: { level: Level; name: string; onLeave:
       game={game}
       canPlay={!machineTurn && !game.winner}
       onPlay={(board, cell) => setMoves(m => (applyMove(fold('X', m), { board, cell }) ? [...m, { board, cell }] : m))}
-      note={game.winner ? '' : machineTurn ? `${levelName} is thinking…` : `Your move — you are ${mine}, ${theirs} is ${levelName}.`}
+      note={
+        game.winner
+          ? ''
+          : machineTurn
+            ? `${levelName} is thinking…`
+            : `Your move — you are ${mine}, ${theirs} is ${levelName}.`
+      }
       result={{
         rematch: {
           label: 'Rematch — sides swap',
@@ -346,7 +362,15 @@ function OnlineGame({ code, name, onLeave }: { code: string; name: string; onLea
 
 // ─── Replay ───────────────────────────────────────────────────────────────────
 
-function ReplayGame({ record, claimed, onLeave }: { record: MatchRecord; claimed: string | null; onLeave: () => void }) {
+function ReplayGame({
+  record,
+  claimed,
+  onLeave,
+}: {
+  record: MatchRecord
+  claimed: string | null
+  onLeave: () => void
+}) {
   const game = useMemo(() => fold(record.starter, record.moves), [record])
   const { info, history } = useRecordMatch({
     key: 'replay',
@@ -364,7 +388,10 @@ function ReplayGame({ record, claimed, onLeave }: { record: MatchRecord; claimed
     <MatchView
       eyebrow="Replay"
       link={{ tone: 'idle', label: 'Replay' }}
-      seats={[seat('X', 'Opens', false, true, ''), seat('O', 'Replies', false, true, '')]}
+      seats={[
+        seat('X', record.starter === 'X' ? 'Opens' : 'Replies', false, true, ''),
+        seat('O', record.starter === 'O' ? 'Opens' : 'Replies', false, true, ''),
+      ]}
       starter={record.starter}
       moves={record.moves}
       game={game}
@@ -379,7 +406,8 @@ function ReplayGame({ record, claimed, onLeave }: { record: MatchRecord; claimed
           <p className={`verify verify-${verdict}`}>
             {verdict === 'verified' && `✓ Verified by replay — #${info!.number}`}
             {verdict === 'computed' && `Number computed from the moves — #${info!.number}`}
-            {verdict === 'mismatch' && `✕ The link says #${claimed}, the moves say #${info!.number}. They may have been changed.`}
+            {verdict === 'mismatch' &&
+              `✕ The link says #${claimed}, the moves say #${info!.number}. They may have been changed.`}
           </p>
         )
       }

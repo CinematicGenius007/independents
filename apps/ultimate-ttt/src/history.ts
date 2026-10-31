@@ -78,7 +78,8 @@ export function loadTally(): Tally {
 export function addMatch(entry: HistoryEntry): HistoryEntry[] {
   const current = loadHistory()
   // The same moves are the same match: a reload that folds the log again must not count twice.
-  if (current.some(e => e.n === entry.n)) return current
+  // Identical moves a few minutes apart are a repeat of the same game; much later they are a new one.
+  if (current.some(e => e.n === entry.n && e.me === entry.me && Math.abs(entry.at - e.at) < 5 * 60_000)) return current
   const next = [entry, ...current].slice(0, HISTORY_SIZE)
   write(HISTORY_KEY, next)
 

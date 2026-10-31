@@ -40,8 +40,14 @@ export function useRecordMatch(opts: {
     let cancelled = false
     ;(async () => {
       const record = { starter, moves }
-      const number = await matchNumber(record)
-      const code = encodeRecord(record)
+      let number: string
+      let code: string
+      try {
+        number = await matchNumber(record)
+        code = encodeRecord(record)
+      } catch {
+        return // no number is better than a crashed result screen; the game itself is unaffected
+      }
       if (cancelled) return
       setInfo({ number, code, link: `${location.origin}${location.pathname}${replayHash(code, number)}` })
       if (file && filed.current !== key) {
