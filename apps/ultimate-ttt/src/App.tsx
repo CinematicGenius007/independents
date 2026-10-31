@@ -1,9 +1,18 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
-import { applyMove, boardsWon, initialState } from './game'
-import type { BoardWinner, GameState, Player } from './game'
-import { BOARD_NAMES, MegaGrid, OMark, PlayerMark, SIDE_NAME, XMark } from './Board'
+import { LEVELS } from './ai'
+import type { Level } from './ai'
+import { applyMove, initialState } from './game'
+import type { GameState, Move, Player } from './game'
+import { codename, loadHistory, loadTally } from './history'
+import { Lobby } from './Lobby'
+import { InvitePanel, MatchView } from './Match'
+import type { SeatInfo } from './Match'
 import { ROOMS_URL, useTable } from './net/useTable'
+import { parseReplayHash } from './record'
+import type { MatchRecord } from './record'
+import { useAi } from './useAi'
+import { useRecordMatch } from './useRecordMatch'
 
 // ─── Rooms and links ─────────────────────────────────────────────────────────
 
@@ -52,7 +61,22 @@ function savedName(): string {
   }
 }
 
-type Mode = { kind: 'lobby' } | { kind: 'local' } | { kind: 'online'; code: string }
+type Mode =
+  | { kind: 'lobby' }
+  | { kind: 'local' }
+  | { kind: 'ai'; level: Level }
+  | { kind: 'online'; code: string }
+  | { kind: 'replay'; record: MatchRecord; claimed: string | null }
+
+function replayFromHash(): Mode | null {
+  const parsed = parseReplayHash(location.hash)
+  return parsed ? { kind: 'replay', ...parsed } : null
+}
+
+/** The game so far: the moves are the truth, the position is a fold over them. */
+function fold(starter: Player, moves: Move[]): GameState {
+  return moves.reduce((state, move) => applyMove(state, move) ?? state, initialState(starter))
+}
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -61,11 +85,14 @@ function App() {
   // filled in, so the visitor can say who they are before sitting down.
   // A tab that was already in this room goes straight back; anyone else is asked.
   const linked = ROOMS_URL ? codeFromHash() : null
-  const [mode, setMode] = useState<Mode>(() =>
-    linked && storedRoom() === linked ? { kind: 'online', code: linked } : { kind: 'lobby' },
-  )
+  const [mode, setMode] = useState<Mode>(() => {
+    const replay = replayFromHash()
+    if (replay) return replay
+    return linked && storedRoom() === linked ? { kind: 'online', code: linked } : { kind: 'lobby' }
+  })
   const [invite, setInvite] = useState<string | null>(() => (linked && storedRoom() !== linked ? linked : null))
   const [name, setName] = useState(savedName)
+  const fallbackName = useMemo(codename, [])
 
   useEffect(() => {
     try {
@@ -74,6 +101,16 @@ function App() {
       // storage refused; the name lasts for this visit
     }
   }, [name])
+
+  // A replay link followed from inside the app (the history list) only changes the hash.
+  useEffect(() => {
+    const onHash = () => {
+      const replay = replayFromHash()
+      if (replay) setMode(replay)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   const goOnline = useCallback((code: string) => {
     history.replaceState(null, '', `#room=${code}`)
@@ -89,182 +126,156 @@ function App() {
     setMode({ kind: 'lobby' })
   }, [])
 
+  const me = name.trim() || fallbackName
+
   return (
     <div className="app">
-      <div className="bg-noise" aria-hidden="true" />
       {mode.kind === 'lobby' && (
         <Lobby
           name={name}
+          placeholder={fallbackName}
           onName={setName}
           invite={invite}
           onDeclineInvite={toLobby}
           onLocal={() => setMode({ kind: 'local' })}
+          onAi={level => setMode({ kind: 'ai', level })}
           onCreate={() => goOnline(newCode())}
           onJoin={goOnline}
+          history={loadHistory()}
+          tally={loadTally()}
         />
       )}
       {mode.kind === 'local' && <LocalGame onLeave={toLobby} />}
-      {mode.kind === 'online' && (
-        <OnlineGame code={mode.code} name={name.trim() || 'Player'} onLeave={toLobby} />
-      )}
+      {mode.kind === 'ai' && <AiGame level={mode.level} name={me} onLeave={toLobby} />}
+      {mode.kind === 'online' && <OnlineGame code={mode.code} name={me} onLeave={toLobby} />}
+      {mode.kind === 'replay' && <ReplayGame record={mode.record} claimed={mode.claimed} onLeave={toLobby} />}
     </div>
   )
 }
 
-// ─── Lobby ────────────────────────────────────────────────────────────────────
+const seat = (side: Player, name: string, you: boolean, here = true, role?: string): SeatInfo => ({ side, name, you, here, role })
 
-function Lobby({
-  name,
-  onName,
-  invite,
-  onDeclineInvite,
-  onLocal,
-  onCreate,
-  onJoin,
-}: {
-  name: string
-  onName: (name: string) => void
-  invite: string | null
-  onDeclineInvite: () => void
-  onLocal: () => void
-  onCreate: () => void
-  onJoin: (code: string) => void
-}) {
-  const [code, setCode] = useState('')
-  const valid = /^[A-Z0-9]{4,12}$/.test(code)
-
-  return (
-    <>
-      <header className="app-header">
-        <Wordmark />
-      </header>
-      <main className="lobby">
-        {invite ? (
-          <section className="lobby-card lobby-card--invite" aria-label="Invitation">
-            <h2 className="lobby-title">You&rsquo;re invited</h2>
-            <p className="lobby-body">
-              A game is waiting in room <b className="lobby-invite-code">{invite}</b>. Tell your
-              opponent who you are, then take a seat.
-            </p>
-            <label className="lobby-label" htmlFor="invite-name">
-              Your name
-            </label>
-            <input
-              id="invite-name"
-              className="lobby-input"
-              value={name}
-              maxLength={24}
-              placeholder="Name"
-              autoFocus
-              onChange={e => onName(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') onJoin(invite)
-              }}
-            />
-            <button className="btn-play-again" onClick={() => onJoin(invite)}>
-              Join room {invite}
-            </button>
-            <button className="btn-new" onClick={onDeclineInvite}>
-              Not this room
-            </button>
-          </section>
-        ) : null}
-
-        <section className="lobby-card">
-          <h2 className="lobby-title">Same screen</h2>
-          <p className="lobby-body">Two players, one device, taking turns.</p>
-          <button className="btn-play-again" onClick={onLocal}>
-            Play here
-          </button>
-        </section>
-
-        <section className="lobby-card">
-          <h2 className="lobby-title">Online</h2>
-          {ROOMS_URL ? (
-            <>
-              <label className="lobby-label" htmlFor="name">
-                Your name
-              </label>
-              <input
-                id="name"
-                className="lobby-input"
-                value={name}
-                maxLength={24}
-                placeholder="Name"
-                onChange={e => onName(e.target.value)}
-              />
-              <button className="btn-play-again" onClick={onCreate}>
-                Create a room
-              </button>
-              <div className="lobby-join">
-                <input
-                  className="lobby-input lobby-code"
-                  value={code}
-                  maxLength={12}
-                  placeholder="Room code"
-                  aria-label="Room code"
-                  onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && valid) onJoin(code)
-                  }}
-                />
-                <button className="btn-new" disabled={!valid} onClick={() => onJoin(code)}>
-                  Join
-                </button>
-              </div>
-              <p className="lobby-body lobby-fine">
-                The first two people in a room play; anyone after them watches.
-              </p>
-            </>
-          ) : (
-            <p className="lobby-body">Online play isn&rsquo;t configured for this deployment.</p>
-          )}
-        </section>
-      </main>
-      <Footer />
-    </>
-  )
-}
-
-// ─── Local game ───────────────────────────────────────────────────────────────
+// ─── Same screen ──────────────────────────────────────────────────────────────
 
 function LocalGame({ onLeave }: { onLeave: () => void }) {
-  const [game, setGame] = useState<GameState>(initialState)
+  const [moves, setMoves] = useState<Move[]>([])
+  const [round, setRound] = useState(1)
+  const game = useMemo(() => fold('X', moves), [moves])
+  const { info, history } = useRecordMatch({
+    key: `local:${round}`,
+    winner: game.winner,
+    starter: 'X',
+    moves,
+    me: null,
+    file: true,
+    vs: 'Same screen',
+  })
 
-  const play = useCallback((board: number, cell: number) => {
-    setGame(current => applyMove(current, { board, cell }) ?? current)
-  }, [])
-  const reset = useCallback(() => setGame(initialState()), [])
+  const reset = () => {
+    setMoves([])
+    setRound(r => r + 1)
+  }
 
   return (
-    <>
-      <Header game={game} onLeave={onLeave}>
-        <button className="btn-new" onClick={reset}>
-          New game
-        </button>
-      </Header>
-      <main className="arena">
-        <MegaGrid game={game} canPlay onPlay={play} />
-        {game.winner && (
-          <GameOver winner={game.winner}>
-            <button className="btn-play-again" onClick={reset}>
-              Play again
-            </button>
-          </GameOver>
-        )}
-      </main>
-      <Footer />
-    </>
+    <MatchView
+      eyebrow="Same screen"
+      link={{ tone: 'idle', label: 'Local' }}
+      seats={[seat('X', 'Player 1', false, true, ''), seat('O', 'Player 2', false, true, '')]}
+      starter="X"
+      moves={moves}
+      game={game}
+      canPlay
+      onPlay={(board, cell) => setMoves(m => (applyMove(fold('X', m), { board, cell }) ? [...m, { board, cell }] : m))}
+      note={`${game.current} to play.`}
+      result={{ rematch: { label: 'Play again', onClick: reset } }}
+      info={info}
+      history={history}
+      onLeave={onLeave}
+    />
   )
 }
 
-// ─── Online game ──────────────────────────────────────────────────────────────
+// ─── Versus the machine ───────────────────────────────────────────────────────
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+function AiGame({ level, name, onLeave }: { level: Level; name: string; onLeave: () => void }) {
+  const [moves, setMoves] = useState<Move[]>([])
+  const [round, setRound] = useState(1)
+  const ask = useAi()
+  const levelName = LEVELS.find(l => l.id === level)!.name
+  // Sides swap every game, as online: X always opens.
+  const mine: Player = round % 2 === 1 ? 'X' : 'O'
+  const game = useMemo(() => fold('X', moves), [moves])
+  const machineTurn = !game.winner && game.current !== mine
+  const count = moves.length
+
+  useEffect(() => {
+    if (!machineTurn) return
+    let live = true
+    const started = Date.now()
+    ;(async () => {
+      const move = await ask(fold('X', moves), level)
+      // Even an instant answer waits a beat, so the reply reads as a decision.
+      await sleep(Math.max(0, 450 - (Date.now() - started)))
+      if (live) setMoves(m => (m.length === count ? [...m, move] : m))
+    })()
+    return () => {
+      live = false
+    }
+    // `moves` is read once per machine turn; `count` identifies the turn
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [machineTurn, count, round, level, ask])
+
+  const { info, history } = useRecordMatch({
+    key: `ai:${level}:${round}`,
+    winner: game.winner,
+    starter: 'X',
+    moves,
+    me: mine,
+    file: true,
+    vs: levelName,
+  })
+
+  const theirs: Player = mine === 'X' ? 'O' : 'X'
+  const seats: [SeatInfo, SeatInfo] =
+    mine === 'X'
+      ? [seat('X', name, true), seat('O', levelName, false)]
+      : [seat('X', levelName, false), seat('O', name, true)]
+
+  return (
+    <MatchView
+      eyebrow={`Versus ${levelName}`}
+      link={{ tone: 'idle', label: 'Solo' }}
+      seats={seats}
+      starter="X"
+      moves={moves}
+      game={game}
+      canPlay={!machineTurn && !game.winner}
+      onPlay={(board, cell) => setMoves(m => (applyMove(fold('X', m), { board, cell }) ? [...m, { board, cell }] : m))}
+      note={game.winner ? '' : machineTurn ? `${levelName} is thinking…` : `Your move — you are ${mine}, ${theirs} is ${levelName}.`}
+      result={{
+        rematch: {
+          label: 'Rematch — sides swap',
+          onClick: () => {
+            setMoves([])
+            setRound(r => r + 1)
+          },
+        },
+      }}
+      info={info}
+      history={history}
+      onLeave={onLeave}
+    />
+  )
+}
+
+// ─── Online ───────────────────────────────────────────────────────────────────
 
 function OnlineGame({ code, name, onLeave }: { code: string; name: string; onLeave: () => void }) {
   const online = useTable(code, name)
   const { table, side, status, peers, error } = online
   const game = table.game
-  const [copied, setCopied] = useState(false)
 
   const opponentSide: Player | null = side === 'X' ? 'O' : side === 'O' ? 'X' : null
   const opponentId = opponentSide ? table.seats[opponentSide] : null
@@ -272,208 +283,108 @@ function OnlineGame({ code, name, onLeave }: { code: string; name: string; onLea
   const seated = table.seats.X !== null && table.seats.O !== null
   const myTurn = status === 'open' && seated && side === game.current && !game.winner
 
-  const nameOf = (id: string | null) =>
-    id === null ? null : id === online.self ? name : (peers.get(id)?.name ?? 'Away')
+  const nameOf = (id: string | null, fallback = 'Open seat') =>
+    id === null ? fallback : id === online.self ? name : (peers.get(id)?.name ?? 'Away')
+  const hereOf = (id: string | null) => (id ? id === online.self || peers.has(id) : false)
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(roomLink(code))
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    } catch {
-      setCopied(false)
-    }
-  }
+  const { info, history } = useRecordMatch({
+    key: `${code}:${table.round}`,
+    winner: game.winner,
+    starter: 'X',
+    moves: table.moves,
+    me: side,
+    file: side !== null,
+    vs: opponentSide ? nameOf(opponentId, 'Rival') : 'Players',
+  })
 
   let note: string
   if (error) note = error
   else if (status === 'connecting') note = 'Connecting to the room…'
-  else if (status === 'reconnecting') note = 'Connection lost — reconnecting. Your seat is held.'
-  else if (!seated) note = side ? 'Waiting for an opponent. Send them the link.' : 'Taking a seat…'
+  else if (status === 'reconnecting') note = 'Connection lost. Your seat is held.'
+  else if (!seated) note = side ? 'Holding the other seat. Send them the link.' : 'Taking a seat…'
   else if (side === null) note = 'Watching. Both seats are taken.'
   else if (!opponentHere && !game.winner) note = `${nameOf(opponentId)} has stepped away. Their seat is held.`
   else if (myTurn) note = 'Your move.'
   else if (!game.winner) note = `${nameOf(opponentId)} is thinking…`
   else note = ''
 
+  const seatCount = (table.seats.X ? 1 : 0) + (table.seats.O ? 1 : 0)
+  const waiting = side !== null && !seated && !error
+
   return (
-    <>
-      <Header game={game} onLeave={onLeave} mine={side} myTurn={myTurn}>
-        <button className="btn-new" onClick={copy} title={roomLink(code)}>
-          {copied ? 'Link copied' : `Room ${code}`}
-        </button>
-      </Header>
-
-      <div className="room-bar" role="status" aria-live="polite">
-        <span className={`room-dot room-dot-${status}`} aria-hidden="true" />
-        <SeatChip side="X" name={nameOf(table.seats.X)} you={side === 'X'} here={table.seats.X ? table.seats.X === online.self || peers.has(table.seats.X) : false} />
-        <span className="room-vs">vs</span>
-        <SeatChip side="O" name={nameOf(table.seats.O)} you={side === 'O'} here={table.seats.O ? table.seats.O === online.self || peers.has(table.seats.O) : false} />
-        {note && <span className="room-note">{note}</span>}
-      </div>
-
-      <main className="arena">
-        <MegaGrid game={game} canPlay={myTurn} onPlay={(board, cell) => online.play({ board, cell })} />
-        {game.winner && (
-          <GameOver winner={game.winner} perspective={side}>
-            {side ? (
-              <button className="btn-play-again" onClick={online.rematch} disabled={status !== 'open'}>
-                Rematch — sides swap
-              </button>
-            ) : (
-              <p className="overlay-body">Waiting for the players to start a rematch.</p>
-            )}
-          </GameOver>
-        )}
-      </main>
-      <Footer />
-    </>
+    <MatchView
+      eyebrow={`Room · ${code}`}
+      link={
+        status === 'open'
+          ? { tone: 'live', label: 'Live' }
+          : status === 'reconnecting'
+            ? { tone: 'lost', label: 'Offline' }
+            : { tone: 'idle', label: 'Connecting' }
+      }
+      seats={[
+        seat('X', nameOf(table.seats.X), side === 'X', hereOf(table.seats.X) || table.seats.X === null),
+        seat('O', nameOf(table.seats.O), side === 'O', hereOf(table.seats.O) || table.seats.O === null),
+      ]}
+      starter="X"
+      moves={table.moves}
+      game={game}
+      canPlay={myTurn}
+      onPlay={(board, cell) => online.play({ board, cell })}
+      note={note}
+      signalLost={status === 'reconnecting'}
+      dock={waiting ? <InvitePanel code={code} link={roomLink(code)} seated={seatCount} /> : undefined}
+      result={
+        side
+          ? { rematch: { label: 'Rematch — sides swap', onClick: online.rematch, disabled: status !== 'open' } }
+          : { watcherNote: 'Waiting for the players to start a rematch.' }
+      }
+      info={info}
+      history={history}
+      onLeave={onLeave}
+    />
   )
 }
 
-function SeatChip({ side, name, you, here }: { side: Player; name: string | null; you: boolean; here: boolean }) {
-  return (
-    <span className={`seat-chip seat-chip-${side} ${here ? '' : 'seat-chip-away'}`}>
-      <PlayerMark player={side} size={12} />
-      <span>{name ?? 'Open seat'}</span>
-      {you && <span className="seat-you">you</span>}
-    </span>
-  )
-}
+// ─── Replay ───────────────────────────────────────────────────────────────────
 
-// ─── Shared chrome ────────────────────────────────────────────────────────────
-
-function Wordmark() {
-  return (
-    <div className="wordmark">
-      <span className="wm-ultra">ULTRA</span>
-      <span className="wm-ttt">TTT</span>
-    </div>
-  )
-}
-
-function Header({
-  game,
-  onLeave,
-  mine,
-  myTurn,
-  children,
-}: {
-  game: GameState
-  onLeave: () => void
-  /** The side this browser plays online; undefined for local play. */
-  mine?: Player | null
-  myTurn?: boolean
-  children?: React.ReactNode
-}) {
-  const current = game.current
-  const xCount = boardsWon(game, 'X')
-  const oCount = boardsWon(game, 'O')
-  const who = mine === undefined ? SIDE_NAME[current] : myTurn ? 'You' : SIDE_NAME[current]
+function ReplayGame({ record, claimed, onLeave }: { record: MatchRecord; claimed: string | null; onLeave: () => void }) {
+  const game = useMemo(() => fold(record.starter, record.moves), [record])
+  const { info, history } = useRecordMatch({
+    key: 'replay',
+    winner: game.winner,
+    starter: record.starter,
+    moves: record.moves,
+    me: null,
+    file: false,
+    vs: '',
+  })
+  // The page shows the stored matches too, so a replay opened from the list can hop to another.
+  const verdict = !info ? null : claimed === null ? 'computed' : claimed === info.number ? 'verified' : 'mismatch'
 
   return (
-    <header className="app-header">
-      <button className="wordmark wordmark-button" onClick={onLeave} title="Back to the lobby">
-        <span className="wm-ultra">ULTRA</span>
-        <span className="wm-ttt">TTT</span>
-      </button>
-
-      <div className="header-center">
-        {game.winner ? (
-          <div className={`status-winner status-winner-${game.winner}`}>
-            {game.winner === 'tie' ? (
-              'Draw — well played'
-            ) : (
-              <>
-                <span className="status-mark">
-                  <PlayerMark player={game.winner} size={16} />
-                </span>
-                {SIDE_NAME[game.winner]} wins
-              </>
-            )}
-          </div>
-        ) : (
-          <div className={`status-turn status-turn-${current}`}>
-            <span className="status-mark">
-              <PlayerMark player={current} size={14} />
-            </span>
-            <span>
-              {who}
-              <span className="status-sub">
-                {game.activeBoard === null ? ' · Any board' : ` · ${BOARD_NAMES[game.activeBoard]}`}
-              </span>
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="header-right">
-        <div className="score-pill">
-          <span className={`score-x ${current === 'X' && !game.winner ? 'score-current' : ''} ${game.winner === 'X' ? 'score-won' : ''}`}>
-            <XMark size={12} />
-            <span className="scores">{xCount}</span>
-          </span>
-          <span className="score-sep" />
-          <span className={`score-o ${current === 'O' && !game.winner ? 'score-current' : ''} ${game.winner === 'O' ? 'score-won' : ''}`}>
-            <span className="scores">{oCount}</span>
-            <OMark size={12} />
-          </span>
-        </div>
-        {children}
-      </div>
-    </header>
-  )
-}
-
-function GameOver({
-  winner,
-  perspective,
-  children,
-}: {
-  winner: BoardWinner
-  /** Online, the result is told from this side's point of view. */
-  perspective?: Player | null
-  children: React.ReactNode
-}) {
-  if (!winner) return null
-  const body =
-    winner === 'tie'
-      ? 'Neither side blinked.'
-      : perspective
-        ? perspective === winner
-          ? 'Dominant performance.'
-          : 'Next one is yours.'
-        : 'Dominant performance.'
-  return (
-    <div className={`overlay overlay-${winner}`}>
-      <div className="overlay-card">
-        <p className="overlay-eyebrow">Game over</p>
-        {winner === 'tie' ? (
-          <h2 className="overlay-title">Draw</h2>
-        ) : (
-          <h2 className={`overlay-title overlay-title-${winner}`}>
-            <span className="overlay-mark">
-              <PlayerMark player={winner} size={48} />
-            </span>
-            {perspective ? (perspective === winner ? 'You win' : `${SIDE_NAME[winner]} wins`) : `${SIDE_NAME[winner]} wins`}
-          </h2>
-        )}
-        <p className="overlay-body">{body}</p>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function Footer() {
-  return (
-    <footer className="app-footer">
-      <span>Your cell choice picks the next board</span>
-      <span className="footer-dot">·</span>
-      <span>Win 3 boards in a row to claim victory</span>
-      <span className="footer-dot">·</span>
-      <span>Sent to a won board? Play anywhere</span>
-    </footer>
+    <MatchView
+      eyebrow="Replay"
+      link={{ tone: 'idle', label: 'Replay' }}
+      seats={[seat('X', 'Opens', false, true, ''), seat('O', 'Replies', false, true, '')]}
+      starter={record.starter}
+      moves={record.moves}
+      game={game}
+      canPlay={false}
+      onPlay={() => {}}
+      note={game.winner ? '' : 'This game was shared unfinished.'}
+      info={info}
+      history={history}
+      onLeave={onLeave}
+      replayBadge={
+        verdict && (
+          <p className={`verify verify-${verdict}`}>
+            {verdict === 'verified' && `✓ Verified by replay — #${info!.number}`}
+            {verdict === 'computed' && `Number computed from the moves — #${info!.number}`}
+            {verdict === 'mismatch' && `✕ The link says #${claimed}, the moves say #${info!.number}. They may have been changed.`}
+          </p>
+        )
+      }
+    />
   )
 }
 

@@ -2,11 +2,66 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ultimate Tic-Tac-Toe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Ultimate TTT — tic-tac-toe inside tic-tac-toe</title>
+    <meta
+      name="description"
+      content="Nine tic-tac-toe boards in one. Where you play decides where your opponent must. Challenge a friend with a link, play the machine, or share the same screen. Free, no sign-up."
+    />
+    <meta name="keywords" content="ultimate tic-tac-toe, super tic-tac-toe, 9x9 tic tac toe, online board game, play with a friend, strategy game" />
+    <meta name="author" content="Ayush" />
+    <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0B0D10" />
+    <link rel="canonical" href="https://ultimate-ttt.cinematicgenius007.com/" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#FF5A36" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://rooms.cinematicgenius007.com" crossorigin />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Ultimate TTT" />
+    <meta property="og:title" content="Ultimate TTT — tic-tac-toe inside tic-tac-toe" />
+    <meta property="og:description" content="Where you play decides where they must. Challenge a friend with one link." />
+    <meta property="og:url" content="https://ultimate-ttt.cinematicgenius007.com/" />
+    <meta property="og:image" content="https://ultimate-ttt.cinematicgenius007.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A nine-by-nine tic-tac-toe board with one small board highlighted, beside the words Ultimate TTT." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Ultimate TTT — tic-tac-toe inside tic-tac-toe" />
+    <meta name="twitter:description" content="Where you play decides where they must. Challenge a friend with one link." />
+    <meta name="twitter:image" content="https://ultimate-ttt.cinematicgenius007.com/og-image.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Ultimate TTT",
+        "description": "Tic-tac-toe nested inside tic-tac-toe, for two players online, against the machine, or on one screen.",
+        "url": "https://ultimate-ttt.cinematicgenius007.com/",
+        "image": "https://ultimate-ttt.cinematicgenius007.com/og-image.png",
+        "genre": ["Strategy", "Board game"],
+        "gamePlatform": "Web browser",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 2 },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "Ayush" }
+      }
+    </script>
+    <style>
+      /* Painted before any script runs, so a slow load is dark rather than a white flash. */
+      html, body { background: #0b0d10; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Ultimate TTT needs JavaScript to run. It makes no tracking requests and needs no sign-up.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
