@@ -55,6 +55,10 @@ interface MatchViewProps {
   replayBadge?: React.ReactNode
 }
 
+/** One move per step at 1×; the speed chips divide it. */
+const REPLAY_STEP_MS = 1100
+const SPEEDS = [0.25, 0.5, 1, 2, 4]
+
 const PLAYING_LABEL = (g: GameState) =>
   g.activeBoard === null ? 'Any board' : `Forced → ${BOARD_NAMES[g.activeBoard]} board`
 
@@ -62,6 +66,7 @@ export function MatchView(p: MatchViewProps) {
   const { starter, moves, game } = p
   const [cursor, setCursor] = useState<number | null>(null) // null follows the live game
   const [autoplay, setAutoplay] = useState(false)
+  const [speed, setSpeed] = useState(1)
 
   // Every position the game has been in, so scrubbing is a lookup.
   const states = useMemo(() => {
@@ -79,9 +84,9 @@ export function MatchView(p: MatchViewProps) {
 
   useEffect(() => {
     if (!autoplay) return
-    const id = setInterval(() => setCursor(c => ((c ?? 0) + 1 >= count ? null : (c ?? 0) + 1)), 520)
+    const id = setInterval(() => setCursor(c => ((c ?? 0) + 1 >= count ? null : (c ?? 0) + 1)), REPLAY_STEP_MS / speed)
     return () => clearInterval(id)
-  }, [autoplay, count])
+  }, [autoplay, count, speed])
 
   // Reaching the end hands the board back to the live game.
   useEffect(() => {
@@ -174,9 +179,7 @@ export function MatchView(p: MatchViewProps) {
       </div>
 
       <div className="stage">
-        <div className="board-box">
-          <MegaGrid game={view} canPlay={p.canPlay && !scrubbing} onPlay={p.onPlay} last={lastMove} />
-        </div>
+        <MegaGrid game={view} canPlay={p.canPlay && !scrubbing} onPlay={p.onPlay} last={lastMove} />
       </div>
 
       <div className="rail rail-right">
@@ -208,6 +211,28 @@ export function MatchView(p: MatchViewProps) {
             })}
           </div>
         </div>
+
+        {count > 0 && (
+          <div className="replay-bar" role="group" aria-label="Replay speed">
+            <button
+              className="btn btn-mini"
+              onClick={() => {
+                if (autoplay) setAutoplay(false)
+                else {
+                  if (cursor === null) setCursor(0)
+                  setAutoplay(true)
+                }
+              }}
+            >
+              {autoplay ? '❚❚ Pause' : '▶ Replay'}
+            </button>
+            {SPEEDS.map(v => (
+              <button key={v} className={`chip ${speed === v ? 'chip-on' : ''}`} onClick={() => setSpeed(v)} aria-pressed={speed === v}>
+                {v}×
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="last-line eyebrow">
           {lastMove ? (

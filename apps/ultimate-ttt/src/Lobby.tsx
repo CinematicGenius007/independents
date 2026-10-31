@@ -47,6 +47,21 @@ export function Lobby({
       </h1>
       <p className="lede">A board inside a board. Where you play decides where they must.</p>
 
+      <label className="namecard">
+        <span className="eyebrow">Playing as</span>
+        <input
+          className="namefield"
+          value={name}
+          maxLength={24}
+          placeholder={placeholder}
+          onChange={e => onName(e.target.value)}
+          aria-label="Your name"
+          spellCheck={false}
+          autoComplete="nickname"
+        />
+        <span className="eyebrow namehint">{name.trim() ? 'Saved on this device' : 'Type a name · your rival sees it'}</span>
+      </label>
+
       {invite && (
         <section className="card card-invite" aria-label="Invitation">
           <span className="eyebrow signal">Invitation</span>
@@ -154,17 +169,7 @@ export function Lobby({
       <footer className="lobby-foot">
         <span className="hatch" aria-hidden="true" />
         <div className="lobby-foot-row">
-          <label className="eyebrow codename">
-            Your codename ·
-            <input
-              value={name}
-              maxLength={24}
-              placeholder={placeholder}
-              onChange={e => onName(e.target.value)}
-              aria-label="Your name"
-              spellCheck={false}
-            />
-          </label>
+          <span className="eyebrow">Ultimate TTT</span>
           <span className="eyebrow">
             W {tally.w} · L {tally.l}
             {tally.d > 0 ? ` · D ${tally.d}` : ''}
