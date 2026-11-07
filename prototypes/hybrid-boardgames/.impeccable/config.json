@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "prototypes/hybrid-boardgames/src/cartel.css"
+        ],
+        "createdAt": "2026-11-07T21:35:50.475Z",
+        "reason": "Claude: per-edge borders on map tiles draw realm silhouettes (border only where a neighbour is a different realm); functional game-state encoding, not a card accent. Not user confirmed."
+      }
+    ]
+  }
+}

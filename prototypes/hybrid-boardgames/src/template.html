@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hybrid Board Games</title>
+<meta name="description" content="Three browser-only board game prototypes, each fusing three classics: Cartel of Cartographers, Shadow Bidding, Lexicon Quarantine.">
+<style>
+/*{{CSS}}*/
+</style>
+</head>
+<body data-table="overview">
+<a class="skip" href="#stage">Skip to the table</a>
+<header class="masthead">
+  <div class="mast-title"><b>Hybrid Board Games</b><span>three prototypes · no server · no database</span></div>
+  <nav class="tabs" role="tablist" aria-label="Prototype tables"></nav>
+</header>
+<main id="stage" tabindex="-1"></main>
+<footer class="foot">Engine, rules and bots are the same file the headless harness runs (<code>src/engine.js</code>). Design notes: <a href="ARCHITECTURE.md">ARCHITECTURE.md</a>.</footer>
+<script>
+/*{{ENGINE}}*/
+</script>
+<script>
+HB.LQ.setWords("{{WORDS}}".split(" "));
+</script>
+<script>
+/*{{UI}}*/
+</script>
+</body>
+</html>

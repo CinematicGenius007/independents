@@ -1,0 +1,4 @@
+flowchart LR
+  app["apps/slug (own build)"] -->|"publishes manifest.json"| ex["Explorer at /"]
+  app -->|"publishes preview.js (port)"| ex
+  ex -->|"navigates with #fragment"| app

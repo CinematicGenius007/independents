@@ -1,0 +1,8 @@
+flowchart LR
+  O["Overhead Draftsman Table"] -->|"click artifact or Enter"| I["Artifact Inspection"]
+  I -->|"Esc or click empty table"| O
+  I -->|"Enter on portal ring"| P["Portal Dive-In"]
+  P -->|"Esc before handoff"| I
+  P -->|"iris closes, navigate with fragment"| A["App at entry"]
+  O -->|"Space"| L["Lineage mode"]
+  L -->|"Space or Esc"| O

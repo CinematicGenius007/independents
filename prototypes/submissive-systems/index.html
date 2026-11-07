@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submissive Systems — Driftwatch &amp; Loomweight (interactive mock)</title>
+<style>
+/* ============================================================
+   Page shell: minimal ivory. Each app owns its own paper below;
+   the two registers are deliberately never blended.
+   ============================================================ */
+:root{
+  --ink:#26241d; --ivory:#efe9da; --hair:#b7ac93;
+  --dw-paper:#f2ead6; --dw-ink:#1e454e; --dw-red:#a73a2b; --dw-amber:#b07b23;
+  --lw-washi:#f7f0e0; --lw-ink:#33302a; --lw-vermilion:#b1392f; --lw-indigo:#2e4d7b;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--ivory); color:var(--ink);
+  font:15px/1.55 Georgia,'Iowan Old Style','Times New Roman',serif;
+}
+a{color:inherit}
+.shell{max-width:1080px;margin:0 auto;padding:34px 20px 80px}
+.masthead{border-bottom:3px double var(--ink);padding-bottom:14px;margin-bottom:6px}
+.eyebrow{font:11px/1 "IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;
+  letter-spacing:.22em;text-transform:uppercase;color:#6c6350}
+.masthead h1{font-size:30px;margin:.35em 0 .15em;letter-spacing:.02em}
+.masthead p{max-width:74ch;color:#4d463a;margin:0}
+.tabnav{display:flex;gap:14px;margin:16px 0 28px;font:12px/1 "IBM Plex Mono",Menlo,monospace;flex-wrap:wrap}
+.tabnav a{color:var(--ink);text-decoration:none;border:1px solid var(--ink);
+  padding:7px 12px;letter-spacing:.12em}
+.tabnav a:hover{background:var(--ink);color:var(--ivory)}
+footer{margin-top:56px;border-top:3px double var(--ink);padding-top:12px;
+  color:#5d5546;font-size:13px;max-width:88ch}
+code{font:12px "IBM Plex Mono",Menlo,monospace;background:rgba(0,0,0,0.05);padding:0 3px}
+
+/* ---- shared canvas & note-card scaffolding ---------------- */
+.canvasbox{position:relative;border:1px solid;overflow:hidden}
+canvas{display:block;touch-action:manipulation}
+.callouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:14px;margin-top:18px}
+.note{border:1px solid;padding:12px 14px;font-size:13px;line-height:1.5}
+.note b{display:block;margin-bottom:5px;letter-spacing:.06em}
+.note .no{display:inline-block;border:1px solid;border-radius:50%;border-color:inherit;
+  width:20px;height:20px;text-align:center;line-height:19px;margin-right:8px}
+.note em{color:inherit}
+
+/* ============================================================
+   DRIFTWATCH — Cold-War bathymetric fan-fold plotter register
+   ============================================================ */
+#driftwatch{background:var(--dw-paper);border:1px solid #8a7a57;padding:26px 26px 30px;
+  position:relative;box-shadow:0 0 0 6px rgba(122,104,66,.09)}
+#driftwatch::before{content:"";position:absolute;inset:8px;border:1px solid #8a7a57;
+  pointer-events:none;opacity:.55}
+.dw-head{font-family:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace}
+.dw-kicker{font-size:10px;letter-spacing:.3em;color:var(--dw-red);
+  text-transform:uppercase;display:flex;justify-content:space-between;border-bottom:2px solid var(--dw-ink);padding-bottom:6px}
+.dw-title{font-size:25px;font-weight:700;letter-spacing:.14em;margin:10px 0 2px}
+.dw-title .stamp{color:var(--dw-amber)}
+.dw-sub{font-size:11px;color:#5c5443;letter-spacing:.13em;margin-bottom:14px}
+#dwCanvasBox{border:2px solid var(--dw-ink);background:#f4ecd8;border-radius:2px}
+#dwCanvas{height:470px;background:#f4ecd8;width:100%}
+.dw-hud{display:flex;flex-wrap:wrap;gap:8px 16px;font:12px/1.5 "IBM Plex Mono",Menlo,monospace;
+  border:1px solid var(--dw-ink);border-top:none;padding:8px 12px;background:#f0e6cf;align-items:center}
+.dw-hud .sep{color:#8a7a57}
+.dw-hud b{font-weight:700}
+.dw-hud button{font:inherit;background:none;border:1px solid var(--dw-ink);
+  padding:4px 10px;cursor:pointer;color:var(--dw-ink);letter-spacing:.08em}
+.dw-hud button.lit{background:var(--dw-ink);color:#f4ecd8}
+.dw-hud select{font:11px/1 "IBM Plex Mono",Menlo,monospace;background:#f4ecd8;
+  border:1px solid var(--dw-ink);padding:4px 4px;color:var(--dw-ink);cursor:pointer}
+.dw-notes .note.drn{border-color:var(--dw-red)}
+.cert{font:11px/1.6 "IBM Plex Mono",Menlo,monospace;color:#41555b;letter-spacing:.02em}
+.dw-valve{position:absolute;right:18px;bottom:18px;z-index:5;user-select:none}
+#valveBtn{width:118px;height:118px;border-radius:50%;cursor:pointer;
+  background:radial-gradient(circle at 50% 38%, #c9503c 0%, var(--dw-red) 55%, #7c2418 100%);
+  border:3px solid #6d1f14;color:#f7ead2;font:11px/1.25 "IBM Plex Mono",Menlo,monospace;
+  letter-spacing:.1em;box-shadow:0 3px 0 #5a1a10;outline:4px solid rgba(30,69,78,.28);touch-action:none}
+#valveBtn.pressed{transform:translateY(3px);box-shadow:0 0 0 #5a1a10;
+  border-color:#3d0f08;background:radial-gradient(circle at 50% 45%, #e2a163 0%, var(--dw-amber) 60%, #7d5210 100%)}
+.dw-valve .cap{color:#f2ead6;font:10px/1.5 "IBM Plex Mono",monospace;text-align:center;
+  margin-top:7px;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.dw-stamp{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-6deg);
+  border:4px double var(--dw-red);padding:10px 24px;text-align:center;text-transform:uppercase;
+  font:700 20px/1.3 "IBM Plex Mono",Menlo,monospace;letter-spacing:.16em;background:rgba(242,234,214,.9);
+  display:none;z-index:6;pointer-events:none;white-space:nowrap}
+.dw-stamp small{display:block;font-size:11px;letter-spacing:.1em;text-transform:none;font-weight:400;color:#5c2318}
+.dw-notes .note{border-color:var(--dw-ink);background:#f4ecd8;color:#33454a;
+  font-family:"IBM Plex Mono",Menlo,monospace;font-size:12.5px}
+.dw-notes .no{color:var(--dw-red);border-color:var(--dw-red)}
+.dw-notes b{color:#143840}
+
+/* ============================================================
+   LOOMWEIGHT — Meiji woodblock textile sample-book register
+   ============================================================ */
+#loomweight{margin-top:34px;background:var(--lw-washi);border:1px solid #a3977a;padding:32px 28px 38px;position:relative}
+#loomweight::before{content:"";position:absolute;inset:10px;border:1px solid rgba(120,96,60,.35);pointer-events:none}
+.kento{position:absolute;width:14px;height:14px;border-left:2px solid var(--lw-ink);
+  border-top:2px solid var(--lw-ink);opacity:.45;pointer-events:none}
+.kento.br{right:16px;bottom:16px;transform:rotate(180deg)}
+.lw-head{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Songti SC",serif;
+  color:var(--lw-ink)}
+.lw-kicker{display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:1px solid var(--lw-ink);padding-bottom:6px}
+.lw-kicker .jp{writing-mode:vertical-rl;font-size:16px;letter-spacing:.3em;color:var(--lw-vermilion)}
+.lw-title{font-size:28px;letter-spacing:.12em;margin:14px 0 2px}
+.lw-sub{font-size:12px;color:#6b6151;letter-spacing:.15em;margin-bottom:18px;font-family:Georgia,serif}
+.lw-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(240px,.95fr);gap:20px}
+@media (max-width:920px){.lw-layout{grid-template-columns:1fr}}
+.lw-leaf{background:#fbf5e6;border:1px solid #a3977a;position:relative;padding:16px}
+.lw-label{font:10px/1.4 "IBM Plex Mono",Menlo,monospace;color:#6b6151;letter-spacing:.2em;margin:0 0 6px}
+#lwDial{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+#dialCv{width:126px;height:126px;flex:none}
+#cardCv{height:70px;flex:1 1 280px;border:1px solid #c6b790;background:#fbf5e6;min-width:240px}
+#heddlesCv{height:132px;width:100%}
+#clothCv{height:300px;width:100%;background:#f1e8d2;background:#ece0c4}
+.lw-row{margin-top:12px}
+.lw-controls{display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap}
+#strikeBtn{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:17px;letter-spacing:.3em;
+  padding:12px 30px 12px 34px;background:var(--lw-vermilion);color:#fbf5e6;border:none;cursor:pointer;
+  box-shadow:0 2px 0 #6f1f19;touch-action:none}
+#strikeBtn:active{transform:translateY(2px);box-shadow:none}
+#holdBtn{font-family:Georgia,serif;letter-spacing:.1em;background:none;border:1px solid var(--lw-ink);
+  color:var(--lw-ink);padding:10px 16px;cursor:pointer}
+.lw-controls .meta{font:11px/1.5 "IBM Plex Mono",Menlo,monospace;color:#6b6151;max-width:340px}
+.lw-side .note{border-color:#a3977a;background:#fbf5e6;margin-bottom:12px}
+.lw-side .no{color:var(--lw-vermilion);border-color:var(--lw-vermilion)}
+#ledgerCv{width:100%;height:86px;border:1px solid #c6b790;background:#fbf5e6;margin-bottom:8px}
+#blendLedger{font:11px/1.7 "IBM Plex Mono",Menlo,monospace;color:#5a534a;max-height:150px;overflow:auto}
+#blendLedger .swatch{display:inline-block;width:10px;height:10px;border:1px solid #857a5e;
+  vertical-align:-1px;margin-right:5px}
+.lw-stamp{position:absolute;right:18px;top:12px;width:46px;height:46px;background:var(--lw-vermilion);
+  color:#fbf5e6;font:700 17px/46px "Hiragino Mincho ProN","Yu Mincho",serif;text-align:center;
+  border-radius:4px;transform:rotate(-3deg);opacity:.92;writing-mode:vertical-rl;letter-spacing:.08em;z-index:2}
+#lwEndcard{position:absolute;inset:0;background:rgba(251,245,230,.95);display:none;z-index:5;
+  padding:40px 34px;text-align:center}
+#lwEndcard .hanko{display:inline-block;border:3px solid var(--lw-vermilion);color:var(--lw-vermilion);
+  padding:12px 30px;font-size:22px;letter-spacing:.4em;margin:14px 0}
+#lwEndcard p{max-width:58ch;margin:10px auto;font-size:14px;color:#4c453a}
+#lwEndcard button{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;letter-spacing:.2em;
+  background:var(--lw-ink);color:#fbf5e6;border:none;padding:11px 28px;cursor:pointer;margin-top:8px}
+.mutecells{font:11px/1 "IBM Plex Mono",monospace;color:#6b6151;margin-left:auto;display:flex;gap:14px;align-items:center}
+#lwGrade{color:var(--lw-vermilion);min-width:150px}
+#lwGrade.faded{opacity:.55}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="masthead">
+  <div class="eyebrow">prototypes/submissive-systems · interactive mock sheet 01 · engine-first · deterministic · zero backend</div>
+  <h1>Interactive-to-Submissive</h1>
+  <p>Two low-agency applications sharing one thesis: <em>you own no steering — only the timing of
+  a single lever.</em> The engines on this page are real, not storyboards: the drift chart is
+  certified by an actual layered BFS running in this tab, and the loom advances a deterministic
+  punched-card state machine. Full critique and engine notes live in
+  <a href="ARCHITECTURE.md">ARCHITECTURE.md</a>.</p>
+</header>
+
+<nav class="tabnav">
+  <a href="#driftwatch">01 · DRIFTWATCH — fan-fold plotter</a>
+  <a href="#loomweight">02 · LOOMWEIGHT — textile sample book</a>
+</nav>
+
+<!-- =================== 01 · DRIFTWATCH =================== -->
+<section id="driftwatch" class="dw-head">
+  <div class="dw-kicker"><span>National Oceanographic Inst. · Instrument Group 4</span><span>CLASSIFICATION: UNCLASSIFIED PLOT</span></div>
+  <div class="dw-title">DRIFTWATCH <span class="stamp">— UNMANNED BATHYSPHERE UW-7</span></div>
+  <div class="dw-sub">BATHYMETRIC SECTION PLOTTER · FAN-FOLD STOCK 46 BP · NO THRUSTERS · ONE BALLAST VALVE · PLANT SEEDED, NOT SEEDED-BY-TIME</div>
+
+  <div class="canvasbox" id="dwCanvasBox">
+    <canvas id="dwCanvas"></canvas>
+    <div class="dw-stamp" id="dwStamp">FIX CONFIRMED<small>detail line</small></div>
+  </div>
+  <div class="dw-hud">
+    <span>LEG <b id="dwRun">—</b></span><span class="sep">|</span>
+    <span>BEACON <b id="dwBeacon">—</b></span><span class="sep">|</span>
+    <span>SHIFTS <b id="dwShifts">—</b></span><span class="sep">|</span>
+    <span class="cert" id="dwDr">—</span><span class="sep">|</span>
+    <span class="cert" id="dwCert">—</span>
+    <span style="flex:1"></span>
+    <select id="dwLegSel" title="certified campaign legs — each one is certified live by the layered BFS">
+      <option value="-1">CAMPAIGN · AUTO CYCLE</option>
+      <option value="0">LEG I · THE SHELF</option>
+      <option value="1">LEG II · COUNTER-GYRE</option>
+      <option value="2">LEG III · SILENT THERMOCLINE</option>
+      <option value="3">LEG IV · TWIN EDDIES</option>
+      <option value="4">LEG V · THE ABYSSAL NARROWS</option>
+    </select>
+    <button id="dwPlanBtn" title="overlay the certified planner course">PLOT COURSE</button>
+    <button id="dwDrBtn" title="dead-reckoning plot cone: the chart plots the believed fix, widening with unconfirmed drift; a thermocline crossing or a rationed sonar fix collapses it to a red crosshair">DEAD-RECKONING</button>
+    <button id="dwFixBtn" title="rationed beacon echo — collapse the uncertainty cone to a true fix">SONAR FIX ×3</button>
+    <button id="dwSoundBtn" title="sonar + valve sounds" class="lit">SOUND ON</button>
+    <button id="dwNewBtn" title="fresh run, new seed">NEW CHART</button>
+  </div>
+
+  <div class="dw-valve">
+    <button id="valveBtn">HOLD<br>VENT<br><small style="font-size:9px">release = flood</small></button>
+    <div class="cap">or hold [V] on the plot</div>
+  </div>
+
+  <div class="callouts dw-notes">
+    <div class="note"><b><span class="no">①</span> ONE BIT, CHOSEN IN TIME</b>
+      There is no neutral: the hull is always sinking or always rising. You toggle the valve
+      bit — HOLD = VENT (−2.6&nbsp;m/s vertical), RELEASE = FLOOD (+2.3&nbsp;m/s) — and you choose
+      <em>when</em>. Horizontal motion is never yours; you only choose which current carries
+      you.</div>
+    <div class="note"><b><span class="no">②</span> SHEAR, DRAWN HONESTLY</b>
+      The flow is the curl of one streamfunction Ψ: <em>exactly divergence-free</em> — no
+      sources, no sinks. Three bands carry you: <b>+3.0&nbsp;m/s east (0–25 m)</b>,
+      +0.6 (25–55 m), <b>−1.1&nbsp;m/s west (55–130 m)</b>. Ten seeded eddies curl through the
+      bands and are the only vertical motion in the sea. Gyres are geometry here, not
+      decoration.</div>
+    <div class="note"><b><span class="no">③</span> BUDGET = CERTIFIED K + 2</b>
+      At every leg a real layered BFS runs in this page over (cell × valve-bit) — using the
+      same fixed-step integrator the vehicle runs — and certifies the minimum valve shifts K
+      needed to reach the beacon. Your grant is K&nbsp;+&nbsp;2. Spend it and the listening
+      station retires the leg: <b>BEACON LOST</b>. PLOT COURSE prints the solver's own plan as
+      a dashed line with one red ring per shift.</div>
+    <div class="note"><b><span class="no">④</span> THREE WAYS TO RETIRE</b>
+      <b>BROACHED</b> — z &lt; 3 m: venting carelessly near the surface pops you out of the
+      sea. <b>CRUSHED</b> — z ≥ 96 m: the counterflow's best repositioning water lies below
+      the hull's contour. <b>GROUNDED</b> — the chart's shelf pinnacles rise to 49–71 m,
+      exactly where a lazy descent lands.</div>
+    <div class="note"><b><span class="no">⑤</span> THE WATCH IS THE GAME</b>
+      Between shifts: twenty to forty seconds of pure instrument-reading — the trace, the
+      dashed plan, the beacon's echo. That is where anticipation lives: every toggle was cast
+      seconds before its payoff, and everything since is its slow, deterministic maturation.
+      There is no pause; the ocean does not care.</div>
+    <div class="note drn"><b><span class="no">⑥</span> DEAD-RECKONING · THE PLOT CONE</b>
+      Arm <b>DEAD-RECKONING</b> and the chart stops plotting the hull and starts plotting
+      the hull's <em>reputation</em>: an expanding stippled uncertainty ellipse grown from
+      band-only dead reckoning — the plotter's estimator knows no eddies. The cone widens
+      fastest while the hull is crossing the thermocline toll band. Crossing a sharp
+      thermocline — or spending a rationed <b>SONAR FIX</b> (three per leg) — collapses the
+      cone back to a crisp red stamped crosshair. Toggles are now scheduled against the
+      cone's growth as well as the field.</div>
+  </div>
+</section>
+
+<!-- =================== 02 · LOOMWEIGHT =================== -->
+<section id="loomweight" class="lw-head">
+  <span class="kento" style="left:16px;top:16px"></span>
+  <span class="kento br"></span>
+  <div class="lw-stamp">織</div>
+  <div class="lw-kicker">
+    <span style="font:11px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#6b6151">MEIJI TEXTILE SAMPLE BOOK · LEAF Nº 12</span>
+    <span class="jp">機織り見本帳</span>
+  </div>
+  <div class="lw-title">LOOMWEIGHT</div>
+  <div class="lw-sub">A SELF-RUNNING JACQUARD ON A 3 : 4 POLYRHYTHM · YOU ARE THE SHOP'S MALLET, NOT THE PATTERN</div>
+
+  <div class="lw-layout">
+    <div class="lw-leaf">
+      <div id="lwDial">
+        <canvas id="dialCv"></canvas>
+        <canvas id="cardCv"></canvas>
+      </div>
+      <div class="lw-row"><div class="lw-label">HEDDLE WORKS — TANGLES LIVE HERE</div>
+        <canvas id="heddlesCv"></canvas></div>
+      <div class="lw-row"><div class="lw-label">THE CLOTH — THIS IS THE SCORE, NOT A METER</div>
+        <canvas id="clothCv"></canvas></div>
+      <div class="lw-controls">
+        <button id="strikeBtn">STRIKE ・ 一打</button>
+        <button id="holdBtn" title="the loom pauses for nothing; this is a mock affordance">HOLD</button>
+        <button id="lwMountNowBtn" title="mount the cloth as the next generation's punch-card:
+the woven slack, scars and splices become the next fault schedule" style="font-family:Georgia,serif;letter-spacing:.1em;background:none;border:1px solid var(--lw-ink);color:var(--lw-ink);padding:10px 16px;cursor:pointer">MOUNT CLOTH · GEN II+</button>
+        <button id="lwExportBtn" title="download a standalone print-ready specimen sheet (SVG)" style="font-family:Georgia,serif;letter-spacing:.1em;background:none;border:1px solid var(--lw-ink);color:var(--lw-ink);padding:10px 16px;cursor:pointer">EXPORT SPECIMEN (SVG)</button>
+        <span class="meta" id="lwGrade"></span>
+        <span class="meta" id="lwMeta"></span>
+        <span class="meta">[SPACE] or the mallet button. Nothing to catch = a blind mallet:
+        a slack pick, woven dark, forever.</span>
+      </div>
+      <div id="lwEndcard">
+        <div class="hanko">機・停・止</div>
+        <p id="lwEndSummary"></p>
+        <button id="lwMountEndBtn">MOUNT CLOTH AS NEXT PUNCH-CARD · GEN II+</button>
+        <button id="lwNewBtn">WARP A NEW SAMPLE</button>
+      </div>
+    </div>
+
+    <div class="lw-side">
+      <div class="note"><b><span class="no">①</span> The machine owns the clock</b>
+        Treadle (3 picks) and card (4 picks) turn together; the <em>shed</em> — the clean
+        window — opens only at their coincidence, two picks in twelve. You can change neither
+        the pattern, the cadence, nor the colour cards. You are not the designer of this
+        tapestry.</div>
+      <div class="note"><b><span class="no">②</span> One mallet, four grades</b>
+        <em>Clean catch</em> — tangle, shed open: no trace. <em>Hurry catch</em> — tangle, shed
+        closed: it clears, but a dark slack row is woven. <em>Clean splice</em> — a dye bobbin
+        runs dry and you strike: the loom blends its two tray neighbours, no defect. <em>Blind
+        mallet</em> — nothing pending: a slack row, for nothing. Do nothing, most of the time,
+        on purpose.</div>
+      <div class="note"><b><span class="no">③</span> Tangles are fair by construction</b>
+        Spawns come from a hash of (seed, card, pick), and only when the next shed is 4–9
+        picks away: <em>every</em> tangle offers a shed window before it can be trapped. Width
+        grows on its 3rd, 6th and 9th unstruck pick; a shuttle can only snag it on a
+        <em>shed-closed</em> pick — so the last-gated tangle is caught as the window opens, or
+        snaps the moment it closes. A tear leaves a bare column in the selvedge forever. Three
+        tears and the shop frames the cloth. <em>(Measured: diligent shed-attendance = 0 tears
+        over 40 seeds × 250 picks.)</em></div>
+      <div class="note"><b><span class="no">④</span> The loom decides the colourway</b>
+        When a bobbin dries, its two neighbours blend, equally, in the tray's mechanical
+        order — forever. Your only art is <em>when</em> the splice happens; a forced splice
+        (you never struck) weaves two pale slub rows. The tapestry remembers every blend.</div>
+      <div class="note"><b><span class="no">⑤</span> The blends ledger</b>
+        The sample book registers each irreversible blend. Watch the palette drift down the
+        page — that drift is the history of your timing.</div>
+      <div class="note"><b><span class="no">⑥</span> The cloth is the fault schedule</b>
+        At any checkpoint — or on framing — <b>MOUNT CLOTH · GEN II+</b> hashes the woven
+        tapestry itself into the next punch-card chain: slack picks raise the spawn pressure
+        (a slack-heavy cloth <em>is</em> a tangle-rich cloth); tear scars imprint their warp
+        columns as scar heddles where new tangles prefer to live; two scars even accelerate
+        maturation; dye splices shorten every next bobbin and the final blend carries over as
+        the <em>heirloom</em> ink. Faults are hashed with a salt taken from the cloth, so the
+        selvage is a seed: replay-by-cloth reproduces the run. <b>EXPORT SPECIMEN (SVG)</b>
+        prints the current weave as a standalone Meiji sample sheet — kentō marks, hanko,
+        seed hash, every pick.</div>
+      <div class="lw-label" style="margin-top:2px">SAMPLER — FULL CLOTH RECORD</div>
+      <canvas id="ledgerCv"></canvas>
+      <div id="blendLedger"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  House rules honoured on this sheet: engine-first (the drift chart is certified by a live
+  solver, not asserted); deterministic (all plant randomness flows from seeded integer hashes —
+  no <code>Math.random()</code> inside either plant); no reskins (one visual register per app,
+  the two never blend); browser-only (one file, no dependencies, no network). The playspecs these
+  mocks promise are in <a href="ARCHITECTURE.md">ARCHITECTURE.md</a> §1.8 and §2.6. Deep links:
+  <code>#driftwatch</code> · <code>#loomweight</code>. Headless certification:
+  <code>node prototypes/submissive-systems/verify.cjs</code>.
+</footer>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   Shared deterministic primitives. The only "randomness" is the run seed,
+   drawn once at boot from the clock; everything after that is hashed.
+   ===================================================================== */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hash32(){let h=2166136261>>>0;for(let i=0;i<arguments.length;i++){const x=arguments[i]|0;h^=Math.imul(x,16777619);h=Math.imul(h,2246822519);}h^=h>>>13;h=Math.imul(h,3266489909);h^=h>>>16;return h>>>0;}
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const $=id=>document.getElementById(id);
+function bootSeed(){return ((Date.now()>>>0)^hash32(Math.floor(performance.now()*7)))>>>0||7;}
+
+/* ---- audio: WebAudio, sound only, never a control input ---- */
+const AudioSys=(()=>{
+  let ctx=null;
+  function ensure(){
+    if(!ctx){try{ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){ctx=null;}}
+    if(ctx&&ctx.state==="suspended")ctx.resume().catch(()=>{});
+  }
+  function tone(freq,dur,type,gain,when){
+    if(!ctx)return;
+    const t0=ctx.currentTime+(when||0);
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type||"sine";o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.linearRampToValueAtTime(gain,t0+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g).connect(ctx.destination);
+    o.start(t0);o.stop(t0+dur+0.05);
+  }
+  function noise(dur,gain,when){
+    if(!ctx)return;
+    const t0=ctx.currentTime+(when||0);
+    const len=Math.max(1,(ctx.sampleRate*dur)|0);
+    const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=ctx.createBufferSource(),g=ctx.createGain();
+    g.gain.value=gain;src.buffer=buf;
+    src.connect(g).connect(ctx.destination);src.start(t0);
+  }
+  return {ensure,tone,noise};
+})();
+let dwSound=true, lwSound=true;
+
+/* canvas helper: returns {c2d context, w, h} sized for dpr */
+function cvs(el,h){ // h = css height; width: css 100% via style already
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const cw=el.clientWidth,ch=h;
+  el.style.height=h+"px";
+  el.width=Math.max(2,Math.round(cw*dpr));
+  el.height=Math.round(ch*dpr);
+  const c=el.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+  return {c,w:cw,h:ch};
+}
+
+/* =====================================================================
+   01 · DRIFTWATCH
+   Divergence-free streamfunction sea · one-bit impulsive control ·
+   layered-BFS certificate. Game and solver share one integrator.
+   ===================================================================== */
+(function Driftwatch(){
+const W=420, DEPTH=130, SURF=3, CRUSH=96;
+const STEP=1/30;                          // game integrator dt
+const SOL={DT:0.05,KMAX:12};
+const NX=Math.ceil(W/SOL.CW), NY=Math.ceil(DEPTH/SOL.CH);
+
+function floorAt(x){
+  let f=120-10*Math.sin(x/95+0.7)-4*Math.sin(x/33+2.2);
+  f-=62*Math.exp(-Math.pow((x-150)/17,2))+56*Math.exp(-Math.pow((x-330)/19,2));
+  return clamp(f,30,126);
+}
+function bandU(z){return z<25?3.0:(z<55?0.6:-1.1);}
+const FLOW=[0,0];
+function flow(x,z,e){
+  let u=bandU(z),w=0;
+  for(let i=0;i<e.length;i++){
+    const E=e[i];
+    const dx=(x-E.cx)/E.sx,dz=(z-E.cz)/E.sz,q=dx*dx+dz*dz;
+    if(q<9){const g=Math.exp(-0.5*q);u+=(E.A/E.sz)*dz*g;w+=(E.A/E.sx)*dx*g;}
+  }
+  FLOW[0]=u;FLOW[1]=w;return FLOW;
+}
+function makeEddies(rnd){
+  const n=10, list=[];
+  for(let i=0;i<n;i++){
+    const sgn=i%2?-1:1;
+    list.push({cx:rnd()*W,cz:14+rnd()*96,sx:14+rnd()*22,sz:9+rnd()*14,A:sgn*(0.6+rnd()*0.5)});
+  }
+  return list;
+}
+function makeLeg(seed,opts){
+  opts=opts||null;
+  const rnd=mulberry32(seed>>>0);
+  const leg={seed,eddies:makeEddies(rnd)};
+  leg.startX=22.5;leg.startZ=22.5;     // cell-centred spawn, valve FLOOD
+  if(opts&&opts.startZ!=null)leg.startZ=opts.startZ;
+  let bx=100+rnd()*140;
+  if(Math.abs(bx-150)<30)bx=(bx+70);   // keep clear of the first pinnacles
+  if(Math.abs(bx-330)<34)bx=(bx+60)%W; // ...and the second
+  if(opts&&opts.narrow){               // The Abyssal Narrows: one slot between the shelves
+    bx=236+rnd()*58;
+    if(Math.abs(bx-330)<34)bx=250+rnd()*40;
+  }
+  leg.bx=bx;leg.bz=55+rnd()*25;
+  if(opts&&opts.deep){                 // deeper fixes: the corridor narrows toward CRUSH 96 m
+    leg.bz=70+rnd()*14;
+  }
+  if(opts&&opts.twinEddies){           // Twin Eddies: two strong counter-rotating gyres on approach
+    leg.eddies.push({cx:leg.bx*0.55,cz:32,sx:20,sz:13,A:1.0});
+    leg.eddies.push({cx:(leg.bx*0.65+W*0.4)%W,cz:86,sx:22,sz:15,A:-1.0});
+  }
+  return leg;
+}
+/* ---- the five-leg certified campaign. Fixed seeds: every leg name is a
+   shareable, reproducible chart whose K is certified by the layered BFS
+   below. AUTO mode derives fresh (still-certified) seeds per run. ---- */
+const CAMPAIGN=[
+  {name:"LEG I · THE SHELF",seed:0x53F10A1,opts:{startZ:14}},
+  {name:"LEG II · COUNTER-GYRE",seed:0x53F10A2,opts:{startZ:36,deep:true}},
+  {name:"LEG III · SILENT THERMOCLINE",seed:0x53F10A3,opts:{startZ:26}},
+  {name:"LEG IV · TWIN EDDIES",seed:0x53F10A4,opts:{startZ:20,twinEddies:true}},
+  {name:"LEG V · THE ABYSSAL NARROWS",seed:0x53F10A5,opts:{startZ:58,deep:true,narrow:true}}
+];
+/* The exact integrator. o = {x,z}; vent = valve bit. Returns a status. */
+function stepState(o,leg,dt,vent){
+  const f=flow(o.x,o.z,leg.eddies);
+  const nx=o.x+f[0]*dt;
+  o.x=nx>=W?nx-W:(nx<0?nx+W:nx);
+  o.z+= (f[1]+(vent?-2.6:2.3))*dt;
+  if(o.z<SURF)return"BROACHED";
+  if(o.z>=CRUSH)return"CRUSHED";
+  if(o.z>=floorAt(o.x)-0.4)return"GROUNDED";
+  return"ok";
+}
+/* ---- atlas v2: layered BFS over (2m-cell, valve-bit), exact positions.
+   Each state remembers the exact (x,z) at which it was first reached, so
+   the dynamics between states are exact; only *when* the player may toggle
+   is quantized (2 s holds). K is therefore an honest upper bound. ---- */
+const QZ=2;                    // lattice, metres
+const HOLD=2.0;                // hold quantum, seconds
+const HOLDN=Math.round(HOLD/SOL.DT); // substeps per hold = 40
+const NXq=Math.ceil(W/QZ), NZq=Math.ceil(DEPTH/QZ);
+const qx=x=>clamp(Math.round(x/QZ),0,NXq-1);
+const qz=z=>clamp(Math.round(z/QZ),0,NZq-1);
+const stKey=(xi,zj,vent)=>((xi*NZq)+zj)*2+(vent?1:0);
+const stUn=k=>{const v=k&1,q=(k-v)/2;return{xi:(q/NZq)|0,zj:q%NZq,vent:!!v};};
+const d2fixed=(x0,z0,x,z)=>{let dx=x0-x;dx=((dx+W/2)%W+W)%W-W/2;const dz=z0-z;return dx*dx+dz*dz;};
+
+function holdFlight(leg,x,z,vent){
+  const o={x,z};const pts=[x,z];
+  for(let i=0;i<HOLDN;i++){
+    const r=stepState(o,leg,SOL.DT,vent);
+    pts.push(o.x,o.z);
+    if(r!=="ok")return{fatal:r};
+    if(d2fixed(leg.bx,leg.bz,o.x,o.z)<64)return{reached:true,path:pts.concat([o.x,o.z])};
+  }
+  return{head:{x:o.x,z:o.z},path:pts.concat([o.x,o.z])};
+}
+function solveLeg(leg){
+  const NS=NXq*NZq*2;
+  /* Float64: stored hop endpoints must be the exact flight termini — a
+     Float32 lattice would re-round every state and accumulate ~1e-5 m
+     of drift over a leg, breaking the zero-deviation replay guarantee. */
+  const px=new Float64Array(NS).fill(-1);
+  const pz=new Float64Array(NS).fill(-1);
+  const layer=new Int16Array(NS).fill(-1);
+  const parent=new Int32Array(NS).fill(-1);
+  const viaToggle=new Uint8Array(NS);
+  const edges=new Map();
+  const put=(key,x,z)=>{px[key]=x;pz[key]=z;};
+  const start=stKey(qx(leg.startX),qz(leg.startZ),false);
+  put(start,leg.startX,leg.startZ);layer[start]=0;
+  let cur=[start],reached=null;
+  for(let k=0;k<=SOL.KMAX;k++){
+    const clos=[],inC=new Set(),stack=cur.slice();
+    while(stack.length){
+      const s=stack.pop();
+      if(inC.has(s))continue;
+      inC.add(s);clos.push(s);
+      let e=edges.get(s);
+      if(!e){const u=stUn(s);e=holdFlight(leg,px[s],pz[s],u.vent);edges.set(s,e);}
+      if(e.fatal)continue;
+      if(e.reached){reached={via:s,path:e.path};break;}
+      if(e.head){
+        const key=stKey(qx(e.head.x),qz(e.head.z),stUn(s).vent);
+        if(layer[key]===-1){layer[key]=k;parent[key]=s;viaToggle[key]=0;put(key,e.head.x,e.head.z);stack.push(key);}
+        else if(layer[key]===k&&!inC.has(key))stack.push(key);
+      }
+    }
+    if(reached)return finalize(reached,parent,viaToggle,edges,k,px,pz);
+    const nxt=[];
+    for(const s of clos){
+      const t=s^1;
+      if(layer[t]===-1){layer[t]=k+1;parent[t]=s;viaToggle[t]=1;put(t,px[s],pz[s]);nxt.push(t);}
+    }
+    if(!nxt.length)break;
+    cur=nxt;
+  }
+  return null;
+}
+function finalize(reached,parent,viaToggle,edges,K,px,pz){
+  const segs=[{type:"path",p:reached.path}];   // ← the last flight (from reached.via)
+  let s=reached.via;
+  while(parent[s]>=0){
+    const p=parent[s];
+    if(viaToggle[s]){
+      segs.push({type:"toggle",x:px[s],z:pz[s]});
+    }else{
+      const e=edges.get(p);                    // ← parent's flight is the arrival flight at s
+      if(e&&e.path)segs.push({type:"path",p:e.path});
+    }
+    s=p;
+  }
+  segs.reverse();
+  return{K,segs,states:NXq*NZq*2};
+}
+function certifyLeg(seed,opts){
+  for(let t=0;t<48;t++){
+    const s=(seed+t*7919)>>>0;
+    const leg=makeLeg(s,opts),sol=solveLeg(leg);
+    if(sol&&sol.K>=2&&sol.K<=10)return{leg,sol,tries:t+1};
+  }
+  const leg=makeLeg(seed,opts),sol=solveLeg(leg);
+  return{leg,sol:sol||{K:SOL.KMAX,segs:[],states:NXq*NZq*2},tries:48};
+}
+
+/* ---- view ---- */
+const cv=$("dwCanvas"),ctx=cv.getContext("2d");
+let scale=1,topm=6,bgc=null,lastW=0,lastH=0;
+const VISD=138;                       // metres visible vertically (2 m margin + 130 + pad)
+function resize(force){
+  const w=cv.clientWidth,h=cv.clientHeight;
+  if(!force&&w===lastW&&h===lastH)return;
+  lastW=w;lastH=h;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  scale=h/VISD;topm=4;
+  paintBg();
+}
+window.addEventListener("resize",()=>resize(true));
+
+/* ---- run state ---- */
+const st={
+  leg:null,sol:null,budget:0,used:0,legNo:0,runSeed:bootSeed(),
+  x:0,z:0,valve:false,trace:[],marks:[],status:"BOOT",platOn:false,
+  tries:0,dist:0,distZ:0,pingT:1,stampT:0,acc:0,
+  /* dead-reckoning: the chart plots the *believed* fix, not the truth */
+  drOn:false,t:0,prevZ:0,cone:0,fixes:3,fixMarks:[],
+  estX:0,estZ:0,estTrace:[],campaignName:"",pinLeg:-1
+};
+const CONERATE=[0.5,1.15,0.6];       /* uncertainty growth m/s: jet, thermocline shear, deep */
+const EDDYLESS=[];                   /* the plotter's estimator knows no eddies */
+function stampIt(title,detail,isRed){
+  const el=$("dwStamp");
+  el.innerHTML=title+"<small>"+detail+"</small>";
+  el.style.display="block";
+  el.style.borderColor=isRed?"#a73a2b":"#1e454e";
+  el.style.color=isRed?"#a73a2b":"#1e454e";
+  st.stampT=performance.now();
+}
+function hideStamp(){const el=$("dwStamp");if(el&&el.style.display==="block"&&performance.now()-st.stampT>2500)el.style.display="none";}
+function collapseCone(tag){
+  st.cone=0;
+  st.estX=st.x;st.estZ=st.z;
+  st.estTrace.push(NaN,NaN);         /* the plotted track snaps to the new fix */
+  st.fixMarks.push({x:st.x,z:st.z,tag:tag});
+  if(dwSound)AudioSys.tone(1080,0.12,"triangle",0.05,0);
+}
+function sonarFix(){
+  if(st.status!=="LIVE"||!st.drOn||!st.leg)return;
+  if(st.fixes<=0){
+    if(dwSound)AudioSys.tone(120,0.2,"sawtooth",0.05,0);
+    return;
+  }
+  st.fixes--;
+  collapseCone("SONAR FIX");
+  if(dwSound){AudioSys.tone(1180,0.16,"sine",0.07,0);AudioSys.tone(590,0.22,"sine",0.05,0.1);}
+  updateHUD();
+}
+function startLeg(){
+  const ci=st.pinLeg>=0?st.pinLeg:st.legNo%CAMPAIGN.length;
+  const camp=CAMPAIGN[ci];
+  const seedBase=st.pinLeg>=0?camp.seed:((st.runSeed^(camp.seed>>>0))+st.legNo*911)>>>0;
+  const cert=certifyLeg(seedBase,camp.opts);
+  st.leg=cert.leg;st.sol=cert.sol;st.tries=cert.tries;
+  st.campaignName=st.pinLeg>=0?camp.name+" (CERTIFIED)":camp.name;
+  st.budget=cert.sol.K+2;st.used=0;st.status="LIVE";
+  st.x=st.leg.startX;st.z=st.leg.startZ;st.valve=false;st.trace=[];st.marks=[];st.acc=0;
+  st.t=0;st.prevZ=st.z;st.cone=0;st.fixes=3;st.fixMarks=[];
+  st.estX=st.x;st.estZ=st.z;st.estTrace=[];
+  $("valveBtn").classList.remove("pressed");
+  paintBg();updateHUD();
+  AudioSys.ensure();
+  if(dwSound){AudioSys.tone(660,0.15,"triangle",0.05,0);AudioSys.tone(495,0.2,"triangle",0.04,0.18);}
+}
+function newRun(){
+  st.runSeed=bootSeed();st.legNo=0;startLeg();
+}
+function toggleValve(){
+  if(st.status!=="LIVE")return;
+  st.valve=!st.valve;
+  st.used++;
+  st.marks.push({x:st.drOn?st.estX:st.x,z:st.drOn?st.estZ:st.z,n:st.used});
+  if(dwSound)AudioSys.tone(st.valve?320:220,0.05,"square",0.045,0);
+  if(st.used>st.budget){
+    st.status="OUT-OF-BUDGET";
+    stampIt("BEACON LOST","shift budget spent · run "+st.legNo+" retired · re-plotting at a new seed",true);
+    if(dwSound)AudioSys.tone(95,0.5,"sawtooth",0.07,0);
+    setTimeout(()=>{st.legNo++;startLeg();},2800);
+  }
+}
+function updateHUD(){
+  if(!st.leg)return;
+  $("dwRun").textContent="LEG №"+String(st.legNo+1).padStart(2,"0")+" · "+st.campaignName+" · SEED 0x"+(st.leg.seed>>>0).toString(16).toUpperCase();
+  $("dwBeacon").textContent=Math.round(Math.sqrt(st.dist))+" m · "+Math.round(st.leg.bz)+" m deep";
+  $("dwShifts").textContent=st.used+" / "+st.budget+(st.status==="LIVE"?" · "+(st.valve?"VENT":"FLOOD"):"");
+  $("dwDr").textContent=st.drOn?("DR · EST ±"+Math.round(st.cone)+" m · FIX "+st.fixes+"/3"):"DR OFF · TRUE FIX PLOTTED";
+  const fixBtn=$("dwFixBtn");
+  fixBtn.textContent="SONAR FIX ×"+st.fixes;
+  fixBtn.style.opacity=(st.drOn&&st.fixes>0)?"1":"0.45";
+  const s=st.sol;
+  $("dwCert").textContent="K = "+s.K+" CERTIFIED · BFS "+s.states.toLocaleString()+" VTX · SEED TRIES "+st.tries+" · GRANT "+(s.K+2);
+}
+
+/* ---- background chart: painted once per leg, blitted per frame ---- */
+function paintBg(){
+  if(!st.leg)return;
+  const dpr=cv.width/cv.clientWidth;
+  bgc=document.createElement("canvas");bgc.width=cv.width;bgc.height=cv.height;
+  const g=bgc.getContext("2d");
+  g.setTransform(dpr,0,0,dpr,0,0);
+  const cssW=cv.clientWidth,cssH=cv.clientHeight;
+  const X=x=>x*scale,Z=z=>topm+z*scale;
+  const mono=(px)=>px+"px 'IBM Plex Mono',Menlo,monospace";
+  g.fillStyle="#f4ecd8";g.fillRect(0,0,cssW,cssH);
+  /* fan-fold creases every 46 world-metres of paper */
+  for(let fx=46;fx<W;fx+=46){
+    const px=X(fx);
+    if(px>cssW)continue;
+    g.fillStyle="rgba(96,78,44,0.05)";g.fillRect(px,0,7,cssH);
+    g.fillStyle="rgba(96,78,44,0.22)";g.fillRect(px,0,1.1,cssH);
+  }
+  /* depth grid */
+  for(let z=10;z<DEPTH;z+=10){
+    const major=z%20===0,py=Z(z);
+    g.strokeStyle=major?"rgba(31,69,78,0.30)":"rgba(31,69,78,0.10)";
+    g.lineWidth=major?0.9:0.5;
+    g.beginPath();g.moveTo(0,py);g.lineTo(cssW,py);g.stroke();
+    if(major){
+      g.fillStyle="rgba(31,69,78,0.6)";g.font=mono(9);
+      for(let lx=4;lx<W;lx+=210)g.fillText(z+" m",X(lx),py-2);
+    }
+  }
+  /* chainage ticks */
+  g.fillStyle="rgba(31,69,78,0.55)";g.font=mono(9);
+  for(let x=50;x<W;x+=50)g.fillText(x+" mE",X(x)+3,11);
+  /* band boundaries */
+  g.setLineDash([5,4]);g.strokeStyle="rgba(31,69,78,0.5)";g.lineWidth=0.8;
+  for(const zb of[25,55]){g.beginPath();g.moveTo(0,Z(zb));g.lineTo(cssW,Z(zb));g.stroke();}
+  g.setLineDash([]);
+  g.fillStyle="rgba(31,69,78,0.66)";g.font=mono(9);
+  for(let x=8;x<W;x+=190){
+    g.fillText("WARM SURFACE JET   +3.0 m/s",X(x),Z(7));
+    g.fillText("THERMOCLINE TOLL   +0.6",X(x),Z(30));
+    g.fillText("COLD COUNTERFLOW   −1.1 m/s",X(x),Z(60));
+  }
+  /* flow arrows */
+  g.strokeStyle="rgba(31,69,78,0.32)";g.lineWidth=1;
+  for(const zc of[13,40,92])for(let x=6;x<W;x+=26){
+    const u=bandU(zc),l=Math.abs(u)*8,dir=u>0?1:-1,px=X(x),py=Z(zc+4);
+    g.beginPath();g.moveTo(px-l*dir,py);g.lineTo(px+l*dir,py);
+    g.moveTo(px+l*dir-dir*3,py-2.4);g.lineTo(px+l*dir,py);g.lineTo(px+l*dir-dir*3,py+2.4);g.stroke();
+  }
+  /* eddies as curl glyphs */
+  st.leg.eddies.forEach((E,i)=>{
+    const cx=X(E.cx),cz=Z(E.cz),r=Math.min(E.sx,E.sz)*scale*0.45;
+    g.strokeStyle="rgba(31,69,78,0.55)";g.lineWidth=1;
+    g.beginPath();
+    for(let a=0;a<=Math.PI*4.2;a+=0.35){
+      const rr=r*(0.14+0.86*a/(Math.PI*4.2));
+      const px=cx+rr*Math.cos(a),py=cz+rr*Math.sin(a);
+      if(a===0)g.moveTo(px,py);else g.lineTo(px,py);
+    }
+    g.stroke();
+    const ax=Math.PI*4.2,rr=r;
+    g.beginPath();
+    g.moveTo(cx+rr*Math.cos(ax),cz+rr*Math.sin(ax));
+    g.lineTo(cx+(rr-4)*Math.cos(ax+0.28),cz+(rr-4)*Math.sin(ax+0.28));
+    g.stroke();
+    g.fillStyle="rgba(122,47,32,0.7)";g.font=mono(8.5);
+    g.fillText((E.A<0?"↺":"↻")+" EDDY "+i,cx+r*0.8,cz-r*0.55);
+  });
+  /* bathymetry: hatched ground */
+  const fp=[];
+  for(let x=0;x<=W;x+=2)fp.push([X(x),Z(floorAt(x))]);
+  g.beginPath();g.moveTo(0,cssH);
+  for(const p of fp)g.lineTo(p[0],p[1]);
+  g.lineTo(cssW,cssH);g.closePath();
+  g.save();g.clip();
+  g.strokeStyle="rgba(31,69,78,0.28)";g.lineWidth=0.8;
+  const span=cssH;
+  for(let x0=-span;x0<cssW+span;x0+=9){
+    g.beginPath();g.moveTo(x0,cssH);g.lineTo(x0+span*0.55,cssH-span);g.stroke();
+  }
+  g.restore();
+  g.beginPath();
+  fp.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));
+  g.strokeStyle="#1e454e";g.lineWidth=2;g.stroke();
+  g.fillStyle="rgba(31,69,78,0.7)";g.font=mono(8);
+  for(let x=16;x<W;x+=92)g.fillText("SHELF CONTOUR",X(x),Z(floorAt(x)+5.5));
+  /* hull-crush contour */
+  g.setLineDash([8,5]);g.strokeStyle="rgba(167,58,43,0.85)";g.lineWidth=1.3;
+  g.beginPath();g.moveTo(0,Z(CRUSH));g.lineTo(cssW,Z(CRUSH));g.stroke();g.setLineDash([]);
+  g.fillStyle="rgba(167,58,43,0.9)";g.font=mono(9);
+  for(let x=4;x<W;x+=124)g.fillText("HULL CRUSH 96 m",X(x),Z(CRUSH)-3);
+  /* surface datum */
+  g.strokeStyle="rgba(31,69,78,0.85)";g.lineWidth=2;
+  g.beginPath();g.moveTo(0,Z(0));g.lineTo(cssW,Z(0));g.stroke();
+  g.fillStyle="rgba(31,69,78,0.7)";
+  for(let x=6;x<W;x+=130)g.fillText("SEA SURFACE · DATUM 0",X(x),Z(0)+12);
+}
+
+/* ---- dynamic layer ---- */
+function wrapDx(dx){dx=((dx+W/2)%W+W)%W-W/2;return dx;}
+function paint(now){
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  const cssW=cv.clientWidth,cssH=cv.clientHeight,s=scale;
+  const camX=clamp(st.x-cssW/s/2,0,Math.max(0,W-cssW/s));
+  const X=x=>(x-camX)*s,Z=z=>topm+z*s;
+  ctx.fillStyle="#f4ecd8";ctx.fillRect(0,0,cssW,cssH);
+  if(bgc){
+    const sx=Math.floor(camX*s*dpr);
+    const sw=Math.min(cv.width,camX*0+Math.round(cssW*s*dpr));
+    ctx.drawImage(bgc,sx,0,sw,cv.height,0,0,cssW,cssH);
+  }
+
+  /* planner course overlay */
+  if(st.platOn&&st.sol){
+    ctx.save();
+    ctx.setLineDash([5,4]);ctx.strokeStyle="rgba(176,123,43,0.95)";ctx.lineWidth=1.4;
+    ctx.beginPath();
+    let began=false;
+    for(const seg of st.sol.segs){
+      if(seg.type==="toggle")continue;
+      const p=seg.p;
+      for(let i=0;i<p.length;i+=2){
+        const px=X(p[i]),py=Z(p[i+1]);
+        if(px<-40||px>cssW+40)continue;
+        if(began)ctx.lineTo(px,py);else{ctx.moveTo(px,py);began=true;}
+      }
+    }
+    ctx.stroke();ctx.setLineDash([]);
+    ctx.font="9px 'IBM Plex Mono',Menlo,monospace";
+    let tn=0;
+    for(const seg of st.sol.segs)if(seg.type==="toggle"){
+      tn++;
+      const px=X(seg.x),py=Z(seg.z);
+      if(px<-20||px>cssW+20)continue;
+      ctx.strokeStyle="rgba(167,58,43,0.95)";ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.arc(px,py,4.6,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle="rgba(167,58,43,0.95)";
+      ctx.fillText("shift "+tn,px+7,py-6);
+    }
+    ctx.restore();
+  }
+  const hx=st.drOn?st.estX:st.x,hz=st.drOn?st.estZ:st.z;
+  /* trace: the *plotted* track — dead-reckoned estimate when DR mode is on */
+  const tr=st.drOn?st.estTrace:st.trace;
+  ctx.strokeStyle="rgba(20,52,60,0.85)";ctx.lineWidth=1.6;
+  ctx.beginPath();
+  let began=false;
+  for(let i=0;i<tr.length;i+=2){
+    const tx=tr[i],tz=tr[i+1];
+    if(!isFinite(tx)||!isFinite(tz)){began=false;continue;}  /* fix-snap gap */
+    const px=X(tx),py=Z(tz);
+    if(px<-20||px>cssW+20)continue;
+    if(began)ctx.lineTo(px,py);else{ctx.moveTo(px,py);began=true;}
+  }
+  ctx.stroke();
+  /* stamped fix crosshairs: sonar fixes + thermocline collapses */
+  ctx.font="9px 'IBM Plex Mono',Menlo,monospace";
+  for(const fm of st.fixMarks){
+    const fx=X(fm.x),fz=Z(fm.z);
+    if(fx<-20||fx>cssW+20)continue;
+    ctx.strokeStyle="rgba(167,58,43,0.95)";ctx.lineWidth=1.6;
+    ctx.beginPath();ctx.moveTo(fx-7,fz);ctx.lineTo(fx+7,fz);
+    ctx.moveTo(fx,fz-7);ctx.lineTo(fx,fz+7);ctx.stroke();
+    ctx.beginPath();ctx.arc(fx,fz,4.5,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle="rgba(167,58,43,0.95)";ctx.fillText(fm.tag,fx+9,fz-6);
+  }
+  /* the belief cone: a stippled sea of words the plotter cannot prove */
+  if(st.drOn&&st.cone>0.4){
+    const cx0=X(hx),cy0=Z(hz),rx=st.cone*1.5*s,ry=st.cone*0.62*s;
+    ctx.save();
+    ctx.setLineDash([3,3]);ctx.strokeStyle="rgba(42,90,102,0.6)";ctx.lineWidth=1;
+    ctx.beginPath();ctx.ellipse(cx0,cy0,rx,ry,0,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle="#1e454e";
+    const t8=(st.t*8)|0;
+    for(let i=0;i<120;i++){
+      const h1=hash32(st.leg.seed,i,t8,51)/4294967296;
+      const h2=hash32(st.leg.seed,i,t8,52)*Math.PI*2;
+      const u=Math.sqrt(h1);
+      const dxp=u*rx*Math.cos(h2),dyp=u*ry*Math.sin(h2);
+      const px=cx0+dxp,py=cy0+dyp;
+      if(px>0&&px<cssW&&py>0&&py<cssH){
+        ctx.globalAlpha=0.5*(1-u*0.6);
+        ctx.fillRect(px,py,1.7,1.7);
+      }
+    }
+    ctx.globalAlpha=1;
+    ctx.restore();
+  }
+  /* toggle marks */
+  ctx.font="9px 'IBM Plex Mono',Menlo,monospace";
+  for(const m of st.marks){
+    const px=X(m.x),py=Z(m.z);
+    if(px<-20||px>cssW+20)continue;
+    ctx.strokeStyle="rgba(167,58,43,0.95)";ctx.lineWidth=1.3;
+    ctx.beginPath();ctx.moveTo(px-4,py-4);ctx.lineTo(px+4,py+4);
+    ctx.moveTo(px+4,py-4);ctx.lineTo(px-4,py+4);ctx.stroke();
+    ctx.fillStyle="rgba(167,58,43,0.95)";ctx.fillText("№"+m.n,px+6,py+3);
+  }
+  /* beacon */
+  const px=X(st.leg.bx),py=Z(st.leg.bz);
+  const ring=((now/1300)%1)*(30+8);
+  if(st.status==="LIVE"){
+    ctx.globalAlpha=1-ring/(30+8);
+    ctx.strokeStyle="rgba(167,58,43,0.7)";ctx.lineWidth=1.1;
+    ctx.beginPath();ctx.arc(px,py,6+ring,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  ctx.strokeStyle="#a73a2b";ctx.lineWidth=2;
+  ctx.strokeRect(px-5,py-5,10,10);
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+7,py-7);ctx.lineTo(px+12,py-7);ctx.lineTo(px+5,py);
+  ctx.closePath();ctx.fillStyle="rgba(167,58,43,0.85)";ctx.fill();
+  ctx.fillStyle="rgba(167,58,43,0.95)";ctx.fillText("BEACON",px-10,py+14);
+  /* vehicle = the plotter's fix mark. In dead-reckoning mode the marker
+     plots the BELIEVED fix, amber and fat with doubt; the true hull is
+     only known where a sonar or thermocline fix has stamped its crosshair. */
+  const vx=X(hx),vz=Z(hz);
+  const unsure=st.drOn&&st.cone>8;
+  ctx.strokeStyle=unsure?"rgba(176,123,43,0.95)":"#14404a";
+  ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(vx,vz,5,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(vx-10,vz);ctx.lineTo(vx+10,vz);ctx.moveTo(vx,vz-10);ctx.lineTo(vx,vz+10);ctx.stroke();
+  ctx.fillStyle=unsure?"rgba(176,123,43,0.95)":"rgba(31,69,78,0.95)";
+  ctx.fillText(st.valve?"▲ VENTING":"▼ FLOODED",vx-15,vz-14);
+  if(st.drOn)ctx.fillText("DR PLOT ±"+Math.round(st.cone)+" m",vx+12,vz+12);
+}
+/* ---- simulation loop: one fixed substep of the plant + the DR estimator ---- */
+function simStep(){
+  const r=stepState(st,st.leg,STEP,st.valve);
+  st.trace.push(st.x,st.z);
+  if(st.trace.length>5200)st.trace.splice(0,400);
+  const dx=wrapDx(st.leg.bx-st.x),dz=st.leg.bz-st.z;
+  st.dist=dx*dx+dz*dz;
+  if(st.dist<64){
+    st.status="FIXING";st.legNo++;
+    stampIt("FIX CONFIRMED","beacon acquired · opening leg №"+(st.legNo+1)+" under the next certificate",false);
+    if(dwSound){AudioSys.tone(760,0.12,"triangle",0.06,0);AudioSys.tone(1010,0.18,"triangle",0.05,0.14);}
+    setTimeout(()=>{startLeg();},2400);
+    return;
+  }
+  if(r!=="ok"){
+    st.status=r;
+    const sub={BROACHED:"the hull broached the surface datum",CRUSHED:"past the hull-crush contour at 96 m",GROUNDED:"the shelf caught the hull under the thermocline"}[r];
+    stampIt(r+" · LEG LOST",sub+" · run retired · re-plotting",true);
+    if(dwSound)AudioSys.noise(0.5,0.12,0);
+    setTimeout(()=>{st.legNo++;startLeg();},2800);
+    return;
+  }
+  /* --- dead reckoning: the chart's plotted fix is band-estimated only --- */
+  st.t+=STEP;
+  if(st.drOn){
+    const eb=flow(st.estX,st.estZ,EDDYLESS);   /* band carry only; no eddy knowledge */
+    let ex=st.estX+eb[0]*STEP;
+    st.estX=ex>=W?ex-W:(ex<0?ex+W:ex);
+    st.estZ=clamp(st.estZ+(st.valve?-2.6:2.3)*STEP,2,128);
+    const zb=st.z<25?0:(st.z<55?1:2);
+    st.cone=Math.min(58,st.cone+CONERATE[zb]*STEP);   /* shear accumulates unmodeled noise fastest in the toll band */
+    for(const zb2 of[25,55]){
+      if((st.prevZ<zb2)!==(st.z<zb2)){collapseCone("THERMOCLINE FIX");break;}
+    }
+    st.prevZ=st.z;
+    st.estTrace.push(st.estX,st.estZ);
+    if(st.estTrace.length>5200)st.estTrace.splice(0,400);
+  }
+}
+let last=performance.now(),hudLast=0;
+function frame(now){
+  const dt=Math.min(0.08,(now-last)/1000);last=now;
+  hideStamp();
+  if(st.status==="LIVE"){
+    st.acc+=dt;
+    let guard=0;
+    while(st.acc>=STEP&&st.status==="LIVE"&&guard++<10){
+      st.acc-=STEP;
+      simStep();
+    }
+    st.pingT-=dt;
+    if(st.pingT<=0&&st.status==="LIVE"){
+      st.pingT=1.5;
+      if(dwSound){
+        const d=Math.sqrt(st.dist);
+        AudioSys.tone(clamp(880-d*0.9,300,880),0.13,"sine",clamp(0.09-d*0.00006,0.02,0.09),0);
+      }
+    }
+  }
+  if(now-hudLast>200){hudLast=now;updateHUD();}
+  paint(now);
+  requestAnimationFrame(frame);
+}
+
+/* ---- input: pointer on the valve wheel, or hold V ---- */
+const valveBtn=$("valveBtn");
+function ventDown(e){
+  if(e)e.preventDefault();
+  AudioSys.ensure();
+  if(st.valve||st.status!=="LIVE")return;
+  valveBtn.classList.add("pressed");
+  toggleValve();
+}
+function ventUp(){
+  if(!st.valve)return;
+  valveBtn.classList.remove("pressed");
+  toggleValve();
+}
+valveBtn.addEventListener("pointerdown",ventDown);
+window.addEventListener("pointerup",ventUp);
+window.addEventListener("pointercancel",ventUp);
+window.addEventListener("keydown",e=>{
+  if(e.code==="KeyV"&&!e.repeat){ventDown(e);}
+});
+window.addEventListener("keyup",e=>{
+  if(e.code==="KeyV")ventUp();
+});
+$("dwNewBtn").addEventListener("click",()=>{newRun();});
+$("dwPlanBtn").addEventListener("click",function(){
+  st.platOn=!st.platOn;
+  this.classList.toggle("lit",st.platOn);
+});
+$("dwSoundBtn").addEventListener("click",function(){
+  dwSound=!dwSound;AudioSys.ensure();
+  this.textContent="SOUND "+(dwSound?"ON":"OFF");
+  this.classList.toggle("lit",dwSound);
+});
+$("dwDrBtn").addEventListener("click",function(){
+  st.drOn=!st.drOn;
+  this.classList.toggle("lit",st.drOn);
+  if(st.drOn){st.estX=st.x;st.estZ=st.z;st.cone=0.6;}
+  else{st.cone=0;st.fixMarks=[];}
+  updateHUD();
+});
+$("dwFixBtn").addEventListener("click",()=>sonarFix());
+$("dwLegSel").addEventListener("change",function(){
+  const v=parseInt(this.value,10);
+  st.pinLeg=v;
+  if(v>=0)st.legNo=v;   /* jump straight to that certified leg */
+  startLeg();
+});
+resize(true);startLeg();requestAnimationFrame(frame);
+/* ---- headless harness hook: the certification engine is exported for
+   scripts/verify (see ARCHITECTURE §1.8 · zero replay deviation). ---- */
+window.__DW_TEST__={makeLeg,certifyLeg,solveLeg,stepState,holdFlight,
+  SOL,HOLDN,QZ,CAMPAIGN,wrapDx,flow,floorAt,bandU,d2fixed,
+  st,simStep,startLeg,sonarFix,collapseCone,W,DEPTH};
+})();
+
+/* =====================================================================
+   02 · LOOMWEIGHT
+   Deterministic Jacquard card-loop + fault-cascade FSM on a 3:4
+   polyrhythm. One input: the mallet. The cloth is the score.
+   ===================================================================== */
+(function Loomweight(){
+const PICK=0.64;                 // seconds per weft pick
+const NH=14;                     // heddles
+const NC=24;                     // pinned cards
+const SUPER=12;                  // lcm(3,4)
+const PALETTE=[
+  {name:"INDIGO 曅",r:46,g:77,b:123},
+  {name:"VERMILION 柙",r:177,g:57,b:47},
+  {name:"OCHRE 土",r:185,g:138,b:60},
+  {name:"CELADON 青磁",r:109,g:144,b:121},
+  {name:"SUMI 墨",r:51,g:48,b:46},
+  {name:"ROSE 紅",r:201,g:98,b:125}
+];
+const PAPER={r:235,g:223,b:196};
+function mix(a,b){return{r:Math.round((a.r+b.r)/2),g:Math.round((a.g+b.g)/2),b:Math.round((a.b+b.b)/2)};}
+const css=c=>"rgb("+c.r+","+c.g+","+c.b+")";
+function shade(c,f){return"rgb("+Math.round(PAPER.r+(c.r-PAPER.r)*f)+","+Math.round(PAPER.g+(c.g-PAPER.g)*f)+","+Math.round(PAPER.b+(c.b-PAPER.b)*f)+")";}
+
+const ls={seed:0,pick:0,running:true,runningEverStarted:false,halt:false,
+  tangles:[],tray:[],dry:false,dryAge:0,slackOwed:0,paleOwed:0,slubOwed:0,
+  cloth:[],deadCols:[],tears:0,splices:0,ledger:[],acc:0,lastTickPhase:0,
+  /* generational weave ("the cloth is the fault schedule", §2.5) */
+  gen:1,genSalt:0,spawnThresh:130,scarHeddles:[],growthAges:[3,6,9],
+  capCut:0,parentHash:0,carryColor:null};
+
+/* ---- the cloth becomes the next punch-card: derive the polyrhythmic
+   fault & bobbin schedule of the next generation deterministically from
+   the finished tapestry — slack picks, knot scars, dye splices. ---- */
+function snapshotCloth(){
+  return{seed:ls.seed>>>0,gen:ls.gen,tears:ls.tears,splices:ls.splices,
+    cloth:ls.cloth.slice(),deadCols:ls.deadCols.slice(),ledger:ls.ledger.slice()};
+}
+function deriveFaultSchedule(par){
+  let h=hash32(par.seed>>>0,9127);
+  for(let i=0;i<par.cloth.length;i++){
+    const r=par.cloth[i];
+    h=hash32(h,r.kind.charCodeAt(0)|0,r.bits|0,r.color.r,(r.color.g<<8)|r.color.b,r.p|0);
+  }
+  h=hash32(h,par.tears|0,par.splices|0,par.cloth.length|0,731)>>>0;
+  const slack=par.cloth.filter(r=>r.kind==="slack").length;
+  const slubs=par.cloth.filter(r=>r.kind==="slub"||r.kind==="pale").length;
+  /* knot scars: every tear leaves its warp column in the memory of the cloth */
+  const scars=[];
+  for(const d of par.deadCols)if(!scars.includes(d.col))scars.push(d.col);
+  return{
+    parentHash:h,
+    salt:h%104729,                                   /* faults read the weaving itself */
+    spawnThresh:clamp(130+slack*4+slubs*2,130,380),  /* a slack-heavy cloth is a tangle-rich cloth */
+    growthAges:par.tears>=2?[2,5,8]:[3,6,9],         /* scarred cloth matures its faults faster */
+    scarHeddles:scars.slice(0,8),
+    capCut:Math.min(10,par.splices*2+par.tears*3),   /* dye splices shorten every next bobbin */
+    carryColor:par.ledger.length?par.ledger[par.ledger.length-1].rgb:null
+  };
+}
+function applySchedule(sch){
+  ls.genSalt=sch.salt>>>0;
+  ls.spawnThresh=sch.spawnThresh;
+  ls.scarHeddles=sch.scarHeddles.slice(0,8);
+  ls.growthAges=sch.growthAges;
+  ls.capCut=sch.capCut;
+  ls.parentHash=sch.parentHash>>>0;
+  ls.carryColor=sch.carryColor||null;
+}
+function mountCloth(){
+  if(!ls.cloth.length)return;
+  ls.running=false;
+  const par=snapshotCloth();
+  newSample(par);
+  $("lwGrade").textContent="CLOTH MOUNTED · GENERATION "+ls.gen+" · SALT 0x"+ls.genSalt.toString(16).toUpperCase();
+}
+
+function newSample(parent){
+  if(parent){ /* Gen II+: same shop, same seed chain — only the fault schedule is read off the cloth */
+    ls.gen=(parent.gen|0)+1;
+    applySchedule(deriveFaultSchedule(parent));
+  }else{
+    ls.seed=bootSeed()|1;
+    ls.gen=1;
+    applySchedule({parentHash:0,salt:0,spawnThresh:130,scarHeddles:[],
+      growthAges:[3,6,9],capCut:0,carryColor:null});
+  }
+  ls.pick=0;ls.running=true;ls.halt=false;ls.tangles=[];ls.dry=false;ls.dryAge=0;
+  ls.slackOwed=0;ls.paleOwed=0;ls.slubOwed=0;
+  ls.cloth=[];ls.deadCols=[];ls.tears=0;ls.splices=0;ls.ledger=[];
+  const rnd=mulberry32(ls.seed);
+  const pal=PALETTE.slice();
+  for(let i=pal.length-1;i>0;i--){const j=(rnd()*(i+1))|0;const t=pal[i];pal[i]=pal[j];pal[j]=t;}
+  ls.tray=[];
+  for(let i=0;i<5;i++){
+    const cap=clamp(22+((rnd()*13)|0)-ls.capCut,8,34);   /* splices & tears shorten the dye */
+    if(i===0&&ls.carryColor){
+      ls.tray.push({dye:cap,cap:cap,color:ls.carryColor,name:"HEIRLOOM 織受"});
+    }else{
+      ls.tray.push({dye:cap,cap:cap,color:pal[i%pal.length],name:pal[i%pal.length].name});
+    }
+  }
+  ls.blendSeq=0;
+  renderLedgerText();
+  $("lwEndcard").style.display="none";
+  if(lwSound){AudioSys.ensure();AudioSys.tone(620,0.08,"triangle",0.04,0);AudioSys.tone(465,0.1,"triangle",0.035,0.1);}
+}
+function shedOpen(p){return (p%SUPER)<2;}
+function distanceToShed(p){return (SUPER-(p%SUPER))%SUPER;}
+
+function forceSplice(){
+  const a=ls.tray[(1+5)%5]; // tray[1]
+  const b=ls.tray[4];
+  const color=mix(a.color,b.color);
+  const dye=20+((hash32(ls.seed,ls.blendSeq++,401)%13)|0);
+  ls.tray[0]={dye:dye,cap:dye,color:color,name:"BLEND"};
+  ls.splices++;ls.paleOwed+=2;ls.dry=false;ls.dryAge=0;
+  ls.ledger.push({from:a.name+" × "+b.name,to:css(color),rgb:color,note:"forced"});
+  renderLedgerText();
+  if(lwSound){AudioSys.tone(240,0.12,"triangle",0.04,0);AudioSys.tone(190,0.14,"triangle",0.04,0.12);}
+}
+function splice(){
+  const a=ls.tray[1],b=ls.tray[4];
+  const color=mix(a.color,b.color);
+  const dye=26+((hash32(ls.seed,ls.blendSeq++,401)%10)|0);
+  ls.tray[0]={dye:dye,cap:dye,color:color,name:"BLEND"};
+  ls.splices++;ls.dry=false;ls.dryAge=0;
+  ls.ledger.push({from:a.name+" × "+b.name,to:css(color),rgb:color,note:"clean"});
+  renderLedgerText();
+  if(lwSound){AudioSys.tone(740,0.07,"triangle",0.05,0);AudioSys.tone(930,0.1,"triangle",0.04,0.09);}
+}
+
+/* --- the one deterministic FSM tick --- */
+function tick(){
+  if(!ls.running||ls.halt)return;
+  ls.pick++;
+  const p=ls.pick;
+  const cardIdx=p%NC;
+  const bits=hash32(ls.seed,cardIdx,7717)&0xFFF;
+  /* 2 · spawn (gated by distance-to-shed; from GEN II onward the fault
+     schedule itself is hashed out of the parent cloth — §2.5) */
+  const dNext=distanceToShed(p);
+  if(ls.tangles.length<2&&dNext>=4&&dNext<=9&&(hash32(ls.seed,p,cardIdx,17,ls.genSalt)%1000)<ls.spawnThresh){
+    let heddle=hash32(ls.seed,p,cardIdx,19,ls.genSalt)%NH;
+    if(ls.scarHeddles.length&&(hash32(ls.seed,p,cardIdx,23,ls.genSalt)&1)){
+      heddle=ls.scarHeddles[hash32(ls.seed,p,cardIdx,29,ls.genSalt)%ls.scarHeddles.length];
+    }
+    if(!ls.tangles.some(t=>t.heddle===heddle)){
+      ls.tangles.push({heddle:heddle,w:1,birth:p});
+      if(lwSound)AudioSys.tone(1240,0.05,"square",0.028,0);
+    }
+  }
+  /* 3 · growth & snap. A tangle can only trap the shuttle on a
+     shed-closed pick (the warp is not shut while the shed is open) — so a
+     tangle born on the last gated slot (Δ = 9) is caught as its window
+     opens, or snaps the moment the window closes. */
+  let torn=null;
+  for(const t of ls.tangles){
+    const age=p-t.birth;
+    if(ls.growthAges.indexOf(age)>=0)t.w++;
+    if(t.w>=4&&!shedOpen(p)&&torn===null){torn=t;}
+  }
+  /* 4 · bobbin */
+  const bob=ls.tray[0];
+  bob.dye--;
+  if(!ls.dry&&bob.dye<=0){ls.dry=true;ls.dryAge=0;}
+  else if(ls.dry){ls.dryAge++;if(ls.dryAge>=3)forceSplice();}
+  /* 5 · weave pass */
+  const row={p:p,bits:bits,color:bob.color,kind:"w",faded:ls.dry&&ls.dryAge>0,tearCol:-1};
+  if(ls.slackOwed>0){row.kind="slack";ls.slackOwed--;}
+  else if(ls.slubOwed>0){row.kind="slub";ls.slubOwed--;}
+  else if(ls.paleOwed>0){row.kind="pale";ls.paleOwed--;}
+  if(torn){
+    row.kind="tear";row.tearCol=torn.heddle;
+    ls.tears++;ls.deadCols.push({col:torn.heddle,from:p});
+    ls.slubOwed+=4;
+    ls.tangles=ls.tangles.filter(t=>t!==torn);
+    if(lwSound){AudioSys.noise(0.35,0.14,0);AudioSys.tone(110,0.4,"sawtooth",0.07,0);}
+    if(ls.tears>=3){haltLoom();return;}
+  }
+  ls.cloth.push(row);
+  if(ls.cloth.length>1400)ls.cloth.splice(0,200);
+  /* 6 · clock sounds */
+  if(lwSound){
+    AudioSys.tone(600+((p%3)*45),0.045,"square",0.03,0);
+    if(p%4===0)AudioSys.tone(520,0.06,"triangle",0.038,0);
+    if(shedOpen(p))AudioSys.tone(185,0.16,"sine",0.055,0);
+  }
+}
+function haltLoom(){
+  ls.halt=true;
+  const grades=ls.ledger.reduce((n,e)=>n+(e.note==="forced"?1:0),0);
+  $("lwEndSummary").innerHTML=
+    "After <b>"+ls.pick+"</b> picks the loom came to a halt — the third tear."+
+    "<br>Tears <b>"+ls.tears+"</b> · splices <b>"+ls.splices+"</b> ("+grades+" forced) · every blend permanent."+
+    "<br>The shop frames the cloth as woven: slubs, bare columns, drifted colourway and all."+
+    "<br><i>Mount this cloth as the next punch-card and its slack, scars and splices"+
+    " become the next generation's fault schedule.</i>";
+  $("lwEndcard").style.display="block";
+}
+
+/* --- the single input --- */
+function strike(){
+  if(ls.halt)return;
+  AudioSys.ensure();
+  if(!ls.running)return;
+  const p=ls.pick, open=shedOpen(p);
+  let grade="";
+  const live=ls.tangles.slice().sort((a,b)=>b.w-a.w)[0];
+  if(live){
+    ls.tangles=ls.tangles.filter(t=>t!==live);
+    if(open){grade="CLEAN CATCH";if(lwSound)AudioSys.tone(880,0.08,"triangle",0.05,0);}
+    else{grade="HURRY CATCH · slack finish";ls.slackOwed++;if(lwSound)AudioSys.tone(300,0.1,"square",0.05,0);}
+  }else if(ls.dry){
+    splice();grade="CLEAN SPLICE · 染糸つぎ";
+    if(lwSound)AudioSys.tone(700,0.06,"triangle",0.05,0);
+  }else{
+    grade="BLIND MALLET · slack pick woven";ls.slackOwed++;
+    if(lwSound)AudioSys.tone(200,0.08,"square",0.04,0);
+  }
+  const el=$("lwGrade");
+  el.textContent=grade;
+  el.classList.remove("faded");
+  clearTimeout(strike._h);
+  strike._h=setTimeout(()=>el.classList.add("faded"),900);
+}
+
+/* --- views --- */
+let dialC,cardC,hedC,clC,ledC;
+function initViews(){
+  dialC=cvs($("dialCv"),126);
+  cardC=cvs($("cardCv"),70);
+  hedC=cvs($("heddlesCv"),132);
+  clC=cvs($("clothCv"),300);
+  ledC=cvs($("ledgerCv"),86);
+}
+function drawDial(frac){
+  const g=dialC.c,w=dialC.w,h=dialC.h;
+  g.clearRect(0,0,w,h);
+  const cx=63,cy=63,R=50;
+  g.strokeStyle="#33302a";g.lineWidth=1;
+  g.beginPath();g.arc(cx,cy,R,0,Math.PI*2);g.stroke();
+  g.beginPath();g.arc(cx,cy,R*0.62,0,Math.PI*2);g.stroke();
+  /* treadle: 3 positions, outer hand */
+  for(let i=0;i<3;i++){
+    const a=-Math.PI/2+i*Math.PI*2/3;
+    g.beginPath();g.arc(cx+Math.cos(a)*R,cy+Math.sin(a)*R,2.4,0,Math.PI*2);
+    g.fillStyle="#33302a";g.fill();
+  }
+  const at=((-1/2+((ls.pick%3)+frac)/3)*Math.PI*2)-Math.PI/2;
+  g.strokeStyle="#b1392f";g.lineWidth=2;
+  g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(at)*R,cy+Math.sin(at)*R);g.stroke();
+  /* card: 4 positions, inner hand */
+  for(let i=0;i<4;i++){
+    const a=-Math.PI/2+i*Math.PI*2/4;
+    g.beginPath();g.arc(cx+Math.cos(a)*R*0.62,cy+Math.sin(a)*R*0.62,2,0,Math.PI*2);
+    g.fillStyle="#2e4d7b";g.fill();
+  }
+  const ac=((-1/2+((ls.pick%4)+frac)/4)*Math.PI*2)-Math.PI/2;
+  g.strokeStyle="#2e4d7b";g.lineWidth=2;
+  g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(ac)*R*0.62,cy+Math.sin(ac)*R*0.62);g.stroke();
+  /* shed lamp */
+  const open=shedOpen(ls.pick);
+  if(open){
+    g.save();g.strokeStyle="rgba(177,57,47,0.35)";g.lineWidth=6;
+    g.beginPath();g.arc(cx,cy,R+4,-Math.PI/2-0.5,-Math.PI/2+0.5);g.stroke();g.restore();
+  }
+  g.font="9px 'IBM Plex Mono',Menlo,monospace";g.fillStyle="#6b6151";
+  g.textAlign="center";
+  g.fillText("TREADLE 3",cx,cy+R+12);
+  g.fillText("CARD 4",cx,cy+R+22);
+  g.fillText(open?" ・SHED OPEN・ ":" · shed closed · ",cx,h-4);
+  g.textAlign="left";
+}
+function drawCards(){
+  const g=cardC.c,w=cardC.w,h=cardC.h;
+  g.clearRect(0,0,w,h);
+  g.font="8px 'IBM Plex Mono',Menlo,monospace";
+  g.fillStyle="#6b6151";
+  g.textAlign="center";g.fillText("PUNCHED CARD BELT · 24 · chain reads one per pick",w/2,9);
+  g.textAlign="left";
+  const cw=13,gap=4,total=cw*NC+gap*(NC-1),x0=(w-total)/2;
+  for(let i=0;i<NC;i++){
+    const idx=i,xp=x0+(cw+gap)*i;
+    const cur=(ls.pick%NC)===i;
+    g.fillStyle=cur?"#e8dab2":"#efe6cb";
+    g.fillRect(xp,17,cw,h-17-10);
+    g.strokeStyle=cur?"#b1392f":"rgba(120,96,60,0.4)";
+    g.lineWidth=cur?1.4:0.7;g.strokeRect(xp,17,cw,h-17-10);
+    const bits=hash32(ls.seed,i,7717)&0xFFF;
+    g.fillStyle="#33302a";
+    for(let b=0;b<12;b++){
+      if(bits>>b&1){g.beginPath();g.arc(xp+4+((b/3)|0)*3.2,21+(b%3)*6,1.2,0,Math.PI*2);g.fill();}
+    }
+  }
+}
+function drawHeddles(frac){
+  const g=hedC.c,w=hedC.w,h=hedC.h;
+  g.clearRect(0,0,w,h);
+  const x0=14,x1=w-14,pitch=(x1-x0)/(NH-1);
+  const beam=26,fell=h-24;
+  g.strokeStyle="rgba(51,48,42,0.7)";g.lineWidth=1;
+  for(let i=0;i<NH;i++){
+    const x=x0+pitch*i;
+    const lift=3.5*Math.sin(((ls.pick+frac)*2+i*0.45)%6.28);
+    g.beginPath();g.moveTo(x,beam);g.lineTo(x-8,fell+lift);g.stroke();
+    g.beginPath();g.moveTo(x,beam);g.lineTo(x+8,fell+lift);g.stroke();
+  }
+  /* shuttle */
+  const sx=x0+((ls.pick+frac)%1)*(x1-x0);
+  g.fillStyle="#33302a";
+  g.beginPath();g.ellipse(sx,fell-4,7,2.6,0,0,Math.PI*2);g.fill();
+  /* tangles */
+  for(const t of ls.tangles){
+    const x=x0+pitch*t.heddle;
+    const danger=t.w>=3;
+    g.strokeStyle=danger?"#b1392f":"#33302a";
+    g.lineWidth=1.4+0.45*t.w;
+    const R=3+t.w*2.4;
+    for(let k=0;k<t.w;k++){
+      g.beginPath();
+      g.ellipse(x,fell-12,R*0.6+k*1.5,R*0.45,0.5,0,Math.PI*2);
+      g.stroke();
+    }
+    if(danger){
+      g.font="9px 'IBM Plex Mono',Menlo,monospace";g.fillStyle="#b1392f";
+      g.textAlign="center";g.fillText("w"+t.w,x,fell-20);g.textAlign="left";
+    }
+  }
+  g.font="8.5px 'IBM Plex Mono',Menlo,monospace";g.fillStyle="#6b6151";
+  g.fillText("BEAM",4,beam-6);g.fillText("FELL (cloth tears live here)",4,fell+14);
+}
+function drawCloth(){
+  const g=clC.c,w=clC.w,h=clC.h;
+  g.clearRect(0,0,w,h);
+  g.fillStyle="#ece0c4";g.fillRect(0,0,w,h);
+  const rowH=10.5,cw=(w-24)/NH,x0=12;
+  const maxRows=Math.floor((h-16)/rowH);
+  const rows=ls.cloth.slice(-maxRows);
+  /* fell */
+  g.strokeStyle="rgba(51,48,42,0.7)";g.lineWidth=1.4;
+  g.beginPath();g.moveTo(6,6);g.lineTo(w-6,6);g.stroke();
+  rows.forEach((row,i)=>{
+    const y=9+rowH*i;
+    let col=row.color,shadeF=1;
+    if(row.kind==="slack"){shadeF=0.55;}
+    else if(row.kind==="slub"){shadeF=0.35;}
+    else if(row.kind==="pale"){shadeF=0.85;}
+    if(row.faded)shadeF*=0.62;
+    for(let columnIndex=0;columnIndex<NH;columnIndex++){
+      const x=x0+columnIndex*cw;
+      const bit=row.bits>>columnIndex&1;
+      const dead=ls.deadCols.some(dc=>dc.col===columnIndex&&dc.from<=row.p);
+      if(dead){
+        g.fillStyle="#ece0c4";
+        g.fillRect(x+0.6,y,cw-1.2,rowH-1.2);
+        continue;
+      }
+      g.fillStyle=bit?shade(col,shadeF):"rgba(205,182,143,0.55)";
+      g.fillRect(x+0.8,y+0.4,cw-1.8,rowH-1.4);
+      if(bit&&row.kind==="slub"){
+        g.fillStyle="rgba(51,48,42,0.4)";
+        g.fillRect(x+3+((hash32(row.p,columnIndex)%Math.max(1,cw-9))|0),y+2,3,rowH-4);
+      }
+    }
+    if(row.kind==="tear"){
+      g.fillStyle="#b1392f";
+      g.fillRect(x0+row.tearCol*cw+2,y,2,rowH-1.6);
+    }
+    if(row.kind==="slack"){
+      g.strokeStyle="rgba(51,48,42,0.55)";g.lineWidth=1;
+      g.beginPath();g.moveTo(x0+2,y+rowH/2);g.lineTo(w-x0+2,y+rowH/2);g.stroke();
+    }
+  });
+}
+function drawLedger(){
+  const g=ledC.c,w=ledC.w,h=ledC.h;
+  g.clearRect(0,0,w,h);
+  g.fillStyle="#fbf5e6";g.fillRect(0,0,w,h);
+  const stride=Math.max(1,Math.ceil(ls.cloth.length/(h-6)));
+  const rowH=(h-10)/Math.max(1,ls.cloth.length/stride);
+  const cw=(w-16)/NH,x0=8;
+  for(let i=0;i<ls.cloth.length;i+=stride){
+    const row=ls.cloth[i];
+    const y=h-4-((i/stride)*rowH);
+    if(y<10)break;
+    for(let c=0;c<NH;c++){
+      const dead=ls.deadCols.some(dc=>dc.col===c&&dc.from<=row.p);
+      if(dead)continue;
+      const bit=row.bits>>c&1;
+      let f=1;
+      if(row.kind==="slack")f=0.5;else if(row.kind==="slub")f=0.3;else if(row.kind==="pale")f=0.85;
+      if(row.faded)f*=0.62;
+      g.fillStyle=bit?shade(row.color,f):"rgba(205,182,143,0.5)";
+      g.fillRect(x0+c*cw,y,cw*Math.min(stride,2),Math.max(1,rowH-0.4));
+    }
+  }
+  g.strokeStyle="rgba(51,48,42,0.5)";g.lineWidth=1;
+  g.beginPath();g.moveTo(4,8);g.lineTo(w-4,8);g.stroke();
+}
+/* --- SVG specimen export: a standalone print-ready Meiji textile sample
+   sheet with kentō registration marks, hanko seal, seed hash and every
+   woven pick reproduced 1:1 from the cloth ledger. --- */
+function buildSpecimenSVG(){
+  const rows=ls.cloth;
+  const cw=38,rh=11,mX=54,mY=176;
+  const clothW=NH*cw,clothH=rows.length*rh;
+  const SWm=880,SHm=Math.max(640,mY+clothH+120);
+  const seedHex="0x"+(ls.seed>>>0).toString(16).toUpperCase();
+  const parenHex="0x"+(ls.parentHash>>>0).toString(16).toUpperCase();
+  let s="";
+  s+='<?xml version="1.0" encoding="UTF-8"?>\n';
+  s+='<svg xmlns="http://www.w3.org/2000/svg" width="'+SWm+'" height="'+SHm+'" viewBox="0 0 '+SWm+" "+SHm+'" font-family="Hiragino Mincho ProN,Yu Mincho,Georgia,serif">\n';
+  s+='<rect x="0" y="0" width="'+SWm+'" height="'+SHm+'" fill="#f7f0e0"/>\n';
+  s+='<rect x="14" y="14" width="'+(SWm-28)+'" height="'+(SHm-28)+'" fill="none" stroke="#33302a" stroke-width="2"/>\n';
+  /* kentō registration marks — the corner Ls that hold the print true */
+  for(const[cxm,cym,dxm,dym]of[[30,30,1,1],[SWm-30,30,-1,1],[30,SHm-30,1,-1],[SWm-30,SHm-30,-1,-1]]){
+    s+='<path d="M '+(cxm-14*dxm)+' '+cym+' H '+cxm+' V '+(cym-14*dym)+'" fill="none" stroke="#33302a" stroke-width="1.8"/>\n';
+  }
+  /* title band */
+  s+='<text x="52" y="72" font-size="26" letter-spacing="6" fill="#33302a">織見本 · WOVEN SPECIMEN — LOOMWEIGHT</text>\n';
+  s+='<text x="52" y="94" font-size="11" letter-spacing="2" fill="#6b6151" font-family="Menlo,monospace">MEIJI TEXTILE SAMPLE SHEET · EVERY WOVEN PICK REPRODUCED 1 : 1 · NO BACKEND, NO NETWORK</text>\n';
+  s+='<text x="52" y="120" font-size="13" font-family="Menlo,monospace" fill="#33302a">SEED '+seedHex+'</text>\n';
+  s+='<text x="52" y="140" font-size="12" font-family="Menlo,monospace" fill="#6b6151">GEN '+ls.gen+(ls.gen>1?' · PARENT CLOTH <tspan fill="#b1392f">'+parenHex+'</tspan> · FAULT SALT 0x'+ls.genSalt.toString(16).toUpperCase():' · FIRST WARP')+'</text>\n';
+  s+='<text x="52" y="158" font-size="12" font-family="Menlo,monospace" fill="#6b6151">PICKS '+rows.length+' · TEARS '+ls.tears+'/3 · SPLICES '+ls.splices+'</text>\n';
+  /* hanko: vermilion seal */
+  s+='<g transform="rotate(-3 '+""+(SWm-96)+' 96)"><rect x="'+(SWm-126)+'" y="60" width="60" height="76" rx="6" fill="#b1392f"/><text x="'+(SWm-96)+'" y="118" font-size="46" fill="#fbf5e6" text-anchor="middle">織</text></g>\n';
+  /* the cloth plate */
+  s+='<rect x="'+(mX-8)+'" y="'+(mY-8)+'" width="'+(clothW+16)+'" height="'+(clothH+16)+'" fill="#fbf5e6" stroke="#a3977a"/>\n';
+  for(let i=0;i<rows.length;i++){
+    const row=rows[i],y=mY+i*rh;
+    let f=1;
+    if(row.kind==="slack")f=0.55;else if(row.kind==="slub")f=0.35;else if(row.kind==="pale")f=0.85;
+    if(row.faded)f*=0.62;
+    const fill=shade(row.color,f);
+    for(let c=0;c<NH;c++){
+      let dead=false;
+      for(const dc of ls.deadCols)if(dc.col===c&&dc.from<=row.p){dead=true;break;}
+      if(dead)continue;
+      if(row.bits>>c&1){
+        s+='<rect x="'+(mX+c*cw+1.2)+'" y="'+(y+0.7)+'" width="'+(cw-2.4)+'" height="'+(rh-1.4)+'" fill="'+fill+'"/>\n';
+      }
+    }
+    if(row.kind==="tear"){
+      s+='<rect x="'+(mX+row.tearCol*cw+14)+'" y="'+y+'" width="3.4" height="'+(rh-1)+'" fill="#b1392f"/>\n';
+    }
+    if(row.kind==="slack"){
+      s+='<path d="M '+mX+' '+(y+rh/2)+' H '+(mX+clothW)+'" stroke="rgba(51,48,42,0.5)" stroke-width="1.2" fill="none"/>\n';
+    }
+  }
+  const footY=mY+clothH+52;
+  s+='<path d="M 52 '+footY+' H '+(SWm-52)+'" stroke="#33302a" stroke-width="1.4"/>\n';
+  s+='<text x="52" y="'+(footY+24)+'" font-size="11" fill="#6b6151" font-family="Menlo,monospace">KENTŌ KENTŌ · LEGEND — dark weft rows: slack picks · pale rows: forced splices · vermilion column: tear · selvedge gaps: dead warp columns</text>\n';
+  s+='<text x="52" y="'+(footY+42)+'" font-size="11" fill="#33302a" font-family="Menlo,monospace">RE-WEAVING THIS SHEET: strike ledger '+rows.length+' picks, dye ledger '+ls.splices+' splices — the cloth is the score, and its selvedge is the seed.</text>\n';
+  s+='</svg>\n';
+  return s;
+}
+
+function renderLedgerText(){
+  const holder=$("blendLedger");
+  let head="";
+  if(ls.gen>1){
+    head="GEN "+ls.gen+" · mounted from cloth 0x"+ls.parentHash.toString(16).toUpperCase()+
+      " · fault salt 0x"+ls.genSalt.toString(16).toUpperCase()+" · spawn "+ls.spawnThresh+"‰"+(ls.scarHeddles.length?" · scars @H "+ls.scarHeddles.join("/"):"")+"<br><br>";
+  }
+  if(!ls.ledger.length){holder.innerHTML=head+"<i>no blends yet — the tray holds its original inks</i>";return;}
+  holder.innerHTML=head+ls.ledger.map((e,i)=>
+    "Nº"+(i+1)+" · <span class='swatch' style='background:"+e.to+"'></span>"+
+    e.from+" → BLEND <i>· "+e.note+"</i>").reverse().join("<br>");
+}
+
+function exportSpecimen(){
+  const svg=buildSpecimenSVG();
+  const blob=new Blob([svg],{type:"image/svg+xml"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="loomweight-specimen-0x"+(ls.seed>>>0).toString(16)+"-gen"+ls.gen+".svg";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1200);
+  $("lwGrade").textContent="SPECIMEN EXPORTED · "+ls.pick+" PICKS · GEN "+ls.gen;
+}
+
+/* --- main loop --- */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.1,(now-last)/1000);last=now;
+  if(ls.running&&!ls.halt){
+    ls.acc+=dt;ls.lastTickPhase=(now%Math.round(PICK*1000))/Math.round(PICK*1000);
+    let guard=0;
+    while(ls.acc>=PICK&&guard++<8){ls.acc-=PICK;tick();}
+  }
+  const frac=ls.running&&ls.halt?0:(ls.acc/PICK);
+  drawDial(frac);drawCards();drawHeddles(frac);drawCloth();drawLedger();
+  hudTick(now);
+  requestAnimationFrame(frame);
+}
+let hudLast=0;
+function hudTick(now){
+  if(now-hudLast<200)return;hudLast=now;
+  const live=ls.tangles.map(t=>t.heddle).join(",")||"—";
+  $("lwMeta").textContent="PICK "+String(ls.pick).padStart(4,"0")+" · T"+(ls.pick%3)+"/3 · C"+(ls.pick%4)+"/4 · GEN "+ls.gen+" · TEARS "+ls.tears+"/3 · TANGLES@H "+live;
+}
+
+/* --- wiring --- */
+$("strikeBtn").addEventListener("pointerdown",e=>{e.preventDefault();strike();});
+window.addEventListener("keydown",e=>{
+  if(e.code==="Space"&&!e.repeat){
+    e.preventDefault();
+    strike();
+  }
+});
+$("holdBtn").addEventListener("click",function(){
+  const resuming=!ls.running;
+  ls.running=!ls.running;
+  if(resuming)ls.acc=0;
+  this.textContent=ls.running?"HOLD":"RESUME";
+  this.classList.toggle("lit",!ls.running);
+});
+$("lwNewBtn").addEventListener("click",()=>newSample());
+$("lwEndcard").addEventListener("dblclick",()=>newSample());
+$("lwMountNowBtn").addEventListener("click",()=>mountCloth());
+$("lwMountEndBtn").addEventListener("click",()=>mountCloth());
+$("lwExportBtn").addEventListener("click",()=>exportSpecimen());
+initViews();newSample();requestAnimationFrame(frame);
+/* ---- headless harness hook (loom FSM + cloth-as-schedule, §2.5/§2.6) ---- */
+window.__LW_TEST__={ls,newSample,tick,strike,shedOpen,deriveFaultSchedule,
+  snapshotCloth,mountCloth,buildSpecimenSVG,NH,SUPER,PICK};
+})();
+/* ---- deep-link routing: #driftwatch and #loomweight are first-class
+   routes so the Root Explorer can open either instrument directly. ---- */
+if(typeof location!=="undefined"){
+  window.addEventListener("hashchange",function routeHash(){
+    const h=(location.hash||"").replace(/^#/,"").toLowerCase();
+    if(h!=="driftwatch"&&h!=="loomweight")return;
+    const el=document.getElementById(h);
+    if(!el)return;
+    try{el.setAttribute("tabindex","-1");}catch(e){}
+    try{el.scrollIntoView({block:"start"});}catch(e){try{el.scrollIntoView();}catch(e2){}}
+    try{el.focus();}catch(e){}
+    document.title="Submissive Systems — "+(h==="driftwatch"?"Driftwatch":"Loomweight");
+  });
+}
+
+</script>
+</body>
+</html>
