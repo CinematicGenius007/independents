@@ -1,0 +1,5 @@
+flowchart LR
+  S["Scene: sky, desert, water, shoal, creatures, spores, ribbons"] -->|"MSAA half float"| RP["RenderPass"]
+  RP -->|"HDR colour"| BL["UnrealBloom"]
+  BL -->|"glow added"| GR["Grade: cel bands, grain, flash"]
+  GR -->|"linear colour"| OP["OutputPass: ACES + sRGB"]
