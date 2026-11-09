@@ -1,0 +1,7 @@
+flowchart TD
+  A[Player proposes a covenant] -->|every named party accepts| B[Covenant becomes active]
+  B -->|move generator checks each square| C{Does this move break the promise?}
+  C -->|yes| D[Square is hatched and cannot be chosen]
+  C -->|no| E[Move is legal]
+  B -->|1 to 3 of the promiser's turns pass| X[Covenant expires]
+  F[Third player pays 1 point buy-in] -->|joins an existing treaty| B

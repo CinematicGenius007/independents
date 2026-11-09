@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant G as Guest browser
+  participant R as Matchmaker relay
+  participant H as Host browser
+  G->>R: hello, I want room 42
+  R->>H: introduces guest, passes connection offers
+  H->>G: direct peer to peer channel opens
+  G->>H: act, my intended move
+  H->>G: event, the official ordered result
+  G->>H: resync, I missed event 7
+  H->>G: snapshot of the state

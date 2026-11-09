@@ -1,0 +1,12 @@
+flowchart TD
+  A[Both players seal a move and a bid] -->|reveal together| B{Bids equal?}
+  B -->|no| C[Higher bid goes first]
+  B -->|yes| D[Coin from both players' secrets]
+  D -->|coin decides| C
+  C -->|first mover pays its bid| E[Execute first move]
+  E -->|check board again| F{Is the second move still legal?}
+  F -->|yes| G[Execute second move]
+  F -->|no| H[Second move fizzles into a pass]
+  G -->|king captured| I[Game over]
+  G -->|otherwise| J[Income plus 1, next turn]
+  H -->|next turn| J

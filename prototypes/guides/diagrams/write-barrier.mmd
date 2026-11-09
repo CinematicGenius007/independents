@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant G as Collector
+  participant P as Program
+  participant B as Black block
+  participant W as White block
+  G->>B: scans it, black now, W was not yet reachable
+  P->>B: rewires pointer so B points to W
+  P->>P: drops the old path to W
+  Note over B,W: black points to white, collector never looks at B again
+  G->>W: sweep would free W while B still uses it
+  G-->>B: write barrier shades W grey, or shade B grey to rescan

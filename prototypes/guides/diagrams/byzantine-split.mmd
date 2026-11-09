@@ -1,0 +1,6 @@
+flowchart TD
+  T[Traitor general] -->|tells Attack| L1[Loyal general 1]
+  T -->|tells Retreat| L2[Loyal general 2]
+  L1 -->|relays I heard Attack| L2
+  L2 -->|relays I heard Retreat| L1
+  L1 -->|sees one Attack and one Retreat: cannot tell who lies| Q[Stuck]

@@ -1,0 +1,7 @@
+flowchart TD
+  S0[Start state: all tapes at step 0] -->|scheduler tick| S1[State after one tick]
+  S0 -->|hold cart 1, cost 1| S2[Cart 1 delayed]
+  S0 -->|loan to holder, cost 1| S3[Holder boosted]
+  S1 -->|tick| D[Deadlock, branch dies]
+  S2 -->|tick| W[All carts finish: WIN]
+  S3 -->|tick| M[Missed connection, branch dies]

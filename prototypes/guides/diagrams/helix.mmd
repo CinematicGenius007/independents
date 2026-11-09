@@ -1,0 +1,5 @@
+flowchart TB
+  flow["flow: how far the spiral has risen"] -->|"add each plate's station number q"| s["s = (q + flow) mod LOOP"]
+  s -->|"seven stations per full turn"| phi["angle phi = (s - LOOP/2) x 2pi/7"]
+  phi -->|"sin and cos place it round the axis"| pos["position x, y, z on the helix"]
+  s -->|"fade near the loop seam"| fade["scale and dim to zero, so nothing pops"]

@@ -1,0 +1,10 @@
+sequenceDiagram
+  participant V as Visitor
+  participant R as Root Explorer
+  participant P as Project page
+  V->>R: clicks a plate
+  R->>V: shows a preview, not the real game
+  V->>R: presses OPEN
+  R->>P: navigates to page.html with #35;from=root&v=1 on the end
+  P->>P: reads the fragment, ignores what it cannot use
+  Note over R,P: the fragment after the hash mark is never sent to any server

@@ -1,0 +1,10 @@
+flowchart TD
+  P[Poet traces a word through touching letters] -->|new cells turn to ink, points scored| S1[Sweep: ink with one breath or fewer dies]
+  S1 -->|Censor's turn| C{Censor picks two actions}
+  C -->|bar a letter with a stone| ST[Stone shrinks neighbouring ink's breathing room]
+  C -->|turn a 2x2 block, once then jammed| R[Rotation re-joins or tears cells]
+  ST -->|sweep| S2[Starved ink quarantined]
+  R -->|shear: ink cut off from main vine dies| S2
+  S2 -->|next round| P
+  S2 -->|60 points or left to right path| PW[Poet wins]
+  S2 -->|round 7 ends or Poet silenced| CW[Censor wins]

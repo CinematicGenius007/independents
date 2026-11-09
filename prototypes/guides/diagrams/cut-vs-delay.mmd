@@ -1,0 +1,5 @@
+flowchart TD
+  M[A message on a link] -->|Cut| X[Never arrives: recipient hears nothing and cannot relay]
+  M -->|Delay in round 1| L[Arrives one round late: recipient counts it but cannot relay it]
+  M -->|Delay in round 2| D[Arrives after the decision: dropped]
+  M -->|Open| O[Arrives on time: counted and relayed]
