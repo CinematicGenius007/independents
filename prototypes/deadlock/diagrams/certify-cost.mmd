@@ -1,0 +1,7 @@
+flowchart LR
+  S[Seed and rung] -->|build candidate| L[Level]
+  L -->|0-1 BFS with dominance pruning| C{Winning plan?}
+  C -->|no| X[Reject and resample]
+  C -->|yes| R{Shipping rules}
+  R -->|par 1 to budget, window 2 or more, default run fails, not hold everyone| OK[Ship]
+  R -->|any rule fails| X
