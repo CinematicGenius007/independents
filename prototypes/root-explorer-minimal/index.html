@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:,">
 <title>independents — scattered works (minimal sleeve)</title>
-<meta name="description" content="Root Explorer prototype, minimal variation: a charcoal vinyl liner-notes sleeve with a flat chalk world in 3D perspective. Nineteen upright monoline landmarks, one tracklist, and a live micro-board that pops up beside each one.">
+<meta name="description" content="Root Explorer prototype, minimal variation: a charcoal vinyl liner-notes sleeve with a flat chalk world in 3D perspective. Nineteen upright monoline landmarks, one tracklist, and a high-detail project-authentic app frame that pops up beside each one — Side A live, Side B roadmap.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
@@ -18,32 +18,52 @@
 <style>
 :root{
   --card:#151516; --chalk:#EAE8E3; --mute:#8E8D8A; --accent:#EE6A3C;
-  --hair:rgba(234,232,227,.42); --hair2:rgba(234,232,227,.2);
+  --hair:rgba(234,232,227,.42); --hair2:rgba(234,232,227,.15);
   --mono:'IBM Plex Mono','Space Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --pad:clamp(18px,3vw,56px);
+  --pad:clamp(22px,3.6vw,64px);
+  --gap:clamp(26px,3.8vw,64px);
 }
 *{box-sizing:border-box}
 /* the whole viewport is the card: no wall, no frame, no shadow */
 html,body{margin:0;padding:0;width:100%;min-height:100vh;background:var(--card)}
-body{color:var(--chalk);font:400 13px/1.55 var(--mono);letter-spacing:.04em;text-transform:uppercase;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{color:var(--chalk);font:400 12.5px/1.6 var(--mono);letter-spacing:.04em;text-transform:uppercase;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 button{font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 :focus-visible{outline:1px solid var(--accent);outline-offset:3px}
 
 /* ---- the sleeve: 100% full-bleed matte charcoal cardstock ------------------- */
-.sleeve{position:relative;z-index:1;display:block;width:100%;min-height:100vh;margin:0;
-  padding:clamp(22px,2.6vw,40px) var(--pad) clamp(24px,2.8vw,44px);background:var(--card)}
-.sleeve::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.9;background-size:512px 512px,300px 300px;background-image:var(--grain,none),
+.sleeve{position:relative;z-index:1;display:grid;width:100%;min-height:100vh;margin:0;
+  grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr);
+  grid-template-areas:
+    "title  bar"
+    "lede   lede"
+    "ensemble ensemble"
+    "left   right"
+    "footer footer";
+  column-gap:var(--gap);row-gap:clamp(20px,2.8vw,40px);align-items:start;
+  padding:clamp(24px,3vw,46px) var(--pad) clamp(26px,3vw,48px);background:var(--card)}
+.sleeve::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.8;background-size:512px 512px,300px 300px;background-image:var(--grain,none),
   url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='g' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='2' seed='11'/><feColorMatrix values='0 0 0 0 .92  0 0 0 0 .91  0 0 0 0 .88  0 0 0 .5 -.14'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>")}
 /* a quiet vignette pinned to the viewport, so the card reads as one lit sheet at any scroll */
 .sleeve::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(ellipse 88% 78% at 50% 46%,rgba(0,0,0,0) 48%,rgba(0,0,0,.4) 100%),radial-gradient(ellipse 60% 40% at 16% 10%,rgba(234,232,227,.045),transparent 70%),radial-gradient(ellipse 50% 36% at 86% 90%,rgba(234,232,227,.04),transparent 70%)}
 .sleeve>*{position:relative;z-index:1}
-h1{margin:0;font-weight:500;font-size:13px;letter-spacing:.78em;word-spacing:1.25em;line-height:1.7}
-.stage{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(440px,1fr);gap:clamp(24px,3.2vw,56px);margin-top:clamp(20px,2.6vw,34px);align-items:start}
 
-/* ---- ensemble credits (the top block of the liner notes) -------------------- */
-.ensemble{display:grid;grid-template-columns:1fr 1fr;gap:3px clamp(24px,5vw,84px);margin-top:clamp(10px,1.4vw,18px);max-width:1180px}
+/* ---- masthead: the wordmark, and the layout switcher on the far right ------- */
+h1{grid-area:title;margin:0;font-weight:500;font-size:13px;letter-spacing:.78em;word-spacing:1.25em;line-height:1.7}
+#layoutBar{grid-area:bar;justify-self:end;display:flex;align-items:center;gap:4px;font-size:9px;letter-spacing:.18em;color:var(--mute);white-space:nowrap}
+#layoutBar .lb-lab{color:var(--mute);opacity:.65;margin-right:6px;font-size:8px}
+#layoutBar .lb{padding:7px 10px 6px;border:1px solid transparent;color:var(--mute);transition:color .2s,border-color .2s,background .2s}
+#layoutBar .lb:hover,#layoutBar .lb:focus-visible{color:var(--chalk);border-color:var(--hair2);outline:none}
+#layoutBar .lb.on{color:var(--chalk);border-color:var(--hair);background:rgba(234,232,227,.035)}
+#layoutBar .lb.on::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--accent);margin-right:7px;vertical-align:1px}
+
+/* ---- a single editorial statement, then the ensemble credits ---------------- */
+.lede{grid-area:lede;margin:clamp(2px,.6vw,8px) 0 0;max-width:62ch;padding-left:clamp(14px,2vw,26px);border-left:1px solid var(--hair2);
+  font-size:clamp(13px,1.35vw,17px);line-height:1.7;letter-spacing:.01em;text-transform:none;color:var(--mute)}
+.lede b{font-weight:500;color:var(--chalk)}
+
+.ensemble{grid-area:ensemble;display:grid;grid-template-columns:1fr 1fr;gap:3px clamp(24px,5vw,84px);margin-top:0;max-width:1180px;padding-top:clamp(10px,1.4vw,18px);border-top:1px solid var(--hair2)}
 .ensemble .col{display:flex;flex-direction:column;gap:3px}
 .cr{display:flex;align-items:baseline;gap:10px;padding:1px 0;min-height:1.55em}
 .cr b{font-weight:600;white-space:nowrap}
@@ -53,32 +73,36 @@ h1{margin:0;font-weight:500;font-size:13px;letter-spacing:.78em;word-spacing:1.2
 .cr.guest{margin-top:1.1em}.cr.guest b{font-weight:600;text-transform:none;letter-spacing:.05em}
 .ensemble .cr.guest span{color:var(--chalk)}
 
+/* ---- the two editorial columns ---------------------------------------------- */
+.colL,.colR{display:flex;flex-direction:column;gap:clamp(26px,3.4vw,52px);min-width:0}
+.colL{grid-area:left}.colR{grid-area:right}
+
 /* ---- the world ------------------------------------------------------------- */
-#world{margin:0;position:relative}
-#frame{position:relative;height:clamp(540px,calc(100vh - 250px),1000px);width:100%;touch-action:none}
+#world{grid-area:world;margin:0;position:relative;min-width:0}
+#frame{position:relative;height:clamp(470px,calc(100vh - 350px),700px);width:100%;touch-action:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none;cursor:crosshair;
-  -webkit-mask-image:radial-gradient(ellipse 82% 80% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 82% 80% at 50% 50%,#000 62%,transparent 100%)}
+  -webkit-mask-image:radial-gradient(ellipse 84% 82% at 50% 50%,#000 66%,transparent 100%);mask-image:radial-gradient(ellipse 84% 82% at 50% 50%,#000 66%,transparent 100%)}
 .reg{position:absolute;width:15px;height:15px;pointer-events:none;border:0 solid var(--hair)}
 .reg.tl{left:0;top:0;border-width:1px 0 0 1px}.reg.tr{right:0;top:0;border-width:1px 1px 0 0}
 .reg.bl{left:0;bottom:0;border-width:0 0 1px 1px}.reg.br{right:0;bottom:0;border-width:0 1px 1px 0}
 #tags{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.tag{position:absolute;left:0;top:0;white-space:nowrap;font-size:10px;letter-spacing:.14em;color:var(--mute);opacity:0;will-change:transform,opacity;transform:translate3d(-999px,0,0)}
+.tag{position:absolute;left:0;top:0;white-space:nowrap;font-size:9.5px;letter-spacing:.14em;color:var(--mute);opacity:0;will-change:transform,opacity;transform:translate3d(-999px,0,0)}
 .tag b{font-weight:600;color:var(--chalk)}
 .mapmode .tag:not(.on):not(.lm) span{display:none}.tag.lm b,.tag.lm{color:var(--chalk)}
 .tag.on{color:var(--accent)}.tag.on b{color:var(--accent)}
 .tag.bd{color:var(--accent);letter-spacing:.2em}
-.tag.brg{color:var(--accent);letter-spacing:.16em;font-size:9.5px}
-#where{position:absolute;left:22px;top:20px;font-size:10px;letter-spacing:.2em;color:var(--mute);pointer-events:none}
+.tag.brg{color:var(--accent);letter-spacing:.16em;font-size:9px}
+#where{position:absolute;left:22px;top:20px;font-size:9.5px;letter-spacing:.2em;color:var(--mute);pointer-events:none}
 #where b{color:var(--chalk);font-weight:600}
-#toast{position:absolute;left:22px;top:38px;font-size:10px;letter-spacing:.2em;color:var(--accent);opacity:0;transition:opacity .35s;pointer-events:none}
+#toast{position:absolute;left:22px;top:38px;font-size:9.5px;letter-spacing:.2em;color:var(--accent);opacity:0;transition:opacity .35s;pointer-events:none}
 #toast.show{opacity:1}
-#hint{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin-top:14px;min-height:4.6em}
-#hintText{font-size:10px;line-height:1.55;letter-spacing:.1em;color:var(--mute);max-width:70ch;text-transform:none}
-.play{white-space:nowrap;font-size:11px;font-weight:600;letter-spacing:.2em;padding:7px 11px 6px;border:1px solid var(--hair);transition:border-color .2s,color .2s,background .2s,opacity .2s}
+#hint{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-top:12px;min-height:4.4em;padding-top:12px;border-top:1px solid var(--hair2)}
+#hintText{font-size:9.5px;line-height:1.6;letter-spacing:.1em;color:var(--mute);max-width:64ch;text-transform:none}
+.play{white-space:nowrap;font-size:10px;font-weight:600;letter-spacing:.2em;padding:9px 12px 8px;border:1px solid var(--hair);transition:border-color .2s,color .2s,background .2s,opacity .2s}
 .play:hover:not(:disabled),.play:focus-visible{border-color:var(--accent);color:var(--accent)}
 .play:disabled{opacity:.28;cursor:default}
 .play.go{border-color:var(--chalk)}
-figcaption{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between;font-size:10px;letter-spacing:.16em;color:var(--mute)}
+figcaption{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between;font-size:9.5px;letter-spacing:.16em;color:var(--mute)}
 .keys{display:flex;flex-wrap:wrap;gap:6px 14px}
 .keys button{color:var(--mute);border-bottom:1px solid var(--hair2);padding-bottom:1px;transition:color .2s,border-color .2s}
 .keys button:hover,.keys button.on{color:var(--chalk);border-color:var(--accent)}
@@ -86,67 +110,212 @@ figcaption{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:
 #nogl{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--mute);font-size:11px;letter-spacing:.14em}
 body.nogl #nogl{display:flex}body.nogl #gl,body.nogl #tags{display:none}
 
-/* ---- tracklist: number, title, formal sub-caption, hairline leader, par/metric, mechanism tag ---- */
-.side{margin:0 0 6px;font-weight:400;font-size:11px;letter-spacing:.5em;color:var(--mute)}
-ol.tracks{list-style:none;margin:0 0 20px;padding:0}
-.trk{display:grid;grid-template-columns:3.1ch auto minmax(14px,1fr) auto;align-items:baseline;column-gap:0;padding:3px 6px 3px;margin:0 -6px;border-left:1px solid transparent;transition:background .2s,border-color .2s}
+/* ---- true-project inner app window ----------------------------------------- */
+.appPanel{grid-area:app;position:relative;display:flex;flex-direction:column;gap:12px;min-width:0;
+  padding:clamp(12px,1.5vw,18px);border:1px solid var(--hair2);
+  background:linear-gradient(180deg,rgba(234,232,227,.04),rgba(234,232,227,.012))}
+.appPanel::before{content:"";position:absolute;inset:5px;pointer-events:none;border:1px solid rgba(234,232,227,.04)}
+.tw-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:8.5px;letter-spacing:.22em;color:var(--mute)}
+.tw-head .tw-live{color:var(--accent)}
+.tw-chrome{position:relative;z-index:1;min-width:0}
+.tw-chrome .tf-chrome{width:100%;border-radius:0}
+.tw-screen{position:relative;aspect-ratio:4/3;overflow:hidden;border:1px solid var(--hair2);background:#080809;min-height:220px}
+.tw-screen canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.tw-screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);opacity:.22;mix-blend-mode:multiply}
+.tw-controls{display:flex;flex-wrap:wrap;gap:5px;min-height:34px}
+.tw-controls button{min-height:34px;padding:7px 10px 6px;border:1px solid var(--hair2);color:var(--mute);font-size:8.5px;letter-spacing:.14em;transition:color .2s,border-color .2s,background .2s}
+.tw-controls button:hover,.tw-controls button:focus-visible{color:var(--accent);border-color:var(--accent);outline:none;background:rgba(238,106,60,.06)}
+.tw-meta{font-size:8.5px;line-height:1.6;letter-spacing:.14em;color:var(--mute);min-height:1.4em}
+.tw-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:11px;border-top:1px solid var(--hair2)}
+.tw-readout{display:flex;flex-wrap:wrap;gap:14px;font-size:8.5px;letter-spacing:.12em;color:var(--mute)}
+.tw-readout b{color:var(--chalk);font-weight:500}
+.tw-cta{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:8px 12px 7px;border:1px solid var(--chalk);
+  color:var(--chalk);font-size:9px;font-weight:600;letter-spacing:.18em;transition:color .2s,border-color .2s,background .2s}
+.tw-cta:hover,.tw-cta:focus-visible{border-color:var(--accent);color:var(--accent);background:rgba(238,106,60,.06);outline:none}
+.tw-cta.dead{opacity:.38;pointer-events:none}
+
+/* ---- tracklist: a clean segmented filter, then 19 hairline-leader rows ------ */
+.trackPanel{grid-area:tracks;min-width:0}
+.filterBar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-bottom:clamp(14px,2vw,22px);margin-bottom:clamp(8px,1.4vw,16px);border-bottom:1px solid var(--hair2)}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 11px 7px;border:1px solid var(--hair2);color:var(--mute);
+  font-size:9px;letter-spacing:.18em;white-space:nowrap;transition:color .2s,border-color .2s,background .2s}
+.pill::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.4;transition:opacity .2s,background .2s,box-shadow .2s}
+.pill:hover,.pill:focus-visible{color:var(--chalk);border-color:var(--hair);outline:none}
+.pill.on{color:var(--chalk);border-color:var(--chalk);background:rgba(234,232,227,.04)}
+.pill.on::before{background:var(--accent);opacity:1;box-shadow:0 0 0 3px rgba(238,106,60,.14)}
+.listWrap{min-height:0}
+.listWrap+.listWrap{margin-top:clamp(20px,2.6vw,32px);padding-top:clamp(14px,2vw,22px);border-top:1px solid var(--hair2)}
+body[data-filter="live"] .listWrap[data-side="roadmap"],
+body[data-filter="roadmap"] .listWrap[data-side="live"]{max-height:0;overflow:hidden;opacity:0;margin:0;padding:0;border:0;pointer-events:none}
+.side{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 clamp(8px,1.2vw,14px);font-weight:400;font-size:10px;letter-spacing:.5em;color:var(--mute)}
+.side span:last-child{letter-spacing:.18em;color:var(--chalk);opacity:.5}
+ol.tracks{list-style:none;margin:0;padding:0}
+.trk{display:grid;grid-template-columns:2.7ch auto minmax(18px,1fr) auto;align-items:baseline;column-gap:0;
+  padding:7px 8px 8px;margin:0 -8px;border-left:1px solid transparent;transition:background .2s,border-color .2s}
 .trk .n{grid-column:1;grid-row:1;color:var(--mute);transition:color .2s}
-.trk .t{grid-column:2;grid-row:1;font-weight:600;white-space:nowrap}
-.trk .lead{grid-column:3;grid-row:1;height:1px;margin:0 10px;background:var(--hair);transform:translateY(-.34em);transition:background .2s}
-.trk .d{grid-column:4;grid-row:1;white-space:nowrap;text-align:right}
+.trk .t{grid-column:2;grid-row:1;font-weight:600;white-space:nowrap;letter-spacing:.07em}
+.trk .lead{grid-column:3;grid-row:1;height:1px;margin:0 12px;background:var(--hair);transform:translateY(-.34em);transition:background .2s}
+.trk .d{grid-column:4;grid-row:1;white-space:nowrap;text-align:right;font-size:11px}
 .trk .d em{font-style:normal;color:var(--mute);margin-left:.7ch}
-.trk .sub{grid-column:2;grid-row:2;font-size:9.5px;letter-spacing:.16em;color:var(--mute);white-space:nowrap;line-height:1.35;opacity:.86}
-.trk .lead2{grid-column:3;grid-row:2;background:var(--hair2)}
-.trk .pm{grid-column:4;grid-row:2;font-size:9.5px;letter-spacing:.16em;color:var(--mute);white-space:nowrap;text-align:right;line-height:1.35}
+.trk .sub{grid-column:2;grid-row:2;font-size:8px;letter-spacing:.18em;color:var(--mute);white-space:nowrap;line-height:1.5;opacity:.62;padding-top:2px}
+.trk .lead2{grid-column:3;grid-row:2;background:var(--hair2);height:1px}
+.trk .pm{grid-column:4;grid-row:2;font-size:8px;letter-spacing:.16em;color:var(--mute);white-space:nowrap;text-align:right;line-height:1.5;opacity:.7;padding-top:2px}
 .trk .lead2{transform:translateY(-.22em)}
-.trk:hover,.trk:focus-visible{background:rgba(234,232,227,.05);outline:none}
+.trk:hover,.trk:focus-visible{background:rgba(234,232,227,.045);outline:none}
 .trk.hot .n,.trk.on .n{color:var(--chalk)}.trk.hot .lead:not(.lead2){background:var(--chalk)}
 .trk.on{border-left-color:var(--accent);background:rgba(238,106,60,.07)}
 .trk.on .n,.trk.on .t{color:var(--accent)}.trk.on .lead:not(.lead2){background:var(--accent)}
-.trk.on .sub,.trk.on .pm{color:var(--chalk)}
+.trk.on .sub,.trk.on .pm{color:var(--chalk);opacity:1}
 .trk.off .t{color:var(--mute)}
+.tl-foot{margin:clamp(16px,2vw,24px) 0 0;font-size:8px;letter-spacing:.22em;color:var(--mute);opacity:.7}
 
 /* ---- liner-note credits ---------------------------------------------------- */
-.lnh{margin-top:clamp(26px,3.4vw,46px)}
-.credits{display:grid;grid-template-columns:1fr 1fr;gap:6px clamp(24px,5vw,84px);margin-top:6px}
+.linerPanel{grid-area:liner;min-width:0}
+.lnh{margin-top:0}
+.credits{display:grid;grid-template-columns:1fr 1fr;gap:6px clamp(24px,4vw,64px);margin-top:10px}
 .credits .col{display:flex;flex-direction:column;gap:2px}
 .credits .play{margin-top:14px;align-self:flex-start}
+.linerPanel .credits{border-top:1px solid var(--hair2);padding-top:clamp(12px,1.8vw,20px)}
+/* the liner notes are a back-cover column, not a spreadsheet: label + rule, then the value below */
+#linerPanel .cr{display:grid;grid-template-columns:auto minmax(18px,1fr);gap:1px 10px;align-items:baseline;padding:3px 0}
+#linerPanel .cr b{grid-column:1;white-space:normal}
+#linerPanel .cr i{grid-column:2;flex:none;width:auto;height:1px;transform:translateY(-.3em)}
+#linerPanel .cr span{grid-column:1/-1;padding-top:1px;font-size:10.5px;line-height:1.55;color:var(--chalk);opacity:.78;overflow-wrap:anywhere}
+#linerPanel .cr.guest{margin-top:.9em;display:flex;gap:10px;align-items:baseline}
+#linerPanel .cr.guest b{white-space:nowrap}
 
 /* ---- footer ---------------------------------------------------------------- */
-footer{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:clamp(14px,3vw,40px);align-items:end;margin-top:clamp(30px,4.4vw,60px);font-size:10px;line-height:1.55;letter-spacing:.08em;color:var(--chalk)}
-footer .label{border:1px solid var(--chalk);padding:9px 12px 8px;min-width:190px}
+footer{grid-area:footer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:clamp(14px,3vw,40px);align-items:end;
+  margin-top:clamp(8px,1.6vw,24px);padding-top:clamp(18px,2.6vw,34px);border-top:1px solid var(--hair2);
+  font-size:9.5px;line-height:1.6;letter-spacing:.08em;color:var(--chalk)}
+footer .label{border:1px solid var(--chalk);padding:10px 13px 9px;min-width:190px}
 footer .label .lno{font-weight:600;font-size:17px;line-height:1.05;letter-spacing:.14em;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--hair)}
-footer .label small{display:block;font-size:8.5px;font-weight:500;letter-spacing:.24em;color:var(--mute);line-height:1.7}
+footer .label small{display:block;font-size:8px;font-weight:500;letter-spacing:.24em;color:var(--mute);line-height:1.8}
 footer .label small b{color:var(--chalk);font-weight:600}
 footer p{margin:0 0 7px;text-transform:none}
 footer .cat{color:var(--chalk)}
-#sigil{width:clamp(96px,10vw,150px);height:auto;display:block;cursor:pointer;overflow:visible;-webkit-tap-highlight-color:transparent}
+#sigil{width:clamp(92px,9vw,142px);height:auto;display:block;cursor:pointer;overflow:visible;-webkit-tap-highlight-color:transparent}
 #sigil *{fill:none;stroke:var(--chalk);stroke-width:1;vector-effect:non-scaling-stroke;stroke-linejoin:round}
 #sigil .tick.on{stroke:var(--accent)}
 #sigil .dot{fill:var(--accent);stroke:none}
 #sigil .faint{stroke:var(--hair)}
 
-@media (max-width:1180px){
-  .stage{grid-template-columns:minmax(0,1fr)}
-  #frame{height:clamp(440px,72vh,860px)}
+/* ---- editorial statement card, only on phones ------------------------------- */
+.mobileHead{display:none}
+
+/* ---- II · GATEFOLD: tracklist / app showcase / perspective world ------------ */
+body[data-layout="gatefold"] .sleeve{
+  grid-template-columns:minmax(0,.84fr) minmax(0,1.2fr) minmax(0,.96fr);
+  grid-template-areas:
+    "title  title bar"
+    "lede   lede  lede"
+    "tracks app   world"
+    "ensemble liner world"
+    "footer footer footer"}
+body[data-layout="gatefold"] .colL,body[data-layout="gatefold"] .colR{display:contents}
+body[data-layout="gatefold"] #trackPanel{grid-area:tracks;align-self:start}
+body[data-layout="gatefold"] #trueWindow{grid-area:app;align-self:start}
+body[data-layout="gatefold"] #trueWindow .tw-screen{flex:0 0 auto;aspect-ratio:4/3;min-height:0}
+body[data-layout="gatefold"] #world{grid-area:world;align-self:start}
+body[data-layout="gatefold"] #linerPanel{grid-area:liner;align-self:start}
+body[data-layout="gatefold"] #ensemble{grid-area:ensemble;grid-template-columns:1fr;align-self:start}
+body[data-layout="gatefold"] #ensemble .cr{display:grid;grid-template-columns:auto minmax(12px,1fr);gap:1px 8px;align-items:baseline;padding:3px 0}
+body[data-layout="gatefold"] #ensemble .cr b{grid-column:1;white-space:normal}
+body[data-layout="gatefold"] #ensemble .cr i{grid-column:2;flex:none;width:auto}
+body[data-layout="gatefold"] #ensemble .cr span{grid-column:1/-1;padding-top:1px}
+body[data-layout="gatefold"] #ensemble .cr.guest{display:flex;gap:8px;align-items:baseline}
+body[data-layout="gatefold"] #frame{height:clamp(440px,56vh,600px)}
+body[data-layout="gatefold"] .credits{grid-template-columns:1fr}
+
+/* ---- III · HORIZON: full-width panorama over a classic back cover ---------- */
+body[data-layout="horizon"] .sleeve{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  grid-template-areas:
+    "title  bar"
+    "lede   lede"
+    "ensemble ensemble"
+    "world  world"
+    "tracks liner"
+    "tracks footer"}
+body[data-layout="horizon"] .colL,body[data-layout="horizon"] .colR{display:contents}
+body[data-layout="horizon"] #world{grid-area:world}
+body[data-layout="horizon"] #trueWindow{grid-area:world;justify-self:end;align-self:start;z-index:5;width:min(540px,43%);margin-top:clamp(18px,3vw,40px);
+  background:linear-gradient(180deg,rgba(21,21,22,.96),rgba(21,21,22,.9));box-shadow:0 18px 46px rgba(0,0,0,.36)}
+body[data-layout="horizon"] #trackPanel{grid-area:tracks;align-self:start;padding-right:clamp(0px,2vw,28px)}
+body[data-layout="horizon"] #linerPanel{grid-area:liner;align-self:start;padding-left:clamp(0px,2vw,28px)}
+body[data-layout="horizon"] #frame{height:clamp(500px,66vh,760px)}
+body[data-layout="horizon"] footer{margin-top:clamp(16px,2.4vw,30px);padding-left:clamp(0px,2vw,28px)}
+
+/* ---- tablet: one editorial column, layout switcher retires ----------------- */
+@media (max-width:1100px){
+  #layoutBar{display:none}
+  .sleeve,body[data-layout="gatefold"] .sleeve,body[data-layout="horizon"] .sleeve{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"title" "lede" "ensemble" "left" "right" "footer"}
+  body[data-layout] .colL,body[data-layout] .colR{display:flex;flex-direction:column}
+  body[data-layout="gatefold"] #ensemble,body[data-layout="horizon"] #ensemble{grid-template-columns:1fr 1fr}
 }
-@media (max-width:980px){
-  #frame{height:auto;aspect-ratio:1/1}
-}
-@media (max-width:620px){
+
+/* ---- PHONE: a native instrument, not a squashed desktop --------------------- */
+@media (max-width:768px){
   body{font-size:12px}
-  h1{letter-spacing:.42em;word-spacing:.9em;font-size:11.5px}
-  .credits,.ensemble{grid-template-columns:1fr}
-  .trk .d em,.trk .pm,.trk .lead2{display:none}
-  footer{grid-template-columns:1fr auto}footer .fine{grid-column:1/-1;order:3}
-  #hint{flex-direction:column;align-items:flex-start;gap:10px;min-height:0}
+  body[data-layout] .sleeve{display:block;padding:18px 16px 30px}
+  h1{font-size:11.5px;letter-spacing:.4em;word-spacing:.7em;line-height:1.5}
+  .h1sub{display:none}
+  #layoutBar,.lede{display:none}
+  #ensemble{display:none}
+  .mobileHead{display:block;margin:14px 0 18px}
+  .mRow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .mRow+.mRow{margin-top:8px}
+  #mobileFilters .pill{font-size:8.5px;padding:9px 10px 8px}
+  .mv{padding:9px 12px 8px;border:1px solid var(--hair2);color:var(--mute);font-size:8.5px;letter-spacing:.2em;min-height:38px}
+  .mv.on{color:var(--chalk);border-color:var(--chalk);background:rgba(234,232,227,.04)}
+  body[data-layout] .colL,body[data-layout] .colR{display:flex;flex-direction:column;gap:18px}
+  body[data-layout] #world{order:1}
+  body[data-layout] #trueWindow{order:2;width:100%;margin:0}
+  body[data-layout] #trackPanel{order:3;padding:0}
+  body[data-layout] #linerPanel{order:4}
+  #frame{height:38vh;min-height:270px}
+  #hint{gap:10px;min-height:0;padding-top:10px;margin-top:10px;flex-direction:column;align-items:stretch}
+  #hintText{font-size:9px}
+  #hint .play{min-height:44px;align-self:flex-start}
+  figcaption{margin-top:10px;gap:6px 12px;font-size:9px}
+  .filterBar{display:none}
+  .appPanel{padding:12px}
+  .tw-screen{min-height:210px}
+  .tw-controls{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;min-height:44px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .tw-controls::-webkit-scrollbar{display:none}
+  .tw-controls button{min-height:44px;flex:0 0 auto;font-size:9px}
+  .tw-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #trueWindow .tf-tele{display:none}
+  #trueWindow .tf-title{font-size:10px;flex:1 1 auto}
+  .tw-cta{min-height:44px;padding:10px 14px 9px}
+  .tw-head{font-size:8px}
+  .side{font-size:9px;letter-spacing:.38em}
+  .trk{padding:10px 2px;margin:0;border-left:0}
+  .trk .sub,.trk .pm,.trk .lead2,.trk .d em{display:none}
+  .trk .t{font-size:11.5px}
+  .trk .d{font-size:10px}
+  .trk .lead{margin:0 9px}
+  .trk.on{border-left:2px solid var(--accent);padding-left:8px;margin-left:-8px}
+  .credits{grid-template-columns:1fr}
+  .linerPanel .credits{border-top:1px solid var(--hair2)}
+  footer{grid-template-columns:1fr auto;gap:14px;align-items:start}
+  footer .fine{grid-column:1/-1;order:3}
+  footer .label{min-width:0}
+  footer p{font-size:9px}
+  #sigil{width:92px}
+}
+@media (max-width:420px){
+  h1{letter-spacing:.3em;word-spacing:.4em}
+  .trk .t{font-size:11px;letter-spacing:.04em}
 }
 </style>
 </head>
 <body>
 
 <main class="sleeve" id="sleeve">
-  <h1 aria-label="Independents — Scattered Works">Independents — Scattered Works</h1>
+  <h1 aria-label="Independents — Scattered Works">Independents<span class="h1sub"> — Scattered Works</span></h1>
 
   <!-- the ensemble: five formal mechanisms with their lineages, and one special guest -->
   <section class="ensemble" id="ensemble" aria-label="Ensemble credits">
@@ -162,7 +331,31 @@ footer .cat{color:var(--chalk)}
     </div>
   </section>
 
-  <div class="stage">
+  <!-- three desktop compositions; I · SLEEVE is the default -->
+  <div id="layoutBar" role="group" aria-label="Desktop layout">
+    <span class="lb-lab">LAYOUT</span>
+    <button class="lb on" type="button" data-layout-btn="sleeve" aria-pressed="true">I · SLEEVE</button>
+    <button class="lb" type="button" data-layout-btn="gatefold" aria-pressed="false">II · GATEFOLD</button>
+    <button class="lb" type="button" data-layout-btn="horizon" aria-pressed="false">III · HORIZON</button>
+  </div>
+
+  <p class="lede"><b>Nineteen self-contained browser instruments.</b> No server, no account, no database.</p>
+
+  <!-- the phone header: the same taxonomy as a native instrument toggle -->
+  <div class="mobileHead">
+    <div class="mRow" id="mobileFilters" role="group" aria-label="Filter tracks">
+      <button class="pill on" type="button" data-filter="live" aria-pressed="true">● LIVE · 09</button>
+      <button class="pill" type="button" data-filter="roadmap" aria-pressed="false">○ ROADMAP · 10</button>
+      <button class="pill" type="button" data-filter="all" aria-pressed="false">ALL · 19</button>
+    </div>
+    <div class="mRow" id="mView" role="group" aria-label="Mobile view">
+      <button class="mv on" type="button" data-mview="map">MAP</button>
+      <button class="mv" type="button" data-mview="app">APP</button>
+      <button class="mv" type="button" data-mview="tracks">TRACKS</button>
+    </div>
+  </div>
+
+  <div class="colL">
     <figure id="world">
       <div id="frame">
         <canvas id="gl" tabindex="0" aria-label="A flat chalk landscape seen in 3D perspective, with a survey grid, contours, territory labels and a compass rose etched into the ground. Nineteen upright three-layer paper-cut landmarks stand on it, one per game. Walk with WASD or the arrow keys, click the ground to walk, click a landmark or a track to open its live micro-board, and click the keycaps in front of the board to play it. The tracklist is the same set of links."></canvas>
@@ -179,22 +372,52 @@ footer .cat{color:var(--chalk)}
       </figcaption>
     </figure>
 
-    <section aria-label="Tracklist">
-      <h2 class="side">Side A — Shipped</h2>
-      <ol class="tracks" id="sideA"></ol>
-      <h2 class="side">Side B — Prototypes</h2>
-      <ol class="tracks" id="sideB" start="10"></ol>
+    <!-- the selected project's own window: authentic chrome, a live canvas, real controls -->
+    <section class="appPanel" id="trueWindow" aria-label="True-project inner app window">
+      <div class="tw-head"><span>TRUE-PROJECT WINDOW</span><span class="tw-live">● LIVE FEED</span></div>
+      <div class="tw-chrome" id="twChrome"></div>
+      <div class="tw-screen">
+        <canvas id="twCanvas" width="1024" height="768" aria-label="Live interactive rendering of the selected project's own app window. Click and drag inside it to play the project."></canvas>
+        <div class="tw-placeholder" id="twPlaceholder" hidden>SELECT A TRACK</div>
+      </div>
+      <div class="tw-controls" id="twControls" role="group" aria-label="Project controls"></div>
+      <div class="tw-meta" id="twMeta"></div>
+      <div class="tw-foot">
+        <div class="tw-readout"><span>REV <b id="twRev">0</b></span><span>HASH <b id="twHash">—</b></span></div>
+        <a class="tw-cta" id="twOpen" href="#">OPEN PROJECT ↗</a>
+      </div>
     </section>
   </div>
 
-  <h2 class="side lnh">Liner notes — Scattered Days</h2>
-  <section class="credits" aria-label="Liner notes" aria-live="polite">
-    <div class="col" id="credL"></div>
-    <div class="col" id="credR"></div>
-  </section>
+  <div class="colR">
+    <section class="trackPanel" id="trackPanel" aria-label="Tracklist">
+      <div class="filterBar" id="filterBar" role="group" aria-label="Filter tracks">
+        <button class="pill on" type="button" data-filter="live" aria-pressed="true">● LIVE · 09</button>
+        <button class="pill" type="button" data-filter="roadmap" aria-pressed="false">○ ROADMAP · 10</button>
+        <button class="pill" type="button" data-filter="all" aria-pressed="false">ALL · 19</button>
+      </div>
+      <div class="listWrap" data-side="live">
+        <h2 class="side"><span>LIVE</span><span>09</span></h2>
+        <ol class="tracks" id="sideA"></ol>
+      </div>
+      <div class="listWrap" data-side="roadmap">
+        <h2 class="side"><span>ROADMAP</span><span>10</span></h2>
+        <ol class="tracks" id="sideB" start="10"></ol>
+      </div>
+      <p class="tl-foot">SIDE A · LIVE NOW &nbsp;/&nbsp; SIDE B · IN THE WORKSHOP</p>
+    </section>
+
+    <section class="linerPanel" id="linerPanel">
+      <h2 class="side lnh">Liner notes — Scattered Days</h2>
+      <section class="credits" aria-label="Liner notes" aria-live="polite">
+        <div class="col" id="credL"></div>
+        <div class="col" id="credR"></div>
+      </section>
+    </section>
+  </div>
 
   <footer>
-    <div class="label" id="colophon"><div class="lno">IND-LP-019</div><small><b>Independents Records</b></small><small>33⅓ RPM · Scattered Works</small><small>Side A · 9 shipped &nbsp;/&nbsp; Side B · 10 prototypes</small><small>Mastered in a browser, 2026</small></div>
+    <div class="label" id="colophon"><div class="lno">IND-LP-019</div><small><b>Independents Records</b></small><small>33⅓ RPM · Scattered Works</small><small>Live · 09 &nbsp;/&nbsp; Roadmap · 10</small><small>Mastered in a browser, 2026</small></div>
     <div class="fine">
       <p class="cat">ID019<br>Independents, scattered works, 2026</p>
       <p>No build, no server, no account. Every session is deterministic and the hash in the link is the whole proof.</p>
@@ -205,6 +428,7 @@ footer .cat{color:var(--chalk)}
   </footer>
 </main>
 
+<script src="./true-frames.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
@@ -2635,13 +2859,13 @@ const HINTS = { fog: 'Click left, right, up or down of centre (or use the arrow 
 /* =====================================================================
    4. THE SLEEVE — everything below is new in this variation.
       Chalk-on-charcoal liner notes (DOM) + a flat chalk world seen in 3D perspective (three.js, 1px monolines).
-      The nineteen ports and painters above are untouched; their boards are re-inked through a duotone pass.
+      The nineteen ports and painters above are untouched; their boards are painted in true-project colour by true-frames.js.
    ===================================================================== */
 const CHALK_HEX = '#EAE8E3', CARD_HEX = '#151516', ACCENT_HEX = '#EE6A3C';
 const navigate = u => window.__independents_nav ? window.__independents_nav(u) : location.assign(u);
 const pad2 = n => String(n).padStart(2, '0');
 
-/* track order = Side A (the nine shipped works) then Side B (the ten prototypes); time = a typical sitting, tag = the one-word mechanism */
+/* track order = Side A (the nine live works) then Side B (the ten roadmap works); time = a typical sitting, tag = the one-word mechanism */
 const ORDER = ['fogwalk', 'bloomwright', 'tonguecracker', 'sealed-orders', 'hushword', 'pictionary', 'azul', 'longhaul', 'boards',
   'sporefront', 'terrarium', 'driftwatch', 'loomweight', 'deadlock', 'byzantine', 'gc', 'cartel', 'shadow', 'lexicon'];
 const META = {
@@ -2705,38 +2929,22 @@ const ROOT_HASH = hash8(ART.map(a => a.session.hash()));
   $('#sleeve').style.setProperty('--grain', `url(${c.toDataURL('image/png')})`);
 })();
 
-/* ---------- duotone re-inking: any painter output -> chalk on charcoal, warm hues -> the single accent ---------- */
-const BW_ = 512, BH_ = 384;
+/* ---------- true-project frame surface: 1024 x 768, painted by true-frames.js and never re-inked ---------- */
+const BW_ = 1024, BH_ = 768;
 const paintCv = document.createElement('canvas'); paintCv.width = BW_; paintCv.height = BH_;
 const paintCx = paintCv.getContext('2d', { willReadFrequently: true });
 const inkCv = document.createElement('canvas'); inkCv.width = BW_; inkCv.height = BH_;
 const inkCx = inkCv.getContext('2d', { willReadFrequently: true });
-const inkImg = inkCx.createImageData(BW_, BH_), ink32 = new Uint32Array(inkImg.data.buffer);
-const GRAIN = (() => { const r = mulberry32(77), a = new Uint8Array(BW_ * BH_); for (let i = 0; i < a.length; i++) a[i] = r() * 255; return a; })();
-const PAPER = [27, 27, 28], CHALK = [234, 232, 227], ACC = [238, 106, 60];
-function chalkify() {
-  const src = paintCx.getImageData(0, 0, BW_, BH_).data;
-  for (let p = 0, i = 0; p < ink32.length; p++, i += 4) {
-    const r = src[i], g = src[i + 1], b = src[i + 2], mx = r > g ? (r > b ? r : b) : (g > b ? g : b), mn = r < g ? (r < b ? r : b) : (g < b ? g : b), ch = mx - mn;
-    let R, G, B;
-    const gr = GRAIN[p] / 255;
-    let hue = -1; if (ch > 40 && mx > 95) { const h = r === mx ? ((g - b) / ch + 6) % 6 : g === mx ? (b - r) / ch + 2 : (r - g) / ch + 4; hue = h * 60; }
-    if (hue >= 0 && (hue < 52 || hue > 335)) { // amber / orange / crimson -> accent, scaled by brightness
-      const k = .32 + .68 * Math.min(1, mx / 235) * (.9 + .1 * gr); R = PAPER[0] + (ACC[0] - PAPER[0]) * k; G = PAPER[1] + (ACC[1] - PAPER[1]) * k; B = PAPER[2] + (ACC[2] - PAPER[2]) * k;
-    } else {
-      const y = (.299 * r + .587 * g + .114 * b) / 255, tone = .5 * y + .5 * mx / 255, t = Math.min(1, Math.max(0, (tone - .2) / .6)), s = t * t * (3 - 2 * t);
-      const dust = s > .45 ? (gr < .1 ? .8 : .9 + .1 * gr) : 1;
-      R = (PAPER[0] + (CHALK[0] - PAPER[0]) * s) * dust; G = (PAPER[1] + (CHALK[1] - PAPER[1]) * s) * dust; B = (PAPER[2] + (CHALK[2] - PAPER[2]) * s) * dust;
-    }
-    ink32[p] = 0xFF000000 | ((B | 0) << 16) | ((G | 0) << 8) | (R | 0);
-  }
-  inkCx.putImageData(inkImg, 0, 0);
-}
 function paintBoard(art, t) {
   const v = art.session.view();
-  try { DRAW[art.e.adapter](paintCx, v, BW_, BH_, t); }
+  try {
+    if (window.TRUE_FRAMES) TRUE_FRAMES.renderTrueFrame(paintCx, art.e.adapter, v, BW_, BH_, t, art.session);
+    else DRAW[art.e.adapter](paintCx, v, BW_, BH_, t);
+  }
   catch (x) { paintCx.fillStyle = '#151516'; paintCx.fillRect(0, 0, BW_, BH_); paintCx.fillStyle = '#fff'; paintCx.font = '16px monospace'; paintCx.fillText('paint error: ' + String(x).slice(0, 40), 10, 30); }
-  chalkify();
+  // the board texture keeps the project's real palette; inkCv is retained as the live surface the checks sample
+  inkCx.clearRect(0, 0, BW_, BH_);
+  inkCx.drawImage(paintCv, 0, 0);
 }
 function pickFor(art, u, v, ph) { const e = art.e, s = art.session; if (PICK[e.adapter]) return PICK[e.adapter](u, v, ph, s.view()); if (ph !== 'down') return null; return s.pick ? s.pick(u, v) : null; }
 function act(art, id, arg) { try { const ev = art.session.do(id, arg); BRD.dirty = true; return ev; } catch (x) { toast('PORT REFUSED: ' + String(x).slice(0, 40)); return null; } }
@@ -2762,12 +2970,40 @@ for (const a of ART) {
   el.addEventListener('click', ev => { if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return; ev.preventDefault(); pin(a.slug); });
 }
 
+/* the taxonomy: Side A is LIVE (the nine shipped works), Side B is ROADMAP (the ten in the workshop).
+   The filters only hide the list wrappers; all nineteen anchors stay in the DOM, so the whole
+   tracklist remains one link surface and every hairline leader keeps its 1px computed height. */
+const FILTERS = ['live', 'roadmap', 'all'], LAYOUTS = ['sleeve', 'gatefold', 'horizon'];
+let FILTER = 'all', LAYOUT = 'sleeve', MVIEW = 'map';
+function setFilter(f) {
+  if (!FILTERS.includes(f)) f = 'all';
+  FILTER = f; document.body.dataset.filter = f;
+  for (const b of document.querySelectorAll('[data-filter]')) { const on = b.dataset.filter === f; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+}
+function setLayout(name) {
+  if (!LAYOUTS.includes(name)) name = 'sleeve';
+  LAYOUT = name; document.body.dataset.layout = name;
+  for (const b of document.querySelectorAll('[data-layout-btn]')) { const on = b.dataset.layoutBtn === name; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+}
+function setMView(v) {
+  MVIEW = v; document.body.dataset.mview = v;
+  for (const b of document.querySelectorAll('[data-mview]')) b.classList.toggle('on', b.dataset.mview === v);
+  const target = { map: '#world', app: '#trueWindow', tracks: '#trackPanel' }[v];
+  const el = target && $(target);
+  if (el && innerWidth <= 768) el.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+}
+for (const b of document.querySelectorAll('[data-filter]')) b.addEventListener('click', () => setFilter(b.dataset.filter));
+for (const b of document.querySelectorAll('[data-layout-btn]')) b.addEventListener('click', () => setLayout(b.dataset.layoutBtn));
+for (const b of document.querySelectorAll('[data-mview]')) b.addEventListener('click', () => setMView(b.dataset.mview));
+setFilter('all'); setLayout('sleeve'); document.body.dataset.mview = MVIEW;
+
 function cr(label, val, cls = '', id = '') { return `<div class="cr ${cls}"><b>${label}</b><i></i><span${id ? ` id="${id}"` : ''}>${val}</span></div>`; }
 function renderLiner() {
   const a = FOC.eff ? artBySlug[FOC.eff] : null, selfTest = x => `${PORT_REPORT.find(r => r.slug === x.slug)?.ok ? '✓ PORT' : '✗ PORT'} · ${PAINT_REPORT.find(r => r.slug === x.slug)?.ok ? '✓ PAINTER' : '✗ PAINTER'}`;
   if (a) {
     const e = a.e, nb = NEIGHBOURS[a.slug].slice(0, 2), base = entryOf(e);
-    T.credL.innerHTML = cr('PRODUCED BY', `INDEPENDENTS · ${esc(FAM[e.family].short)} · ${esc(e.status.toUpperCase())}`) + cr('ENGINEERED BY', `${esc(e.adapter.toUpperCase())} PORT · SEED ${e.seed} · ${a.session.tick ? '60 HZ LOCKSTEP' : 'TURN-BASED'}`) +
+    const liveLabel = e.status === 'prototype' ? 'ROADMAP' : 'LIVE';
+    T.credL.innerHTML = cr('PRODUCED BY', `INDEPENDENTS · ${esc(FAM[e.family].short)} · ${liveLabel}`) + cr('ENGINEERED BY', `${esc(e.adapter.toUpperCase())} PORT · SEED ${e.seed} · ${a.session.tick ? '60 HZ LOCKSTEP' : 'TURN-BASED'}`) +
       cr('FORMAL CITE', esc(e.formal.map(f => f[1]).join(' · ').toUpperCase())) + cr('CERTIFIED AT', selfTest(a)) + cr('TRANSPORT', NETWORK[e.network] || esc(e.network.toUpperCase())) + cr('STATE HASH', a.session.hash(), '', 'hashVal');
     T.credR.innerHTML = cr('TRACK', `${pad2(a.n)} · ${esc(a.title)} · ${a.time}`) + cr('MECHANISM', esc(FAM[e.family].name.toUpperCase())) + cr('PORT', `${a.session.actions.length} ACTIONS · ${esc(METRIC[a.slug]())}`) +
       cr('ENTRY', base ? esc(base.toUpperCase()) : 'NOT ON MAIN YET') + cr('SEE ALSO', nb.length ? nb.map(n => esc(artBySlug[n.slug].title)).join(' · ') : '—') +
@@ -2776,7 +3012,7 @@ function renderLiner() {
     const cites = REG.reduce((n, e) => n + e.formal.length, 0);
     T.credL.innerHTML = cr('PRODUCED BY', 'INDEPENDENTS RECORDS · 2026') + cr('ENGINEERED BY', '19 DETERMINISTIC PORTS · NO DOM, NO CLOCK') + cr('FORMAL CITE', `${cites} CITATIONS ACROSS 19 WORKS`) +
       cr('CERTIFIED AT', `${PORTS_OK === 19 ? '✓' : '✗'} ${PORTS_OK}/19 PORTS · ${PAINT_OK === 19 ? '✓' : '✗'} ${PAINT_OK}/19 PAINTERS`) + cr('TRANSPORT', 'LINK FRAGMENT · WEBRTC · NONE') + cr('STATE HASH', ROOT_HASH, '', 'hashVal');
-    T.credR.innerHTML = cr('MECHANISM', 'AUTOMATA · COMMITMENT · P2P · LOCKSTEP · CELLULAR') + cr('ENTRY', '9 APPS · 10 PROTOTYPES') + cr('THE WANDERER', 'ONE LANTERN · ONE COMPASS') + cr('THE STAGE', 'ONE POP-UP BOARD · EVERY ACTION A KEYCAP') +
+    T.credR.innerHTML = cr('MECHANISM', 'AUTOMATA · COMMITMENT · P2P · LOCKSTEP · CELLULAR') + cr('ENTRY', '9 LIVE · 10 ROADMAP') + cr('THE WANDERER', 'ONE LANTERN · ONE COMPASS') + cr('THE STAGE', 'ONE POP-UP BOARD · EVERY ACTION A KEYCAP') +
       `<div class="cr guest"><b>with special guest</b></div>` + cr('2.5D PERSPECTIVE STAGE', 'THREE LAYERS · ONE LANTERN') + `<button class="play go" disabled>▶ Play track ↵</button>`;
   }
   T.play = [...document.querySelectorAll('.play')]; syncPlay();
@@ -2789,7 +3025,7 @@ function hintText() {
   const a = FOC.eff && artBySlug[FOC.eff];
   if (!a) return 'Walk with WASD or the arrow keys, click the ground to walk, click a landmark or a track to open its board. Space draws the threads.';
   if (FOC.pin) return `${HINTS[a.e.adapter]} Esc leaves, Enter dives in.`;
-  return `Beside ${a.title}. Click the paper board to play it, or press Enter to dive in.`;
+  return `Beside ${a.title}. Click its app frame to play it, or press Enter to dive in.`;
 }
 function render(force) {
   for (const a of ART) {
@@ -2802,12 +3038,15 @@ function render(force) {
   sigilTicks();
   if (force) renderLiner(); else syncPlay();
 }
-function recompute() { const eff = FOC.pin || FOC.hover || FOC.near || null, changed = eff !== FOC.eff; FOC.eff = eff; if (changed) { world?.onFocus(eff); } render(changed); }
+function recompute() { const eff = FOC.pin || FOC.hover || FOC.near || null, changed = eff !== FOC.eff; FOC.eff = eff; if (changed) { world?.onFocus(eff); renderTrueWindow(eff); } render(changed); }
 function setHover(s) { FOC.hover = s; if (s) { FOC.intro = false; FOC.map = false; } recompute(); }
 function setLm(s) { if (FOC.lm !== s) { FOC.lm = s; render(false); } }
 function setNear(s) { if (FOC.near !== s) { FOC.near = s; recompute(); } }
 function pin(slug) {
+  const a = artBySlug[slug]; if (!a) return;
   if (FOC.diving) return; FOC.pin = slug; FOC.map = false; FOC.intro = false;
+  /* keep the active row visible: if the current filter hides this side, move the filter with the pin */
+  if (FILTER !== 'all' && ((FILTER === 'live') !== (a.n <= 9))) setFilter(a.n <= 9 ? 'live' : 'roadmap');
   try { history.replaceState(null, '', '#a=' + slug); } catch (e) { }
   world?.walkToStand(slug); recompute(); render(true); announce(`${artBySlug[slug].title} open`);
 }
@@ -2830,6 +3069,61 @@ function dive() {
   }, REDUCED ? 120 : 820);
 }
 addEventListener('pageshow', e => { if (e.persisted && FOC.diving) { FOC.diving = false; world?.fold(FOC.eff, false); render(true); } });
+
+/* =====================================================================
+   5b. THE TRUE-PROJECT WINDOW — the selected work's own app surface, docked in the page
+       rather than floated over the 3D stage. The chrome is the real header, the canvas is
+       the real painter at 1024 x 768, and pointer events go through the port's own pick map.
+   ===================================================================== */
+const TW = { slug: null, acc: 0, canvas: null, ctx: null, chrome: null, controls: null, meta: null, open: null, rev: null, hash: null };
+TW.canvas = $('#twCanvas'); TW.ctx = TW.canvas.getContext('2d', { willReadFrequently: true });
+TW.chrome = $('#twChrome'); TW.controls = $('#twControls'); TW.meta = $('#twMeta'); TW.open = $('#twOpen'); TW.rev = $('#twRev'); TW.hash = $('#twHash');
+function twStatus(a) { return a.n <= 9 ? 'LIVE' : 'ROADMAP'; }
+function paintTW(a, t) {
+  if (!a) return;
+  try {
+    if (window.TRUE_FRAMES) TRUE_FRAMES.renderTrueFrame(TW.ctx, a.e.adapter, a.session.view(), TW.canvas.width, TW.canvas.height, t || 0, a.session);
+    else { TW.ctx.fillStyle = '#151516'; TW.ctx.fillRect(0, 0, TW.canvas.width, TW.canvas.height); TW.ctx.fillStyle = '#EAE8E3'; TW.ctx.font = '600 30px monospace'; TW.ctx.fillText(a.title, 40, 80); }
+    const ph = $('#twPlaceholder'); if (ph) ph.hidden = true;
+  } catch (x) { }
+}
+function updateTWChrome(a) {
+  if (!a || TW.slug !== a.slug) return;
+  const r = TW.chrome.querySelector('[data-tf-rev]'), h = TW.chrome.querySelector('[data-tf-hash]');
+  if (r) r.textContent = String(a.session.rev | 0);
+  if (h) { try { h.textContent = a.session.hash(); } catch (x) { } }
+  if (TW.rev) TW.rev.textContent = String(a.session.rev | 0);
+  if (TW.hash) { try { TW.hash.textContent = a.session.hash(); } catch (x) { } }
+}
+function renderTrueWindow(slug) {
+  const a = (slug && artBySlug[slug]) || ART[0]; if (!a) return;
+  TW.slug = a.slug;
+  const win = $('#trueWindow'); win.dataset.slug = a.slug; win.dataset.status = twStatus(a).toLowerCase();
+  const url = entryOf(a.e);
+  if (window.TRUE_FRAMES) TW.chrome.innerHTML = TRUE_FRAMES.getFrameChrome({ ...a, url });
+  const acts = a.session.actions.filter(x => x.ui !== false).slice(0, 6);
+  TW.controls.innerHTML = acts.map(x => `<button type="button" data-tw-act="${esc(x.id)}">${esc(String(x.label || x.id).toUpperCase().replace(/_/g, ' '))}</button>`).join('');
+  TW.meta.textContent = `${twStatus(a)} · ${a.tag} · ${METRIC[a.slug]()} · ${a.session.actions.filter(x => x.ui !== false).length} ACTIONS`;
+  if (url) { TW.open.href = url; TW.open.textContent = 'OPEN PROJECT ↗'; TW.open.classList.remove('dead'); }
+  else { TW.open.removeAttribute('href'); TW.open.textContent = 'NOT ON MAIN YET'; TW.open.classList.add('dead'); }
+  paintTW(a, 0); updateTWChrome(a);
+}
+function twAct(a, id) { if (!a || !id) return; act(a, id); TW.acc = 99; paintTW(a, 0); updateTWChrome(a); }
+for (const root of [TW.chrome, TW.controls]) root.addEventListener('click', e => {
+  const b = e.target.closest('[data-tf-act],[data-tw-act]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  twAct(TW.slug && artBySlug[TW.slug], b.dataset.tfAct || b.dataset.twAct);
+});
+TW.open.addEventListener('click', e => { if (TW.open.classList.contains('dead')) e.preventDefault(); });
+{ /* the canvas is a real instrument surface: pointer phases go to the same pick map as the 3D board */
+  const uv = ev => { const r = TW.canvas.getBoundingClientRect(); return { u: clamp((ev.clientX - r.left) / r.width, 0, 1), v: clamp((ev.clientY - r.top) / r.height, 0, 1) }; };
+  let down = false, a0 = null;
+  const pick = (ph, q) => { const a = TW.slug && artBySlug[TW.slug]; if (!a) return; const hit = pickFor(a, q.u, q.v, ph); if (hit) twAct(a, hit[0]); };
+  TW.canvas.addEventListener('pointerdown', ev => { ev.preventDefault(); TW.canvas.setPointerCapture(ev.pointerId); const a = TW.slug && artBySlug[TW.slug]; if (a && FOC.pin !== a.slug) pin(a.slug); down = true; a0 = uv(ev); pick('down', a0); });
+  TW.canvas.addEventListener('pointermove', ev => { if (!down) return; pick('move', uv(ev)); });
+  TW.canvas.addEventListener('pointerup', ev => { down = false; pick('up', uv(ev)); try { TW.canvas.releasePointerCapture(ev.pointerId); } catch (x) { } });
+  TW.canvas.addEventListener('pointerleave', () => { down = false; });
+}
 
 /* =====================================================================
    6. THE WORLD — flat chalk landscape, tilted by a perspective camera. three.js, 1px monolines (LineSegments2).
@@ -2993,25 +3287,25 @@ function buildWorld() {
   /* survey grid: a fine lattice of + fiducial crosshairs across y = 0, every fifth one drawn longer */
   { const a = []; let n = 0;
     for (let x = -66; x <= 66; x += 6) for (let z = -48; z <= 48; z += 6) { const L = (Math.round(x / 6) + Math.round(z / 6)) % 5 === 0 ? .62 : .34; a.push(x - L, .004, z, x + L, .004, z, x, .004, z - L, x, .004, z + L); n++; }
-    DETAIL.fiducials = n; scene.add(lineObj(a, mat(CHALK_HEX, .3))); }
+    DETAIL.fiducials = n; scene.add(lineObj(a, mat(CHALK_HEX, .16))); }
   /* grid coordinates lettered along the south and west margins */
-  for (let x = -60; x <= 60; x += 20) { const t = textMesh(`X ${x > 0 ? '+' : ''}${x}`, .85, { flat: true, op: .45, track: .2 }); t.position.set(x, .006, 48.2); scene.add(t); DETAIL.axisLabels++; }
-  for (let z = -40; z <= 40; z += 20) { const t = textMesh(`Z ${z > 0 ? '+' : ''}${z}`, .85, { flat: true, op: .45, track: .2 }); t.position.set(-62.5, .006, z); scene.add(t); DETAIL.axisLabels++; }
+  for (let x = -60; x <= 60; x += 20) { const t = textMesh(`X ${x > 0 ? '+' : ''}${x}`, .85, { flat: true, op: .3, track: .2 }); t.position.set(x, .006, 48.2); scene.add(t); DETAIL.axisLabels++; }
+  for (let z = -40; z <= 40; z += 20) { const t = textMesh(`Z ${z > 0 ? '+' : ''}${z}`, .85, { flat: true, op: .3, track: .2 }); t.position.set(-62.5, .006, z); scene.add(t); DETAIL.axisLabels++; }
 
   /* contours: the whole ground is 1px topographic ridges; every fourth level is an index contour */
   const C = contourSegments(.85, -1.7, 3.7, .26);
-  scene.add(lineObj(C.minor, mat(CHALK_HEX, .27)), lineObj(C.major, mat(CHALK_HEX, .55)));
+  scene.add(lineObj(C.minor, mat(CHALK_HEX, .19)), lineObj(C.major, mat(CHALK_HEX, .42)));
   /* elevation index: downslope hachure ticks along the index contours, with a few spot heights lettered flat on the ground */
   { const a = [], M = C.major, labs = []; let k = 0;
     for (let i = 0; i + 5 < M.length; i += 6, k++) { if (k % 7) continue; const x = (M[i] + M[i + 3]) / 2, z = (M[i + 2] + M[i + 5]) / 2, e = .05, gx = heightField(x + e, z) - heightField(x - e, z), gz = heightField(x, z + e) - heightField(x, z - e), gl = Math.hypot(gx, gz) || 1;
       a.push(x, .006, z, x - gx / gl * .55, .006, z - gz / gl * .55); DETAIL.elevTicks++; if (k % 49 === 0 && labs.length < 12) labs.push([x, z, heightField(x, z)]); }
-    scene.add(lineObj(a, mat(CHALK_HEX, .55)));
-    for (const [x, z, v] of labs) { const t = textMesh(`EL ${v >= 0 ? '+' : ''}${v.toFixed(1)}`, .62, { flat: true, op: .55, track: .16 }); t.position.set(x + .5, .008, z - .55); scene.add(t); DETAIL.elevLabels++; } }
+    scene.add(lineObj(a, mat(CHALK_HEX, .34)));
+    for (const [x, z, v] of labs) { const t = textMesh(`EL ${v >= 0 ? '+' : ''}${v.toFixed(1)}`, .62, { flat: true, op: .34, track: .16 }); t.position.set(x + .5, .008, z - .55); scene.add(t); DETAIL.elevLabels++; } }
 
   /* five territories etched in 3D perspective onto the ground, each underlined with a boundary rule */
   for (const [label, x, z] of TERR) {
     const t = textMesh(label, 1.9, { flat: true, op: .5, track: .38, weight: 500 }); t.position.set(x, .007, z); scene.add(t); const w = t.userData.w;
-    scene.add(lineObj(polysToFlat([seg(-w / 2, 1.5, w / 2, 1.5), seg(-w / 2, 1.2, -w / 2, 1.8), seg(w / 2, 1.2, w / 2, 1.8), seg(-w / 2 + 1.4, 1.5, -w / 2 + 1.4, 1.35), seg(w / 2 - 1.4, 1.5, w / 2 - 1.4, 1.35)], ([px, pz]) => [x + px, .006, z + pz]), mat(CHALK_HEX, .3)));
+    scene.add(lineObj(polysToFlat([seg(-w / 2, 1.5, w / 2, 1.5), seg(-w / 2, 1.2, -w / 2, 1.8), seg(w / 2, 1.2, w / 2, 1.8), seg(-w / 2 + 1.4, 1.5, -w / 2 + 1.4, 1.35), seg(w / 2 - 1.4, 1.5, w / 2 - 1.4, 1.35)], ([px, pz]) => [x + px, .006, z + pz]), mat(CHALK_HEX, .18)));
     DETAIL.territories.push(label);
   }
 
@@ -3035,7 +3329,7 @@ function buildWorld() {
   const curve = new THREE.CatmullRomCurve3(ART.map(a => new THREE.Vector3(a.pos.x, 0, a.pos.z + 2.6)), false, 'catmullrom', .5), groovePts = curve.getSpacedPoints(520);
   { const pts = groovePts, a = [];
     for (let i = 0; i < pts.length - 1; i++) { if (i % 6 > 3) continue; const p = pts[i], q = pts[i + 1], dx = q.x - p.x, dz = q.z - p.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l * .32, nz = dx / l * .32; a.push(p.x + nx, .01, p.z + nz, q.x + nx, .01, q.z + nz, p.x - nx, .01, p.z - nz, q.x - nx, .01, q.z - nz); }
-    scene.add(lineObj(a, mat(CHALK_HEX, .3))); }
+    scene.add(lineObj(a, mat(CHALK_HEX, .2))); }
 
   /* micro-landmarks along the groove: mile-marker posts, cairns, survey flags, chalk reeds */
   const flags = [];
@@ -3051,11 +3345,11 @@ function buildWorld() {
       cairns.push(...up(x, z, [ell(0, .11, .4, .11), ell(.02, .33, .27, .1), ell(-.02, .52, .15, .07), seg(-.4, .11, -.4, .0), seg(.4, .11, .4, .0)])); DETAIL.cairns++; }
     for (let i = 21; i < P.length - 1; i += 47) { const [nx, nz] = nrm(i), sd = fk % 2 ? 1 : -1, x = P[i].x + nx * 1.9 * sd, z = P[i].z + nz * 1.9 * sd; if (avoid(x, z)) continue;
       poleF.push(...up(x, z, [seg(0, 0, 0, 1.7), seg(0, .5, -.3, 0), seg(0, .5, .3, 0), circ(0, 1.74, .05, 6)]));
-      const g = new THREE.Group(); g.position.set(x, 1.7, z); g.add(lineObj(polysToFlat([[[0, 0], [0, -.55], [.85, -.27], [0, 0]], seg(.1, -.27, .6, -.27)]), mat(CHALK_HEX, .8))); scene.add(g); flags.push({ g, k: fk }); fk++; DETAIL.flags++; }
+      const g = new THREE.Group(); g.position.set(x, 1.7, z); g.add(lineObj(polysToFlat([[[0, 0], [0, -.55], [.85, -.27], [0, 0]], seg(.1, -.27, .6, -.27)]), mat(CHALK_HEX, .5))); scene.add(g); flags.push({ g, k: fk }); fk++; DETAIL.flags++; }
     for (let i = 3; i < P.length - 1; i += 4) for (const sd of [-1, 1]) { const [nx, nz] = nrm(i), d = 1.0 + R() * 2.2, x = P[i].x + nx * d * sd, z = P[i].z + nz * d * sd; if (avoid(x, z) || R() < .25) continue;
       const n = 3 + (R() * 3 | 0), strokes = []; for (let s = 0; s < n; s++) { const bx = (R() - .5) * .5, h = .3 + R() * .5, lean = (R() - .5) * .55; strokes.push([[bx, 0], [bx + lean * .4, h * .55], [bx + lean, h]]); }
       reeds.push(...up(x, z, strokes)); DETAIL.reeds++; }
-    DETAIL.posts = pk; scene.add(lineObj(posts, mat(CHALK_HEX, .6)), lineObj(cairns, mat(CHALK_HEX, .5)), lineObj(poleF, mat(CHALK_HEX, .7)), lineObj(reeds, mat(CHALK_HEX, .36))); }
+    DETAIL.posts = pk; scene.add(lineObj(posts, mat(CHALK_HEX, .4)), lineObj(cairns, mat(CHALK_HEX, .32)), lineObj(poleF, mat(CHALK_HEX, .42)), lineObj(reeds, mat(CHALK_HEX, .18))); }
 
   /* floating chalk-dust motes: points drifting above the plane, moved entirely in the vertex shader by uTime */
   { const N = 320, pos = new Float32Array(N * 3), sd = new Float32Array(N), R = mulberry32(4242);
@@ -3063,7 +3357,7 @@ function buildWorld() {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(sd, 1));
     const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uTime, uPx: { value: DPR }, uCol: { value: new THREE.Color(CHALK_HEX) } },
       vertexShader: 'uniform float uTime; uniform float uPx; attribute float aSeed; varying float vA; void main(){ vec3 p = position; p.x += sin(uTime*.18 + aSeed*40.)*1.6 + uTime*.05*(aSeed-.5); p.y += sin(uTime*.31 + aSeed*17.)*.55; p.z += cos(uTime*.15 + aSeed*23.)*1.3; vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv; gl_PointSize = clamp(uPx*(.5+aSeed)*26./max(-mv.z,1.), 1., 4.5*uPx); vA = .25 + .75*(.5+.5*sin(uTime*1.3 + aSeed*31.)); }',
-      fragmentShader: 'uniform vec3 uCol; varying float vA; void main(){ float d = length(gl_PointCoord-.5); if(d>.5) discard; gl_FragColor = vec4(uCol, (1.-d*2.)*vA*.7); }' });
+      fragmentShader: 'uniform vec3 uCol; varying float vA; void main(){ float d = length(gl_PointCoord-.5); if(d>.5) discard; gl_FragColor = vec4(uCol, (1.-d*2.)*vA*.42); }' });
     const pts = new THREE.Points(g, m); pts.frustumCulled = false; scene.add(pts); DETAIL.motes = N; }
 
   /* the nineteen landmarks: three paper-cut sheets (z -0.35 / 0 / +0.35), a moving mechanism, an etched plinth and a pennant badge */
@@ -3181,7 +3475,6 @@ function buildWorld() {
   /* labels */
   const tags = $('#tags');
   for (const a of ART) { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = `<b>${pad2(a.n)}</b><span> ${esc(a.title)}</span>`; tags.appendChild(d); tagEl[a.slug] = d; }
-  const boardTag = document.createElement('div'); boardTag.className = 'tag bd'; tags.appendChild(boardTag);
   const brgTag = document.createElement('div'); brgTag.className = 'tag brg'; tags.appendChild(brgTag); let brgTxt = '';
 
   /* ---------- picking ---------- */
@@ -3266,12 +3559,12 @@ function buildWorld() {
 
     /* board: swap = fold the old one flat, hinge the new one up */
     BRD.want = FOC.eff && !FOC.diving ? FOC.eff : null;
-    if (BRD.slug !== BRD.want) { BRD.open.t = 0; if (BRD.open.x < .04) { BRD.slug = BRD.want; BRD.dirty = true; if (BRD.slug) { const a = artBySlug[BRD.slug]; boardRoot.position.set(a.pos.x + BOARD_DX, 0, a.pos.z + .15); boardTag.innerHTML = `▲ ${esc(a.title)} · LIVE SESSION`; hudAcc = 9; } layoutKeys(BRD.slug ? artBySlug[BRD.slug] : null); } }
+    if (BRD.slug !== BRD.want) { BRD.open.t = 0; if (BRD.open.x < .04) { BRD.slug = BRD.want; BRD.dirty = true; if (BRD.slug) { const a = artBySlug[BRD.slug]; boardRoot.position.set(a.pos.x + BOARD_DX, 0, a.pos.z + .15); hudAcc = 9; } layoutKeys(BRD.slug ? artBySlug[BRD.slug] : null); } }
     else BRD.open.t = BRD.slug ? 1 : 0;
     const open = BRD.open.step(dt); boardRoot.visible = !!BRD.slug && open > .012; board.visible = boardRoot.visible;
     board.rotation.x = -(1 - clamp(open, 0, 1.18)) * (Math.PI / 2) - .06 * clamp(open, 0, 1); footprint.material.opacity = .22 * clamp(open, 0, 1);
     for (const k of keycaps) { if (!k.on) continue; k.press = Math.max(0, k.press - dt * 3.2); k.om.color.copy(chalk).lerp(accent, k.press); k.om.opacity = .85; k.g.position.y = -.06 * k.press; k.face.material.opacity = 1; }
-    if (BRD.slug && open > .05) { hudAcc += dt; if (hudAcc > .25) { hudAcc = 0; paintHud(artBySlug[BRD.slug]); } }
+    if (BRD.slug && open > .05) { hudAcc += dt; if (hudAcc > .25) { hudAcc = 0; const a = artBySlug[BRD.slug]; paintHud(a); } }
     if (BRD.slug && open > .05) { BRD.acc += dt; if (BRD.dirty || BRD.acc > 1 / 24) { BRD.acc = 0; BRD.dirty = false; paintBoard(artBySlug[BRD.slug], t); tex.needsUpdate = true; } }
 
     /* threads */
@@ -3309,7 +3602,6 @@ function buildWorld() {
       el.style.opacity = op; el.style.transform = `translate3d(${((_p.x * .5 + .5) * rect.width).toFixed(1)}px,${((-_p.y * .5 + .5) * rect.height).toFixed(1)}px,0) translate(-50%,0)`;
     }
     { const ok = BRG.on && BRG.z < 1 && Math.abs(BRG.x) < 1.05 && Math.abs(BRG.y) < 1.05; brgTag.style.opacity = ok ? 1 : 0; if (ok) brgTag.style.transform = `translate3d(${((BRG.x * .5 + .5) * rect.width).toFixed(1)}px,${((-BRG.y * .5 + .5) * rect.height).toFixed(1)}px,0) translate(-50%,-130%)`; }
-    if (boardRoot.visible && !FOC.diving) { _p.set(boardRoot.position.x, BOARD_H + 1.4, boardRoot.position.z).project(camera); boardTag.style.opacity = clamp((open - .6) * 3, 0, 1); const bw = boardTag.offsetWidth / 2 + 4, bx = clamp((_p.x * .5 + .5) * rect.width, bw, rect.width - bw); boardTag.style.transform = `translate3d(${bx.toFixed(1)}px,${((-_p.y * .5 + .5) * rect.height).toFixed(1)}px,0) translate(-50%,-100%)`; } else boardTag.style.opacity = 0;
   }
 
   return {
@@ -3378,7 +3670,7 @@ addEventListener('blur', () => world?.clearKeys());
 $('#kThreads').onclick = () => toggleThreads(); $('#kMap').onclick = () => toggleMap(); $('#kBack').onclick = () => { if (FOC.pin) unpin(); else if (FOC.map) toggleMap(false); else toast('NOTHING TO LEAVE · YOU ARE ALREADY OUTSIDE', 1800); };
 
 world = buildWorld();
-renderLiner(); render(true);
+renderLiner(); render(true); renderTrueWindow(null);
 { const m = /^#a=([\w-]+)/.exec(location.hash); if (m && artBySlug[m[1]]) { FOC.map = false; FOC.intro = false; pin(m[1]); } }
 if (document.fonts?.load) Promise.all([document.fonts.load('600 14px "IBM Plex Mono"'), document.fonts.load('400 14px "IBM Plex Mono"')]).then(() => { BRD.dirty = true; }).catch(() => { });
 setTimeout(() => { if (FOC.intro) { FOC.intro = false; FOC.map = false; render(false); } }, 2900);
@@ -3388,6 +3680,7 @@ function loop(now) {
   const dt = clamp((now - last) / 1000, 0, .1); simT += dt; const t = simT; last = now;
   simAcc = Math.min(simAcc + dt, .25); while (simAcc >= 1 / 60) { simAcc -= 1 / 60; for (const a of ART) a.session.tick?.(); }
   world?.update(dt, t);
+  if (TW.slug) { TW.acc += dt; if (TW.acc > 1 / 12) { TW.acc = 0; const a = artBySlug[TW.slug]; if (a) { paintTW(a, t); updateTWChrome(a); } } }
   sgA[0] += dt * (sgHover ? 36 : 5) * (REDUCED ? 0 : 1); sgA[1] -= dt * (sgHover ? 60 : 9) * (REDUCED ? 0 : 1); sgA[2] += dt * (sgHover ? 110 : 16) * (REDUCED ? 0 : 1);
   sgA[3] -= dt * (sgHover ? 24 : 3) * (REDUCED ? 0 : 1); sgOut.setAttribute('transform', `rotate(${sgA[3].toFixed(2)})`); sgRing.setAttribute('transform', `rotate(${sgA[0].toFixed(2)})`); sgMid.setAttribute('transform', `rotate(${sgA[1].toFixed(2)})`); sgIn.setAttribute('transform', `rotate(${sgA[2].toFixed(2)})`);
   hashAcc += dt; if (hashAcc > .25) { hashAcc = 0; const hv = $('#hashVal'); if (hv && FOC.eff) hv.textContent = artBySlug[FOC.eff].session.hash(); if (world) { const w = world.WAN; T.where.innerHTML = FOC.eff ? `TRACK <b>${pad2(artBySlug[FOC.eff].n)}</b> · <b>${esc(artBySlug[FOC.eff].title)}</b>` : FOC.map ? 'THE MAP · <b>19 TRACKS</b>' : `WANDERING · X <b>${w.p.x.toFixed(0)}</b> · Z <b>${w.p.z.toFixed(0)}</b>`; } else T.where.textContent = ''; }
@@ -3401,6 +3694,8 @@ window.__independents = {
   state: () => ({ pin: FOC.pin, hover: FOC.hover, near: FOC.near, eff: FOC.eff, threads: FOC.threads, map: FOC.map, diving: FOC.diving, boardSlug: BRD.slug, boardOpen: BRD.open?.x ?? 0, wan: world ? [world.WAN.p.x, world.WAN.p.z] : null, cam: world ? [world.CAM.look.x, world.CAM.look.z, world.CAM.dist] : null }),
   stepSim(n = 1, dt = 1 / 60, render = true) { for (let i = 0; i < n; i++) { for (const a of ART) a.session.tick?.(); simT += dt; world?.update(dt, simT, !(render && i === n - 1)); } },
   skipIntro() { FOC.intro = false; FOC.map = false; render(false); }, dive, pin, unpin, toggleThreads, toggleMap, setHover, handoffUrl, inkCv,
+  setFilter, setLayout, setMView, renderTrueWindow, get filter() { return FILTER; }, get layout() { return LAYOUT; },
+  trueWindow: () => ({ slug: TW.slug, canvas: !!TW.canvas, chrome: !!TW.chrome.querySelector(".tf-chrome"), w: TW.canvas.width, h: TW.canvas.height, cta: TW.open.getAttribute("href") }),
 };
 </script>
 </body>

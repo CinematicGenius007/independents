@@ -13,8 +13,18 @@ moves the other.
 
 Revision 2 (after review): the outer plaster wall, the botanical petals and the floating-card
 shadow are gone. The charcoal card **is** the page, edge to edge, and the extra width and height
-go to a denser 2.5D world and a fuller *Scattered Days* set of liner notes. §1, §3 and §7 below
-describe the current page.
+go to a denser 2.5D world and a fuller *Scattered Days* set of liner notes.
+
+Revision 3 (after review): the page is de-crammed and the work is named honestly. The two sides
+are **`LIVE · 09`** (shipped) and **`ROADMAP · 10`** (in the workshop), with an `ALL · 19` view and
+a real segmented switcher. The selected project now opens inside a **docked true-project window**
+(`#trueWindow`) with its own chrome, a 1024 × 768 live painter, its controls and `OPEN PROJECT ↗`,
+in addition to the pop-up board in the world. Three desktop compositions share the same DOM:
+`I · SLEEVE` (default), `II · GATEFOLD`, `III · HORIZON`. A phone layout at `≤ 768px` turns the same
+content into a native instrument: a 38vh stage, 44px touch targets, `MAP / APP / TRACKS` pills and
+one non-overflowing tracklist sheet. §2.1 and §2.2 describe them.
+
+§1, §2 and §7 below describe the current page.
 
 Everything in the Fish Night document that is about the site contract (§1 where it lives and
 what it may not do), the manifest, port and handoff protocol (§3), falsifiable lineage (§4) and
@@ -39,7 +49,7 @@ border, no box-shadow. There is no wall behind it and nothing sticks out from un
 
 | Layer | What it is | How it is made |
 | --- | --- | --- |
-| Cardstock | `#151516`, the whole screen | `html, body, .sleeve` background; the page padding is only `clamp(18px, 3vw, 56px)` inside the card |
+| Cardstock | `#151516`, the whole screen | `html, body, .sleeve` background; the page padding is only `clamp(22px, 3.6vw, 64px)` inside the card |
 | Grain | paper fibre, chalk dust and a few smudges across the full screen | `.sleeve::before` stacks a procedural canvas (generated once at load, tiles seamlessly, set as `--grain`) over an SVG turbulence fallback |
 | Vignette | a quiet lit-from-the-top falloff | `.sleeve::after`, `position: fixed` radial gradients, so the card reads as one lit sheet at any scroll position |
 | Type | IBM Plex Mono (Space Mono fallback), `#EAE8E3` and muted `#8E8D8A` | uppercase, `letter-spacing: .04em`; the header is `.78em` tracked, `INDEPENDENTS — SCATTERED WORKS` |
@@ -53,45 +63,52 @@ registration corners.
 ## 2. Anatomy
 
 ```
- I N D E P E N D E N T S   —   S C A T T E R E D   W O R K S
+ I N D E P E N D E N T S   —   S C A T T E R E D   W O R K S        LAYOUT [ I·SLEEVE ][ II·GATEFOLD ][ III·HORIZON ]
+ Nineteen self-contained browser instruments. No server, no account, no database.
  AUTOMATA / GRAMMARS ___ Černý 1964 · Lindenmayer 1968     60 HZ FIXED-POINT SIM ___ …
  COMMIT-REVEAL CRYPTO ___ …    WEBRTC P2P ___ …           CELLULAR / EMERGENT ___ …
                                                           with special guest ___ 2.5D PERSPECTIVE STAGE
- ┌ world (three.js, ~70% of the width) ─┐   SIDE A — SHIPPED
- │ survey grid, contours, territories,  │   01 FOGWALK ________________ 05:00 · AUTOMATA
- │ compass rose, 19 three-layer dioramas│      SYNCHRONIZING WORD _____________ PAR 5
- │ the wanderer + lantern + bearing line│   02 BLOOMWRIGHT ____________ 04:12 · L-SYSTEM
- │ the pop-up stage with callouts, HUD  │      …
- │ and one keycap per action            │   SIDE B — PROTOTYPES
- └──────────────────────────────────────┘   10 SPOREFRONT … 19 LEXICON QUARANTINE
-  hint line                    [▶ PLAY]
-  FIG. 1 …        SPACE THREADS · O MAP
- LINER NOTES — SCATTERED DAYS
- PRODUCED BY ___ …            TRACK / MECHANISM ___ …
- ENGINEERED BY ___ …          PORT ___ …
- FORMAL CITE ___ …            ENTRY ___ …
- CERTIFIED AT ___ …           SEE ALSO ___ …
- TRANSPORT ___ …              with special guest ___ …
- STATE HASH ___ …             [▶ DIVE IN ↵]
+ ┌ world (three.js, 56%) ──────────────┐   [ ● LIVE · 09 ] [ ○ ROADMAP · 10 ] [ ALL · 19 ]
+ │ survey grid, contours, territories, │   LIVE                                        09
+ │ compass rose, 19 three-layer dioramas│   01 FOGWALK ________________ 05:00 · AUTOMATA
+ │ the wanderer + lantern + bearing line │      SYNCHRONIZING WORD _____________ PAR 5
+ │ the pop-up stage with callouts, HUD  │   02 BLOOMWRIGHT ____________ 04:12 · L-SYSTEM
+ │ and one keycap per action            │      …
+ └──────────────────────────────────────┘   ROADMAP                                     10
+ ┌ #trueWindow ─────────────────────────┐   10 SPOREFRONT … 19 LEXICON QUARANTINE
+ │ true chrome · REV · HASH · controls  │   SIDE A · LIVE NOW / SIDE B · IN THE WORKSHOP
+ │ live 1024×768 painter · OPEN PROJECT │   LINER NOTES — SCATTERED DAYS
+ └──────────────────────────────────────┘   PRODUCED BY ___ …    TRACK / MECHANISM ___ …
+  hint line                    [▶ DIVE IN]   (label + rule, value below)  …
  ┌ IND-LP-019 ┐                                              ( multi-ring sigil )
 ```
+
+The `h1`, the ensemble block, the layout bar, the statement, the two editorial columns and the
+footer are the only direct children of `main.sleeve` in the DOM. `LIVE`/`ROADMAP` are list
+wrappers around `#sideA` / `#sideB`; hiding one is a `max-height: 0` clip, not `display: none`, so
+all nineteen anchors stay in the page and every `.lead` keeps its computed 1px height.
 
 - **Ensemble credits.** The top block, directly under the header: two columns, a bold credit, a
   short 1px underline leader and a muted value. The five formal mechanisms with their lineages
   (Automata / Grammars: Černý 1964 and Lindenmayer 1968; Commit-Reveal Crypto: hash commitment,
   Lamport–Shostak–Pease 1982; WebRTC P2P; 60 Hz Fixed-Point Sim; Cellular / Emergent), then
   `with special guest ____ 2.5D PERSPECTIVE STAGE`.
-- **Tracklist.** Nineteen real `<a href>` rows, `01`..`19`. A row is two lines on a
+- **Tracklist.** Nineteen real `<a href>` rows, `01`..`19`, behind a three-state segmented
+  taxonomy: `● LIVE · 09`, `○ ROADMAP · 10`, `ALL · 19`. A row is two lines on a
   four-column grid. Line one: number, bold title, 1px hairline leader, `mm:ss · MECHANISM`. Line
   two, smaller and muted: a two-word formal sub-caption (`SYNCHRONIZING WORD`, `COFFMAN CYCLES`),
   a second hairline leader and a par / metric. Fogwalk's par (`PAR 5`) is the computed
   breadth-first optimum; the other metrics name the unit each port is scored in (`SHA-256`,
-  `3:4 · 12 PICK`, `N ≥ 3F + 1`). Side A is the nine shipped works, Side B the ten prototypes.
-  The time, tag, sub-caption and metric are hand authored in `META`, `SUBCAP` and `METRIC`, not
-  measured. The href is the destination itself, so middle-click, Tab,
+  `3:4 · 12 PICK`, `N ≥ 3F + 1`). Side A is `LIVE` (the nine shipped works), Side B is `ROADMAP`
+  (the ten in the workshop). The time, tag, sub-caption and metric are hand authored in `META`,
+  `SUBCAP` and `METRIC`, not measured. The href is the destination itself, so middle-click, Tab,
   Enter and no-WebGL all work; the JavaScript only adds the focus behaviour.
+  Pinning a track whose side is hidden by the current filter moves the filter with it, so the
+  active row is never invisible.
 - **Liner notes (the bottom block).** The *Scattered Days* layout, two columns of short-underline
-  credits. The left column is always the six blocks `PRODUCED BY / ENGINEERED BY / FORMAL CITE /
+  credits. Each entry is a label and a 1px leader on the first line and its value on the next, so
+  the back-cover column stays readable at 44% of the page instead of wrapping one word per line.
+  The left column is always the six blocks `PRODUCED BY / ENGINEERED BY / FORMAL CITE /
   CERTIFIED AT / TRANSPORT / STATE HASH`. With nothing focused they describe the whole record
   (the label, 19 deterministic ports, the citation count, `✓ 19/19 PORTS · ✓ 19/19 PAINTERS`,
   the transports, a root hash over all 19 session hashes). With a track focused they are about
@@ -104,6 +121,35 @@ registration corners.
   gauge (every fifth tooth long), the 19 track ticks over a 19-sided polygon, a circle holding
   two triangles and a {5/2} pentagram with five family dots, and a 16-point star with eight
   spokes, an octagon and the accent dot. Four groups counter-rotate at different speeds.
+
+### 2.1 Three desktop compositions
+
+The same elements are re-placed by one grid on `main.sleeve`; `body[data-layout]` selects the
+composition and `#layoutBar` (top right) writes it. The two editorial columns are flex wrappers
+(`.colL`, `.colR`) in the default layout and `display: contents` in the other two, so the world,
+the tracklist, the true window and the liner notes are real grid items in every composition
+without duplicating a node.
+
+| Layout | Grid | What it is |
+| --- | --- | --- |
+| `I · SLEEVE` (default) | `56% / 44%` | Left: the perspective world then the docked `#trueWindow`. Right: the LIVE / ROADMAP tracklist then the two-column liner notes. The quietest reading of the back cover. |
+| `II · GATEFOLD` | `28% / 40% / 32%` | Left: the tracklist and the ensemble credits (stacked label/value at this width). Centre: `#trueWindow` as the showcase, with the liner notes right underneath. Right: the world as a spatial map, with the sigil in the footer. |
+| `III · HORIZON` | `50% / 50%` | A full-width panoramic world with `#trueWindow` anchored at the right of the stage, then the classic back cover: tracklist left, liner notes and the `IND-LP-019` colophon / sigil right. |
+
+The layout bar is hidden below 1100px, where every composition folds to one editorial column.
+The choice is announced with `aria-pressed` and exposed to the harness as
+`__independents.setLayout()` / `get layout`.
+
+### 2.2 The phone
+
+At `≤ 768px` the grid becomes a single sheet. The masthead is the wordmark; a second, compact
+taxonomy row (`● LIVE · 09 / ○ ROADMAP · 10 / ALL · 19`) filters the same list wrappers, and
+`MAP / APP / TRACKS` pills scroll to the world, the true window and the tracklist. The order is
+world → true-project card → tracklist → liner notes → colophon. The stage is `38vh` with a
+`270px` floor, the true card is full width, every touch control is at least `44px`, the project
+chrome drops its telemetry and the track rows drop the sub-caption and metric so the sheet is one
+clean line per track. `overflow-x: hidden` and fixed-width slots keep the page at exactly 390px
+wide in the harness.
 
 ## 3. The world
 
@@ -216,25 +262,41 @@ rotates it from lying flat on the ground to standing (a spring with overshoot); 
 rectangle marks where it folds. Changing track folds the old board flat, swaps, and hinges the
 new one up, about a quarter of a second each way.
 
-The board is not drawn by new game code. It runs the **same 19 painters** (`DRAW[adapter]`) the
-Fish Night page puts inside its creatures, into an offscreen 512 × 384 canvas, and then re-inks
-the result before it becomes the texture:
+The board is not drawn by the sleeve's charcoal/chalk code. It is painted by **`true-frames.js`**,
+a standalone renderer that gives every one of the nineteen projects its own real register at
+1024 × 768: palette, typography, header chrome, instrument gauges and a high-detail game surface.
+Side A keeps the live illustrations (Fogwalk's aurora, Bloomwright's broadsheet, Tonguecracker's
+two-accent line art, Sealed Orders' cyan block, Hushword's neon tiles, Azulejo's glazed ceramics,
+Scribble Club's sketchbook, the Sudoku/UTTT drafting grid, Long Haul's quarry comic). Side B keeps
+the roadmap registers (backlit agar, Wardian case, green-bar plotter, washi sample, enamel
+interlocking panel, copperplate semaphore, CRT analyser, stock certificate, Venetian ledger,
+samizdat zine).
 
-| Painter output | Becomes |
-| --- | --- |
-| Hue in the warm band (0°–52° or 335°–360°), chroma > 40, bright enough: amber, orange, crimson | the accent `#EE6A3C`, scaled by the pixel's brightness |
-| Everything else | grey tone = ½ luminance + ½ max channel, smoothstepped from card (`#1B1B1C`) to chalk (`#EAE8E3`) |
-| Bright pixels | modulated by a fixed grain table, with a few chalk "dropouts" |
-
-So the painters' blue ink and cyan glow collapse to charcoal and chalk, their amber and crimson
-become the single accent, and their text stays legible. The only edit to the engine block is
-that `pcap` (painter caption text) uses IBM Plex Mono at 0.8× the size instead of Barlow
-Condensed; that is a build-time substitution (§6), not a fork of the painters.
+Nothing is re-inked. The only edit to the engine block is that `pcap` (painter caption text) uses
+IBM Plex Mono at 0.8× the size instead of Barlow Condensed; that is a build-time substitution
+(§6), not a fork of the painters. `true-frames.js` is loaded before the module and exposes
+`window.TRUE_FRAMES = { THEMES, renderTrueFrame, getFrameChrome }`: the same painter feeds the 3D
+stage texture and the high-resolution app-window surface.
 
 Picking is a ray against the board mesh: hit UV → `PICK[adapter](u, v, phase, view)` or the
 port's own `pick(u, v)` → `session.do(id, arg)`, exactly as in Fish Night, including `down` /
 `move` / `up` phases for Scribble Club's drag. The board repaints at 24 Hz while open, and
 immediately after any action.
+
+### 3.5 The true-project window
+
+`#trueWindow` is the selected work's own app window, not a picture of it. Its header comes from
+`TRUE_FRAMES.getFrameChrome(track)`: the `LIVE` / `ROADMAP` pill, the project's palette accent,
+its display and mono faces, live `REV` / `HASH` telemetry, up to four action buttons and an
+`OPEN PROJECT ↗` link (or `NOT ON MAIN YET` for Long Haul). Below it a 1024 × 768 canvas is fed by
+`TRUE_FRAMES.renderTrueFrame()` from the same `session.view()` at up to 12 Hz. Six HTML controls
+are generated from the port's own `session.actions`, so `#twControls` and the canvas read the same
+state as the board. Pointer phases over the canvas go through the same
+`PICK[adapter](u, v, phase, view)` map as the 3D board, and the CTA is the track's normal entry
+URL. With nothing focused the window previews track 01; hovering or pinning a row, clicking a
+landmark or walking near one swaps it immediately. The floating `.appchrome` overlay of Revision
+2 is gone: the window is docked in the editorial grid in every layout, so the world stays clear
+and the browser frame is read at a size where its detail actually lands.
 
 **Stage furniture.** The pop-up is a small drafting sheet, not just a picture:
 
@@ -307,8 +369,9 @@ comes back from the bfcache.
    self-test tapes and the 19 `DRAW` painters and `PICK` functions, and `PORT_REPORT`. It contains
    no `THREE`, no DOM and no clock. One substitution is applied to the copy: the font in `pcap`.
    Plus lines 3334–3335, the per-game `HINTS`.
-2. **New code (§4–§8 of the script)**: the sleeve and grain, the duotone re-inking, the focus
-   machine, the three.js world, the sigil, input and the loop.
+2. **New code (§4–§8 of the script)**: the sleeve and grain, the true-frame surface and its
+   HTML/CSS window chrome (`true-frames.js`), the focus machine, the three.js world, the sigil,
+   input and the loop.
 
 To re-sync after the engine changes upstream, re-copy those two ranges and re-apply the font
 substitution; `verify.cjs` will say whether any port or painter regressed. A shared module would
@@ -321,7 +384,7 @@ convention, so the copy stays until the ports move out of the page.
 `node prototypes/root-explorer-minimal/verify.cjs` (set `SHOTS=dir` to also write screenshots).
 It serves the repo root, opens the page in headless Chromium with software WebGL
 (`--use-angle=swiftshader`) and drives it with real keyboard and mouse events. Last run:
-**127 passed, 0 failed**, covering:
+**143 passed, 0 failed**, covering:
 
 - all 19 ports pass their self-test tape (run twice, same hash), 19 distinct hashes, all 19
   painters draw;
@@ -351,7 +414,7 @@ It serves the repo root, opens the page in headless Chromium with software WebGL
   release; clicking the ground walks it to the clicked point;
 - for **each of the 19 tracks**: a row click pins it, the camera lands within 0.9 units of the
   framing point at distance < 22, the board is open, the liner notes show an 8-hex state hash, the
-  re-inked texture has chalk pixels, a real mouse click found by scanning the board moves the
+  true-project frame has lit colour pixels, a real mouse click found by scanning the board moves the
   live session's hash, the stage shows exactly one keycap per UI action, **a real mouse click on
   every keycap fires its action** (the port's `do` is spied, so no-op actions count), and the HUD
   reads `FPS n · x MS` and `TICK 60 HZ` / `TURN-BASED · REV n`;
@@ -361,6 +424,19 @@ It serves the repo root, opens the page in headless Chromium with software WebGL
 - `Space` shows and hides all 28 edges, `Esc` releases, `Enter` and the DIVE IN button navigate to
   the Sporefront and Fogwalk URLs above, Long Haul does not navigate, the sigil toggles the
   threads, and the page does not overflow at 390 px;
+- **the taxonomy and the compositions**: the three pills read `LIVE · 09 / ROADMAP · 10 / ALL ·
+  19`; LIVE and ROADMAP clip only their wrapper while all nineteen 1px leaders keep their computed
+  height; pinning a ROADMAP work from a LIVE filter moves the filter to ROADMAP. Clicking each of
+  the three layout buttons produces `document.body.dataset.layout` and the expected column
+  geometry (left/right in `sleeve`, left < centre < right in `gatefold`, a > 80% full-width
+  panorama in `horizon`), with no horizontal overflow in any of them;
+- **the true window**: `#trueWindow` has the real `.tf-chrome`, a lit 1024 × 768 canvas in more
+  than three colour buckets, the Fogwalk route on its CTA and its live rule summary; every one of
+  its controls is wired (the port's `do` is spied) and clicking a track swaps the whole window;
+- **the phone at 390 × 844**: the wordmark, the compact filter and `MAP / APP / TRACKS` pills are
+  visible while the desktop layout bar is not; the stage is 38vh (321px), the true card is full
+  width with ≥ 44px CTA and control rows, all 19 rows stay in the DOM with 1px leaders, nothing
+  scrolls sideways, the compact pill filters the sheet and the view pills move to their section;
 - zero `console.error`, zero page errors, no failed local requests.
 
 Software WebGL runs this page at only a few frames per second on a busy machine, so the harness

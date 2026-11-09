@@ -28,7 +28,11 @@
    6. Space toggles the lineage threads, Esc releases, Enter folds the paper
       and hands off with the #fragment contract (route first, then
       from / v / h / s); an app that is not on main yet does not navigate;
-   7. zero console errors, zero page errors, no horizontal overflow at 390px.
+   7. zero console errors, zero page errors, no horizontal overflow at 390px; and, for the
+      Revision 3 page: the LIVE · 09 / ROADMAP · 10 / ALL · 19 taxonomy (all 19 anchors stay in
+      the DOM), the three layouts (sleeve / gatefold / horizon) with distinct column geometry,
+      the docked #trueWindow (authentic chrome, lit 1024x768 canvas, wired controls, open route),
+      and the 390x844 phone sheet (compact pills, 38vh stage, 44px targets, no sideways scroll).
 
    Run:   node prototypes/root-explorer-minimal/verify.cjs
    Shots: SHOTS=/some/dir node prototypes/root-explorer-minimal/verify.cjs
@@ -250,9 +254,103 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   console.log("\n[8] sigil + mobile");
   await I(() => __independents.unpin()); await step(60, false);
   await page.locator("#sigil").click(); ok((await st()).threads, "clicking the sigil toggles the threads"); await page.locator("#sigil").click();
+
+  console.log("\n[8a] LIVE / ROADMAP taxonomy, three desktop layouts, true-project window");
+  await I(() => { __independents.unpin(); __independents.setHover(null); __independents.setFilter("all"); __independents.setLayout("sleeve"); }); await step(30, false);
+  const tax = await I(() => ({
+    filter: document.body.dataset.filter,
+    pills: [...document.querySelectorAll("#filterBar .pill")].map(b => b.textContent.replace(/\s+/g, " ").trim()),
+    layout: document.body.dataset.layout,
+    layouts: [...document.querySelectorAll("#layoutBar [data-layout-btn]")].map(b => b.dataset.layoutBtn),
+    tw: !!document.querySelector("#trueWindow"), canvas: !!document.querySelector("#twCanvas"),
+    chrome: !!document.querySelector("#twChrome .tf-chrome"), cta: document.querySelector("#twOpen")?.textContent.trim()
+  }));
+  ok(tax.filter === "all" && tax.pills.length === 3 && /LIVE/.test(tax.pills[0]) && /09/.test(tax.pills[0]) && /ROADMAP/.test(tax.pills[1]) && /10/.test(tax.pills[1]) && /ALL/.test(tax.pills[2]) && /19/.test(tax.pills[2]),
+    "the LIVE · 09 / ROADMAP · 10 / ALL · 19 segmented taxonomy is the tracklist's front door", tax);
+  ok(tax.layout === "sleeve" && tax.layouts.join() === "sleeve,gatefold,horizon", "three desktop compositions: I · SLEEVE, II · GATEFOLD, III · HORIZON", tax);
+  ok(tax.tw && tax.canvas && tax.chrome && /(OPEN PROJECT|NOT ON MAIN)/.test(tax.cta || ""), "#trueWindow is a real project window: authentic chrome, a live canvas and its own open/dead CTA", tax);
+
+  await page.locator('#filterBar [data-filter="live"]').click(); await step(12, false);
+  const fl = await I(() => ({ f: document.body.dataset.filter, live: document.querySelector('.listWrap[data-side="live"]').getBoundingClientRect().height, road: document.querySelector('.listWrap[data-side="roadmap"]').getBoundingClientRect().height, leads: [...document.querySelectorAll("a.trk .lead")].every(e => getComputedStyle(e).height === "1px") }));
+  ok(fl.f === "live" && fl.live > 100 && fl.road === 0 && fl.leads, "LIVE hides the ten roadmap rows; all nineteen 1px leaders stay in the DOM and in style", fl);
+  await page.locator('#filterBar [data-filter="roadmap"]').click(); await step(12, false);
+  const fr = await I(() => ({ f: document.body.dataset.filter, live: document.querySelector('.listWrap[data-side="live"]').getBoundingClientRect().height, road: document.querySelector('.listWrap[data-side="roadmap"]').getBoundingClientRect().height }));
+  ok(fr.f === "roadmap" && fr.live === 0 && fr.road > 100, "ROADMAP shows only the ten works in the workshop", fr);
+  await page.locator('#filterBar [data-filter="all"]').click(); await step(12, false);
+  await page.locator('#filterBar [data-filter="live"]').click();
+  await I(() => __independents.pin("shadow")); await step(20, false);
+  const auto = await I(() => ({ f: document.body.dataset.filter, on: document.querySelector("a.trk.on")?.dataset.slug, tw: document.querySelector("#trueWindow").dataset.slug }));
+  ok(auto.f === "roadmap" && auto.on === "shadow" && auto.tw === "shadow", "pinning a ROADMAP work flips the filter and the true window so the active track is never hidden", auto);
+  await I(() => { __independents.unpin(); __independents.setFilter("all"); }); await step(20, false);
+
+  await page.locator('a.trk[data-slug="fogwalk"]').click(); await step(50);
+  const tw = await I(() => {
+    const w = document.querySelector("#trueWindow"), cv = document.querySelector("#twCanvas"), g = cv.getContext("2d"), d = g.getImageData(0, 0, cv.width, cv.height).data;
+    let lit = 0; const cols = new Set();
+    for (let i = 0; i < d.length; i += 64) if (d[i] + d[i + 1] + d[i + 2] > 150) { lit++; cols.add((d[i] >> 4) + "," + (d[i + 1] >> 4) + "," + (d[i + 2] >> 4)); }
+    return { vis: w.offsetWidth > 240 && w.offsetHeight > 200, title: w.querySelector(".tf-title")?.textContent.trim(), chrome: !!w.querySelector(".tf-chrome"), lit, colors: cols.size, open: w.querySelector("#twOpen")?.getAttribute("href"), btns: w.querySelectorAll("#twControls [data-tw-act]").length, meta: w.querySelector("#twMeta")?.textContent };
+  });
+  ok(tw.vis && /FOGWALK/i.test(tw.title || "") && tw.chrome && tw.lit > 120 && tw.colors > 3 && tw.btns > 0 && /apps\/fogwalk\//.test(tw.open || "") && /AUTOMATA/.test(tw.meta || ""),
+    `#trueWindow shows Fogwalk's authentic chrome, ${tw.lit} lit canvas pixels in ${tw.colors} colour buckets, ${tw.btns} real controls and its route`, tw);
+
+  const ids = await I(() => {
+    const a = __independents.ART.find(x => x.slug === "fogwalk"); window.__twcalls = []; window.__twod = a.session.do;
+    a.session.do = function (id, arg) { window.__twcalls.push(id); return window.__twod.call(this, id, arg); };
+    return [...document.querySelectorAll("#twControls [data-tw-act]")].map(b => b.dataset.twAct);
+  });
+  for (let i = 0; i < ids.length; i++) await page.locator("#twControls [data-tw-act]").nth(i).click();
+  const twCalls = await I(() => { const a = __independents.ART.find(x => x.slug === "fogwalk"), c = window.__twcalls; a.session.do = window.__twod; return c; });
+  ok(ids.length > 0 && twCalls.join() === ids.join(), `every control in #trueWindow fires its port action (${twCalls.join(",")})`, { ids, twCalls });
+
+  const geo = async name => {
+    await page.locator(`#layoutBar [data-layout-btn="${name}"]`).click(); await step(25, false);
+    return I(() => {
+      const r = s => document.querySelector(s).getBoundingClientRect(), iw = document.documentElement.clientWidth;
+      const app = r("#trueWindow");
+      return { layout: document.body.dataset.layout, world: [r("#world").left, r("#world").right, r("#world").width, r("#world").top], tracks: [r("#trackPanel").left, r("#trackPanel").right, r("#trackPanel").top], app: [app.left, app.right, app.width, app.height], liner: [r("#linerPanel").left, r("#linerPanel").top], frame: r("#frame").height, sw: document.documentElement.scrollWidth, iw };
+    });
+  };
+  const gs = await geo("sleeve");
+  ok(gs.layout === "sleeve" && gs.world[1] <= gs.tracks[0] + 2 && gs.world[2] > 500 && gs.app[3] > 240 && gs.sw <= gs.iw,
+    "I · SLEEVE: 56% perspective world + docked app window left, 44% tracklist + liner notes right", gs);
+  const gg = await geo("gatefold");
+  ok(gg.layout === "gatefold" && gg.tracks[1] <= gg.app[0] + 2 && gg.app[1] <= gg.world[0] + 2 && gg.app[2] > 300 && gg.app[3] > 300 && gg.sw <= gg.iw,
+    "II · GATEFOLD: tracklist / full-height app showcase / perspective world in three columns", gg);
+  const gh = await geo("horizon");
+  ok(gh.layout === "horizon" && gh.world[2] > gh.iw * 0.8 && gh.app[0] > gh.iw * 0.5 && gh.tracks[2] > gh.world[3] && gh.liner[0] > gh.tracks[0] && gh.sw <= gh.iw,
+    "III · HORIZON: full-width panorama with the app window anchored right, then the back-cover two-column", gh);
+  await I(() => { __independents.setLayout("sleeve"); __independents.unpin(); __independents.setHover(null); __independents.setFilter("all"); }); await step(40, false);
+
+  console.log("\n[8b] phone at 390 x 844");
   await page.setViewportSize({ width: 390, height: 844 }); await sleep(300); await step(60);
   const ov = await I(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth, fh: document.querySelector("#frame").getBoundingClientRect().height }));
   ok(ov.sw <= ov.iw, "no horizontal overflow at 390px", ov);
+  const mo = await I(() => {
+    const win = document.querySelector("#trueWindow").getBoundingClientRect(), cta = document.querySelector("#twOpen").getBoundingClientRect(), ctl = document.querySelector("#twControls").getBoundingClientRect();
+    const rows = [...document.querySelectorAll("a.trk")];
+    return {
+      filters: getComputedStyle(document.querySelector("#mobileFilters")).display,
+      mf: [...document.querySelectorAll("#mobileFilters [data-filter]")].map(b => b.dataset.filter),
+      views: [...document.querySelectorAll("#mView [data-mview]")].map(b => b.dataset.mview),
+      layoutBar: getComputedStyle(document.querySelector("#layoutBar")).display,
+      frame: document.querySelector("#frame").getBoundingClientRect().height,
+      win: [win.width, win.height], cta: cta.height, ctl: ctl.height,
+      rows: rows.length, maxRight: Math.max(...rows.map(a => a.getBoundingClientRect().right)), minLeft: Math.min(...rows.map(a => a.getBoundingClientRect().left)), iw: innerWidth,
+      leads: rows.every(a => getComputedStyle(a.querySelector(".lead")).height === "1px")
+    };
+  });
+  ok(mo.filters !== "none" && mo.mf.join() === "live,roadmap,all" && mo.views.join() === "map,app,tracks" && mo.layoutBar === "none",
+    "phone header: INDEPENDENTS wordmark, LIVE · 09 / ROADMAP · 10 / ALL · 19 pills and MAP / APP / TRACKS view pills", mo);
+  ok(mo.frame >= 0.3 * 844 && mo.frame <= 0.46 * 844 && mo.win[0] > 330 && mo.win[1] > 300 && mo.cta >= 42 && mo.ctl >= 42,
+    `phone: a ${Math.round(mo.frame)}px perspective stage and a full-width true-project card with 44px touch targets`, mo);
+  ok(mo.rows === 19 && mo.leads && mo.maxRight <= mo.iw && mo.minLeft >= -1, "phone: all nineteen rows stay in the DOM, leaders are 1px, nothing scrolls sideways", mo);
+
+  await page.locator('#mobileFilters [data-filter="roadmap"]').click(); await step(12, false);
+  const mob = await I(() => ({ f: document.body.dataset.filter, live: document.querySelector('.listWrap[data-side="live"]').getBoundingClientRect().height, road: document.querySelector('.listWrap[data-side="roadmap"]').getBoundingClientRect().height, on: document.querySelector("#mobileFilters [data-filter=roadmap]").classList.contains("on") }));
+  ok(mob.f === "roadmap" && mob.live === 0 && mob.road > 100 && mob.on, "phone: the compact pill filters the sheet and keeps its own selected state", mob);
+  await page.locator('#mView [data-mview="tracks"]').click(); await sleep(450);
+  ok(await I(() => document.body.dataset.mview === "tracks" && document.querySelector('#mView [data-mview="tracks"]').classList.contains("on")), "phone: MAP / APP / TRACKS pills jump to their section");
+  await page.locator('#mobileFilters [data-filter="all"]').click(); await step(12, false);
   await page.locator('a.trk[data-slug="shadow"]').scrollIntoViewIfNeeded(); await page.locator('a.trk[data-slug="shadow"]').click(); await step(110);
   await page.evaluate(() => document.querySelector("#world").scrollIntoView()); await sleep(200); await shot("05-mobile-shadow");
   ok((await st()).boardSlug === "shadow", "mobile: track click raises the board");
