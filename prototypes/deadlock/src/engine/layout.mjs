@@ -7,7 +7,8 @@ export function cartWaypoints(level, ci) {
   const cart = level.carts[ci];
   const L = level.layout;
   const depot = L.depots[cart.id];
-  const hut = L.huts[cart.id];
+  const hutAt = L.huts[cart.id];
+  const hut = { x: hutAt.x + Math.sign(500 - hutAt.x) * 74, y: hutAt.y + 30 }; // parks beside its hut, toward the middle
   const loop = L.loops && L.loops[cart.id];
   const nWork = cart.tape.filter((o) => o.k === 'work').length;
   const wp = [depot];

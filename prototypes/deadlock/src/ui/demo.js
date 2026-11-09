@@ -141,6 +141,7 @@ const Demo = (() => {
     D.tokG.setAttribute('opacity', 1);
   }
 
-  const API = { start, stop, frame, get active() { return D.active; }, allowDrag: () => true, D };
+  const jump = (st) => { enterStage(D.A, st); D.A.rewind(); setBeat('hold'); };
+  const API = { start, stop, frame, jump, get active() { return D.active; }, allowDrag: () => true, D };
   return API;
 })();

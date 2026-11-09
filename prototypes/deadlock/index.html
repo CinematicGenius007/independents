@@ -101,6 +101,7 @@ table.thr { width: 100%; border-collapse: collapse; } .thr th { text-align: left
 #cover .pick svg { width: 62%; height: 62%; } #cover .pick.p { background: radial-gradient(circle at 34% 28%, #fff6c0, #f7c531 62%, #c98a0b); } #cover .pick.d { background: radial-gradient(circle at 34% 28%, #e9f6ff, #8fd0f4 62%, #4aa2d6); }
 #cover .pick span { display: none; }
 @media (max-width: 880px) {
+  main { flex: none; } .deck { position: sticky; bottom: 0; z-index: 6; background: #8ecdf2; box-shadow: 0 -8px 14px rgba(40,70,100,.18); }
   [data-mode=dev] main { grid-template-columns: minmax(0, 1fr); } [data-mode=dev] #dev { max-height: none; }
   #board { width: 100%; border-radius: 18px; } .top { padding: 8px 10px 4px; } #trail { max-width: calc(100vw - 130px); } .stone { width: 34px; height: 34px; font-size: 13px; }
   .cbtn { width: 44px; height: 44px; } .deck { gap: 10px; padding: 10px 10px 18px; } .film { order: -1; flex-basis: 100%; }
@@ -1095,7 +1096,8 @@ function cartWaypoints(level, ci) {
   const cart = level.carts[ci];
   const L = level.layout;
   const depot = L.depots[cart.id];
-  const hut = L.huts[cart.id];
+  const hutAt = L.huts[cart.id];
+  const hut = { x: hutAt.x + Math.sign(500 - hutAt.x) * 74, y: hutAt.y + 30 }; // parks beside its hut, toward the middle
   const loop = L.loops && L.loops[cart.id];
   const nWork = cart.tape.filter((o) => o.k === 'work').length;
   const wp = [depot];
@@ -2273,7 +2275,8 @@ const Demo = (() => {
     D.tokG.setAttribute('opacity', 1);
   }
 
-  const API = { start, stop, frame, get active() { return D.active; }, allowDrag: () => true, D };
+  const jump = (st) => { enterStage(D.A, st); D.A.rewind(); setBeat('hold'); };
+  const API = { start, stop, frame, jump, get active() { return D.active; }, allowDrag: () => true, D };
   return API;
 })();
 
