@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deadlock pieces</title>
+<style>
+:root { --ink: #33202a; --grass: #8fbd4b; --sky: #8ecdf2; --cream: #fff6df; --soil: #8b5e3c; --gold: #f7c531; --red: #e3453f;
+  --font: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", system-ui, sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: var(--font); color: var(--ink); background: #cfe6f1; }
+/* specimen sheet */
+body.sheet { padding: 0 16px 60px; background: linear-gradient(#bfe0f1, #e7f1d6 40%, #cfe3a5); min-height: 100%; }
+.sheet-head { max-width: 1180px; margin: 0 auto; padding: 28px 0 8px; }
+.sheet-head h1 { margin: 0; font-size: 38px; letter-spacing: -.01em; }
+.sheet-head p { margin: 4px 0 8px; opacity: .75; }
+.tog { font-size: 14px; opacity: .8; }
+#sheet { max-width: 1180px; margin: 0 auto; }
+#sheet section { margin: 34px 0; }
+#sheet h2 { font-size: 22px; margin: 0 0 4px; }
+#sheet section > p { margin: 0 0 14px; max-width: 62ch; opacity: .78; line-height: 1.45; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+figure { margin: 0; }
+figure svg { display: block; border-radius: 18px; background: #cfe6f1; box-shadow: 0 6px 0 rgba(120, 90, 50, .28), 0 14px 22px rgba(60, 40, 20, .12); overflow: hidden; }
+figcaption { margin: 10px 4px 0; font-size: 14px; font-weight: 700; opacity: .8; }
+
+/* ================= game ================= */
+:root { --clay-hi: rgba(255,255,255,.5); --clay-lo: rgba(60,30,10,.22); --soil2: #6e472c; --paper: #fbf1d8; --paper2: #f2e2b9; }
+body.game { overflow-x: hidden; background: #8ecdf2; }
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 6px; position: relative; z-index: 5; }
+#trail { display: flex; gap: 8px; overflow-x: auto; padding: 6px 4px 8px; max-width: calc(100vw - 160px); scrollbar-width: none; }
+#trail::-webkit-scrollbar { display: none; }
+.stone { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: 0; font: 800 15px var(--font); color: var(--ink); cursor: pointer; position: relative;
+  background: radial-gradient(circle at 34% 28%, #fff7d8, #e9d6a2 62%, #c8ad72); box-shadow: inset -3px -4px 0 var(--clay-lo), inset 2px 2px 0 var(--clay-hi), 0 4px 0 #8a6c36; }
+.stone.here { background: radial-gradient(circle at 34% 28%, #fff1a8, #f7c531 62%, #c98a0b); transform: translateY(-3px) scale(1.12); }
+.stone.won s { position: absolute; left: 0; right: 0; bottom: -13px; font-size: 10px; text-decoration: none; color: #e0a30b; letter-spacing: -1px; text-shadow: 0 1px 0 #fff; }
+.stone.locked { opacity: .45; filter: grayscale(.6); cursor: default; }
+.modes { display: flex; gap: 8px; }
+.cbtn { width: 48px; height: 48px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; color: var(--ink);
+  background: radial-gradient(circle at 34% 28%, #fffaf0, #f3e4c1 62%, #cfb27a); box-shadow: inset -3px -5px 0 var(--clay-lo), inset 3px 3px 0 var(--clay-hi), 0 5px 0 #8a6c36; transition: transform .12s steps(2); }
+.cbtn:active, .cbtn.pressed { transform: translateY(4px) scale(1.04, .94); box-shadow: inset -3px -5px 0 var(--clay-lo), inset 3px 3px 0 var(--clay-hi), 0 1px 0 #8a6c36; }
+.cbtn.on { background: radial-gradient(circle at 34% 28%, #fff6c0, #f7c531 62%, #c98a0b); }
+.cbtn svg { width: 26px; height: 26px; }
+.cbtn:focus-visible, .stone:focus-visible, .tok:focus-visible { outline: 4px solid #fff; outline-offset: 3px; box-shadow: 0 0 0 7px #2f74b4; }
+.cbtn.sky { background: radial-gradient(circle at 34% 28%, #e9f6ff, #8fd0f4 62%, #4aa2d6); }
+.cbtn.coral { background: radial-gradient(circle at 34% 28%, #ffe9e1, #ff9d86 62%, #e0553f); }
+.cbtn.leaf { background: radial-gradient(circle at 34% 28%, #f0ffd6, #a6dc62 62%, #5f9c2e); }
+.cbtn.big { width: 62px; height: 62px; } .cbtn.big svg { width: 32px; height: 32px; }
+#btn-play .ic-pause { display: none; } #btn-play[data-state=pause] .ic-pause { display: block; } #btn-play[data-state=pause] .ic-play { display: none; }
+main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 0 14px; align-items: start; }
+.stage { position: relative; display: grid; place-items: center; }
+#board { width: min(100%, calc((100dvh - 232px) * 1.4286)); min-width: 280px; aspect-ratio: 10 / 7; border-radius: 26px; box-shadow: 0 8px 0 #6e472c, 0 18px 34px rgba(50,30,10,.28); background: #8ecdf2; touch-action: none; display: block; }
+#dev { display: none; }
+[data-mode=dev] main { grid-template-columns: minmax(0, 1fr) 400px; }
+[data-mode=dev] #dev { display: block; background: var(--paper); border-radius: 22px; padding: 12px 14px; box-shadow: 0 6px 0 #b79a58, 0 14px 26px rgba(60,40,10,.2); max-height: calc(100dvh - 120px); overflow: auto; font-size: 13px; line-height: 1.35; }
+#dev h3 { margin: 12px 0 6px; font-size: 14px; } #dev h3:first-child { margin-top: 0; } #dev h3 small { font-weight: 500; opacity: .6; margin-left: 4px; }
+.mono, #dev input, #dev select, #dev button { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; } .kv span { opacity: .65; } .kv b { font-weight: 700; }
+.st-won { color: #2c8a3c; } .st-deadlock { color: #2f74b4; } .st-livelock { color: #8f5ad6; } .st-missed { color: #c4561a; }
+.lamps { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lamp { display: flex; align-items: center; gap: 8px; background: var(--paper2); border-radius: 12px; padding: 6px 8px; }
+.lamp i { width: 16px; height: 16px; border-radius: 50%; background: #c9bd9a; box-shadow: inset -2px -2px 0 rgba(0,0,0,.18); flex: none; }
+.lamp b { font-weight: 700; font-size: 12px; } .lamp.on i { box-shadow: 0 0 10px 2px currentColor, inset -2px -2px 0 rgba(0,0,0,.12); }
+.lamp.on.green i { background: #7ccf52; color: #7ccf52; } .lamp.on.red i { background: #ff4d3d; color: #ff4d3d; } .lamp.on.amber i { background: #ffb02e; color: #ffb02e; }
+table.thr { width: 100%; border-collapse: collapse; } .thr th { text-align: left; opacity: .55; font-weight: 600; padding: 2px 4px; } .thr td { padding: 3px 4px; vertical-align: top; border-top: 1px solid rgba(0,0,0,.08); }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; box-shadow: inset -2px -2px 0 rgba(0,0,0,.2); }
+.tape { display: flex; flex-wrap: wrap; gap: 3px; } .chip { padding: 1px 5px; border-radius: 6px; background: #ece0bd; font-size: 11px; opacity: .7; } .chip.act { background: #f7c531; opacity: 1; font-weight: 800; box-shadow: 0 0 0 2px #c68a0b; } .chip.dn { opacity: .35; text-decoration: line-through; }
+.mutexes { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; } .mx { padding: 2px 8px; border-radius: 999px; background: #dff0c4; } .mx.held { background: #ffd9cf; }
+.pl { padding: 1px 6px; border-radius: 6px; background: #e6e6e6; } .pl.hold { background: #ffd0c4; } .pl.loan { background: #ffeaa0; }
+.seedrow { display: flex; gap: 6px; margin: 6px 0; } #dev input { flex: 1; min-width: 0; padding: 5px 8px; border-radius: 10px; border: 2px solid #cdb47a; background: #fffaf0; } #dev select { padding: 5px; border-radius: 10px; border: 2px solid #cdb47a; background: #fffaf0; max-width: 150px; }
+#dev button { padding: 5px 10px; border-radius: 10px; border: 0; background: #f7c531; font-weight: 800; box-shadow: 0 3px 0 #c68a0b; cursor: pointer; }
+.deck { display: flex; align-items: center; gap: 14px; padding: 12px 14px 16px; flex-wrap: wrap; }
+.tray { display: flex; gap: 8px; min-width: 120px; min-height: 84px; padding: 4px 8px; align-items: center; border-radius: 22px; background: linear-gradient(#a97a52, #8b5e3c); box-shadow: inset 0 5px 8px rgba(0,0,0,.3), 0 3px 0 #5a381f; }
+.tok { position: relative; border: 0; padding: 0; width: 96px; height: 76px; background: none; cursor: grab; touch-action: none; filter: drop-shadow(0 4px 2px rgba(0,0,0,.28)); }
+.tok:active { cursor: grabbing; } .tok.lifted { opacity: .35; } .tok.used { opacity: .22; filter: grayscale(1); cursor: default; }
+.transport { display: flex; gap: 10px; }
+.film { flex: 1 1 320px; min-width: 240px; height: 58px; display: flex; gap: 3px; padding: 11px 8px; overflow-x: auto; scrollbar-width: none; border-radius: 12px; touch-action: none; position: relative; user-select: none;
+  background: #4a3224; box-shadow: inset 0 3px 6px rgba(0,0,0,.45), 0 4px 0 #2d1d13;
+  background-image: radial-gradient(circle, #e7d9b7 2.2px, transparent 2.6px), radial-gradient(circle, #e7d9b7 2.2px, transparent 2.6px); background-size: 14px 8px, 14px 8px; background-position: 0 1px, 0 calc(100% - 1px); background-repeat: repeat-x, repeat-x; }
+.film::-webkit-scrollbar { display: none; }
+.cell { flex: 1 0 16px; min-width: 16px; max-width: 46px; border-radius: 5px; background: #e9dcba; position: relative; box-shadow: inset 0 -2px 0 rgba(0,0,0,.12); display: grid; place-items: center; cursor: pointer; }
+.cell.blank { background: #6a4a35; box-shadow: none; opacity: .55; }
+.cell.open { background: #ffe58a; } .cell.now { background: #fff; transform: translateY(-3px); box-shadow: 0 0 0 3px #f7c531, 0 4px 0 #c68a0b; z-index: 2; }
+.cell .mk { position: absolute; top: -9px; left: 50%; width: 22px; height: 22px; margin-left: -11px; z-index: 3; filter: drop-shadow(0 2px 1px rgba(0,0,0,.4)); } .cell .mk svg, .endi svg { width: 100%; height: 100%; }
+.endi { width: 18px; height: 18px; display: block; }
+.cell.end-2 { background: #cfe6ff; } .cell.end-3 { background: #e3d3ff; } .cell.end-4 { background: #ffd7b0; } .cell.end-1 { background: #fff0a8; }
+.coach-hide, .only-dev { display: none; } [data-mode=dev] .only-dev { display: flex; }
+#btn-skip { display: none; } body.demo #btn-skip { display: grid; } body.demo #trail { opacity: .35; pointer-events: none; }
+.overlay { position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 60; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* cover */
+#cover { position: fixed; inset: 0; z-index: 40; display: grid; align-content: start; justify-items: center; padding: 4vh 16px; gap: 14px; text-align: center; background: linear-gradient(rgba(142,205,242,0), rgba(142,205,242,0) 40%, rgba(60,40,20,.0)); pointer-events: none; }
+#cover.gone { display: none; }
+#cover h1 { margin: 0; font: 900 clamp(54px, 10vw, 120px)/0.95 var(--font); letter-spacing: -.02em; color: #fff6df; text-shadow: 0 2px 0 #e8d3a0, 0 4px 0 #c9a96a, 0 6px 0 #a98649, 0 8px 0 #7a5a30, 0 14px 18px rgba(60,40,10,.35); transform: rotate(-2deg); }
+#cover .picks { display: flex; gap: 34px; pointer-events: auto; position: absolute; left: 50%; top: 64%; transform: translateX(-50%); }
+#cover .pick { width: clamp(96px, 16vw, 132px); height: clamp(96px, 16vw, 132px); border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; font: 900 20px var(--font); color: var(--ink);
+  background: radial-gradient(circle at 34% 28%, #fffaf0, #f3e4c1 62%, #cfb27a); box-shadow: inset -6px -9px 0 var(--clay-lo), inset 5px 5px 0 var(--clay-hi), 0 9px 0 #8a6c36, 0 18px 24px rgba(50,30,10,.3); transition: transform .12s steps(2); }
+#cover .pick:hover { transform: translateY(-4px) rotate(-2deg); } #cover .pick:active { transform: translateY(6px) scale(1.05, .92); }
+#cover .pick svg { width: 62%; height: 62%; } #cover .pick.p { background: radial-gradient(circle at 34% 28%, #fff6c0, #f7c531 62%, #c98a0b); } #cover .pick.d { background: radial-gradient(circle at 34% 28%, #e9f6ff, #8fd0f4 62%, #4aa2d6); }
+#cover .pick span { display: none; }
+@media (max-width: 880px) {
+  [data-mode=dev] main { grid-template-columns: minmax(0, 1fr); } [data-mode=dev] #dev { max-height: none; }
+  #board { width: 100%; border-radius: 18px; } .top { padding: 8px 10px 4px; } #trail { max-width: calc(100vw - 130px); } .stone { width: 34px; height: 34px; font-size: 13px; }
+  .cbtn { width: 44px; height: 44px; } .deck { gap: 10px; padding: 10px 10px 18px; } .film { order: -1; flex-basis: 100%; }
+  .tok { width: 84px; height: 66px; }
+}
+@media (prefers-reduced-motion: reduce) { .cbtn, #cover .pick, .stone { transition: none; } }
+
+</style>
+</head>
+<body class="sheet">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="shared-defs"></defs></svg>
+<header class="sheet-head">
+  <h1>Pieces</h1>
+  <p>Every piece in every state, looping on twos (12 fps).</p>
+  <label class="tog"><input type="checkbox" id="smooth"> smooth (60 fps) for comparison</label>
+</header>
+<main id="sheet"></main>
+<script>
+/* Clay: one coherent plasticine style, drawn as inline SVG.
+ * Material = one SVG filter (wobbly hand-made edge, soft diffuse + specular
+ * lighting off a blurred height map, fine grain) + a thumbprint pattern + a
+ * darker seam stroke. Every piece uses it, so the set reads as one shelf of clay.
+ * Motion is quantised to 12 fps ("on twos") by Clay.snap. No Math.random. */
+(function (root) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const cfg = { fps: 12 }; // 12 = stop-motion "on twos"; 60 = smooth (specimen sheet toggle)
+  const snap = (t) => Math.floor(t * cfg.fps) / cfg.fps;
+  const frame = (t) => Math.floor(t * 12); // counters and boil always tick at 12
+  // deterministic per-frame jitter in [-1,1] (the stop-motion "boil")
+  function hash(n) { n = (n ^ 61) ^ (n >>> 16); n += n << 3; n ^= n >>> 4; n = Math.imul(n, 0x27d4eb2d); n ^= n >>> 15; return (n >>> 0) / 4294967296; }
+  const jit = (t, k = 0) => hash(frame(t) * 31 + k * 977) * 2 - 1;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = (t) => t * t * (3 - 2 * t);
+
+  function S(tag, attrs, ...kids) {
+    const e = document.createElementNS(NS, tag);
+    if (attrs) for (const k in attrs) if (attrs[k] != null) e.setAttribute(k, attrs[k]);
+    for (const k of kids.flat()) if (k) e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k);
+    return e;
+  }
+  const attr = (e, o) => { for (const k in o) e.setAttribute(k, o[k]); return e; };
+
+  // skins: [main, dark seam, light]
+  const SKINS = [
+    { name: 'mustard', main: '#f3b53a', dark: '#b97d10', light: '#ffe08a' },
+    { name: 'teal',    main: '#3db8a8', dark: '#1b7f74', light: '#92e3d5' },
+    { name: 'coral',   main: '#ee6b58', dark: '#b3402f', light: '#ffa597' },
+    { name: 'lilac',   main: '#a88bdc', dark: '#6f52ab', light: '#d2bff5' },
+    { name: 'sky',     main: '#5ba9e8', dark: '#2f74b4', light: '#a5d3fb' },
+    { name: 'oat',     main: '#f1e4c4', dark: '#b39f70', light: '#fff8e4' },
+  ];
+  const INK = '#33202a';
+  const PAL = {
+    ink: INK, cream: '#fff6df', rail: '#8d6b4e', railDark: '#5f452f', steel: '#aab2b8',
+    sand: '#ead7a6', sandDark: '#c3a468', grass: '#8fbd4b', grassDark: '#62983a', grassLight: '#c4de7c',
+    yarn: '#e3453f', yarnLight: '#ff9d8e', gold: '#f7c531', goldDark: '#c68a0b', goldLight: '#fff0a0',
+    sky1: '#8ecdf2', sky2: '#e8f5fc',
+  };
+
+  let uid = 0;
+  const nextId = () => `c${uid++}`;
+  function defs() {
+    return S('defs', null,
+      S('filter', { id: 'clay', x: '-14%', y: '-14%', width: '128%', height: '132%', 'color-interpolation-filters': 'sRGB' },
+        S('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.02', numOctaves: '2', seed: '3', result: 'wob' }),
+        S('feDisplacementMap', { in: 'SourceGraphic', in2: 'wob', scale: '4', xChannelSelector: 'R', yChannelSelector: 'G', result: 'shape' }),
+        S('feGaussianBlur', { in: 'shape', stdDeviation: '2.6', result: 'b1' }),
+        S('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.16 0.22', numOctaves: '2', seed: '11', result: 'grain' }),
+        S('feComposite', { in: 'b1', in2: 'grain', operator: 'arithmetic', k1: '0', k2: '0.9', k3: '0.12', k4: '0', result: 'hm' }),
+        S('feDiffuseLighting', { in: 'hm', surfaceScale: '4.5', diffuseConstant: '1.3', 'lighting-color': '#ffffff', result: 'lit' }, S('feDistantLight', { azimuth: '225', elevation: '54' })),
+        S('feComposite', { in: 'lit', in2: 'shape', operator: 'in', result: 'litIn' }),
+        S('feBlend', { in: 'shape', in2: 'litIn', mode: 'multiply', result: 'base' }),
+        S('feSpecularLighting', { in: 'hm', surfaceScale: '4.5', specularConstant: '0.55', specularExponent: '16', 'lighting-color': '#fff6e0', result: 'spec' }, S('feDistantLight', { azimuth: '225', elevation: '54' })),
+        S('feComposite', { in: 'spec', in2: 'shape', operator: 'in', result: 'specIn' }),
+        S('feComposite', { in: 'base', in2: 'specIn', operator: 'arithmetic', k1: '0', k2: '1', k3: '0.5', k4: '0' })),
+      // a lighter, cheaper variant for small pieces (no displacement/spec)
+      S('filter', { id: 'clay-sm', x: '-20%', y: '-20%', width: '140%', height: '140%', 'color-interpolation-filters': 'sRGB' },
+        S('feGaussianBlur', { in: 'SourceAlpha', stdDeviation: '1.6', result: 'b' }),
+        S('feDiffuseLighting', { in: 'b', surfaceScale: '3', diffuseConstant: '1.3', 'lighting-color': '#fff', result: 'l' }, S('feDistantLight', { azimuth: '225', elevation: '54' })),
+        S('feComposite', { in: 'l', in2: 'SourceAlpha', operator: 'in', result: 'li' }),
+        S('feBlend', { in: 'SourceGraphic', in2: 'li', mode: 'multiply' })),
+      S('filter', { id: 'soft', x: '-30%', y: '-60%', width: '160%', height: '220%' }, S('feGaussianBlur', { stdDeviation: '5' })),
+      S('filter', { id: 'wobble', x: '-5%', y: '-5%', width: '110%', height: '110%' },
+        S('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.012 0.02', numOctaves: '2', seed: '8', result: 'w' }),
+        S('feDisplacementMap', { in: 'SourceGraphic', in2: 'w', scale: '14', xChannelSelector: 'R', yChannelSelector: 'G' })),
+      // fingerprint: concentric arcs, the signature of hand-pressed clay
+      S('pattern', { id: 'thumb', width: '46', height: '46', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(-18)' },
+        [5, 9, 13, 17].map((r) => S('ellipse', { cx: 23, cy: 24, rx: r * 1.25, ry: r, fill: 'none', stroke: '#000', 'stroke-opacity': '.07', 'stroke-width': '1.6', 'stroke-dasharray': `${r * 5} ${r * 2.4}` }))),
+      S('pattern', { id: 'thumbL', width: '46', height: '46', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(24)' },
+        [6, 11, 15].map((r) => S('ellipse', { cx: 23, cy: 24, rx: r * 1.2, ry: r, fill: 'none', stroke: '#fff', 'stroke-opacity': '.12', 'stroke-width': '1.4', 'stroke-dasharray': `${r * 4} ${r * 3}` }))),
+      S('radialGradient', { id: 'shadow', cx: '50%', cy: '50%', r: '50%' },
+        S('stop', { offset: '0', 'stop-color': '#2b1d12', 'stop-opacity': '.42' }),
+        S('stop', { offset: '.7', 'stop-color': '#2b1d12', 'stop-opacity': '.16' }),
+        S('stop', { offset: '1', 'stop-color': '#2b1d12', 'stop-opacity': '0' })),
+      S('radialGradient', { id: 'beam', cx: '50%', cy: '0%', r: '100%' },
+        S('stop', { offset: '0', 'stop-color': '#fff2a8', 'stop-opacity': '.8' }),
+        S('stop', { offset: '1', 'stop-color': '#fff2a8', 'stop-opacity': '0' })),
+      S('radialGradient', { id: 'eyeW', cx: '38%', cy: '32%', r: '75%' },
+        S('stop', { offset: '0', 'stop-color': '#ffffff' }), S('stop', { offset: '.75', 'stop-color': '#fbf4e2' }), S('stop', { offset: '1', 'stop-color': '#d9ccb0' })),
+      S('linearGradient', { id: 'skyG', x1: '0', y1: '0', x2: '0', y2: '1' },
+        S('stop', { offset: '0', 'stop-color': '#79c2ee' }), S('stop', { offset: '.7', 'stop-color': '#c5e6f8' }), S('stop', { offset: '1', 'stop-color': '#eef8e4' })),
+      S('linearGradient', { id: 'grassG', x1: '0', y1: '0', x2: '0', y2: '1' },
+        S('stop', { offset: '0', 'stop-color': '#a6cf58' }), S('stop', { offset: '1', 'stop-color': '#6aa13a' })),
+      S('linearGradient', { id: 'soilG', x1: '0', y1: '0', x2: '0', y2: '1' },
+        S('stop', { offset: '0', 'stop-color': '#9a6a43' }), S('stop', { offset: '1', 'stop-color': '#6e472c' })));
+  }
+
+  // A clay lump: filled path(s) with seam + thumbprint, lit by the clay filter.
+  function lump(d, color, o = {}) {
+    const g = S('g', { filter: o.small ? 'url(#clay-sm)' : 'url(#clay)' });
+    const mk = (extra) => (typeof d === 'string' ? S('path', { d, ...extra }) : S(d.tag, { ...d.attrs, ...extra }));
+    g.appendChild(mk({ fill: color.main || color, stroke: color.dark || 'none', 'stroke-opacity': '.45', 'stroke-width': o.seam ?? 2.2 }));
+    if (!o.noThumb) { g.appendChild(mk({ fill: 'url(#thumb)' })); g.appendChild(mk({ fill: 'url(#thumbL)' })); }
+    return g;
+  }
+  const ell = (cx, cy, rx, ry) => ({ tag: 'ellipse', attrs: { cx, cy, rx, ry } });
+  const circ = (cx, cy, r) => ({ tag: 'circle', attrs: { cx, cy, r } });
+  const rrect = (x, y, w, h, r) => ({ tag: 'rect', attrs: { x, y, width: w, height: h, rx: r, ry: r } });
+
+  function shadow(rx = 60, ry = 12, dx = 8, dy = 4) {
+    return S('ellipse', { cx: dx, cy: dy, rx, ry, fill: 'url(#shadow)' });
+  }
+
+  function starPath(r, ri = r * 0.45) {
+    let d = '';
+    for (let i = 0; i < 10; i += 1) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 5; const rr = i % 2 ? ri : r;
+      d += `${i ? 'L' : 'M'}${(Math.cos(a) * rr).toFixed(2)},${(Math.sin(a) * rr).toFixed(2)}`;
+    }
+    return d + 'Z';
+  }
+  function star(r = 9, o = {}) {
+    return S('g', { filter: 'url(#clay-sm)' }, S('path', { d: starPath(r), fill: o.fill || PAL.gold, stroke: PAL.goldDark, 'stroke-opacity': '.6', 'stroke-width': 1.4, 'stroke-linejoin': 'round' }));
+  }
+
+  /* ---------------- Pad: the mutex. A round clay platform with a lamp. ---------------- */
+  function createPad(o = {}) {
+    const root = S('g');
+    const sh = shadow(112, 40, 10, 18);
+    const side = lump(ell(0, 10, 100, 46), { main: PAL.sandDark, dark: '#8a6c36' }, { noThumb: true });
+    const top = lump(ell(0, -2, 100, 46), { main: PAL.sand, dark: PAL.sandDark });
+    const rim = S('ellipse', { cx: 0, cy: -2, rx: 78, ry: 33, fill: 'none', stroke: '#fff', 'stroke-width': 7, 'stroke-opacity': 0, 'stroke-linecap': 'round' });
+    const inlay = S('ellipse', { cx: 0, cy: -2, rx: 62, ry: 26, fill: PAL.grassLight, 'fill-opacity': 0 });
+    const sleepers = S('g', { opacity: '.5' });
+    for (let i = 0; i < 12; i += 1) {
+      const a = (i / 12) * Math.PI * 2;
+      sleepers.appendChild(S('rect', { x: Math.cos(a) * 86 - 5, y: -2 + Math.sin(a) * 39 - 2.5, width: 10, height: 5, rx: 2.5, fill: PAL.rail, transform: `rotate(${(Math.atan2(Math.sin(a) * 39, Math.cos(a) * 86) * 180) / Math.PI + 90} ${Math.cos(a) * 86} ${-2 + Math.sin(a) * 39})` }));
+    }
+    // lamp: post + bulb
+    const lampPost = lump(rrect(-4, -52, 8, 46, 4), { main: PAL.rail, dark: PAL.railDark }, { small: true, noThumb: true });
+    const bulb = S('circle', { cx: 0, cy: -58, r: 13, fill: '#9ed06a', stroke: '#4a7a2a', 'stroke-opacity': '.5', 'stroke-width': 2 });
+    const bulbHi = S('ellipse', { cx: -4, cy: -63, rx: 4, ry: 3, fill: '#fff', 'fill-opacity': '.8' });
+    const halo = S('circle', { cx: 0, cy: -58, r: 24, fill: '#9ed06a', 'fill-opacity': '.28', filter: 'url(#soft)' });
+    const lamp = S('g', { transform: `translate(${o.lampX ?? 70} ${o.lampY ?? -6})` }, halo, lampPost, S('g', { filter: 'url(#clay-sm)' }, bulb), bulbHi);
+    const label = S('text', { x: 0, y: 9, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 800, fill: PAL.railDark, 'fill-opacity': 0, 'font-family': 'ui-rounded, system-ui, sans-serif' }, o.label || '');
+    root.append(sh, side, top, inlay, rim, sleepers, label, lamp);
+    return {
+      el: root,
+      // owner: skin index or -1 (free). Held pads tint their rim and lamp in the holder's colour.
+      set(p) {
+        const sk = p.owner >= 0 ? SKINS[p.owner % 6] : null;
+        attr(bulb, { fill: sk ? sk.main : '#9ed06a' });
+        attr(halo, { fill: sk ? sk.main : '#9ed06a', 'fill-opacity': sk ? 0.5 : 0.25 });
+        attr(rim, { stroke: sk ? sk.main : '#fff', 'stroke-opacity': sk ? 0.95 : 0 });
+        attr(inlay, { fill: sk ? sk.light : PAL.grassLight, 'fill-opacity': sk ? 0.55 : 0 });
+        attr(label, { 'fill-opacity': p.labels ? 0.75 : 0 });
+        if (p.pulse != null) root.setAttribute('transform', `translate(${p.x || 0} ${p.y || 0}) scale(${1 + p.pulse * 0.04} ${1 - p.pulse * 0.05})`);
+        else if (p.x != null) root.setAttribute('transform', `translate(${p.x} ${p.y})`);
+      },
+    };
+  }
+
+  /* ---------------- Rail: two steel rails over sleepers between two points ---------------- */
+  function createRail(a, b, o = {}) {
+    const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len; const off = 9;
+    const root = S('g', { opacity: o.opacity ?? 1 });
+    const ties = S('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: PAL.rail, 'stroke-width': 24, 'stroke-dasharray': '5 15', 'stroke-linecap': 'butt' });
+    const bed = S('line', { x1: a.x, y1: a.y + 4, x2: b.x, y2: b.y + 4, stroke: '#2b1d12', 'stroke-opacity': '.16', 'stroke-width': 26, 'stroke-linecap': 'round', filter: 'url(#soft)' });
+    const r1 = S('line', { x1: a.x + nx * off, y1: a.y + ny * off, x2: b.x + nx * off, y2: b.y + ny * off, stroke: PAL.steel, 'stroke-width': 5.5, 'stroke-linecap': 'round' });
+    const r2 = S('line', { x1: a.x - nx * off, y1: a.y - ny * off, x2: b.x - nx * off, y2: b.y - ny * off, stroke: PAL.steel, 'stroke-width': 5.5, 'stroke-linecap': 'round' });
+    const hi = S('line', { x1: a.x + nx * off - 1, y1: a.y + ny * off - 1.5, x2: b.x + nx * off - 1, y2: b.y + ny * off - 1.5, stroke: '#fff', 'stroke-opacity': '.55', 'stroke-width': 1.6, 'stroke-linecap': 'round' });
+    root.append(bed, S('g', { filter: 'url(#clay-sm)' }, ties), S('g', { filter: 'url(#clay-sm)' }, r1, r2), hi);
+    return { el: root };
+  }
+
+  /* ---------------- Hut: a cart's station / goal ---------------- */
+  function createHut(skinIdx, o = {}) {
+    const sk = SKINS[skinIdx % 6];
+    const root = S('g');
+    const inner = S('g');
+    const sh = shadow(60, 14, 8, 6);
+    const body = lump(rrect(-40, -52, 80, 52, 10), { main: '#fff1d0', dark: '#b79e6b' });
+    const roof = lump('M-52,-48 Q-48,-86 0,-92 Q48,-86 52,-48 Q0,-40 -52,-48Z', sk);
+    const door = lump(rrect(-12, -34, 24, 34, 12), { main: '#6b4a38', dark: '#3b2a1f' }, { small: true, noThumb: true });
+    const pole = S('rect', { x: 30, y: -128, width: 4, height: 44, rx: 2, fill: PAL.rail });
+    const flag = S('g', { filter: 'url(#clay-sm)' }, S('path', { d: 'M34,-126 L62,-117 L34,-107Z', fill: sk.main, stroke: sk.dark, 'stroke-opacity': '.5', 'stroke-width': 1.4, 'stroke-linejoin': 'round' }));
+    const clock = o.clock ? S('g', { transform: 'translate(0 -66)' }, S('circle', { r: 11, fill: '#fffdf2', stroke: PAL.railDark, 'stroke-width': 2.4 }), S('path', { d: 'M0,0 L0,-7 M0,0 L5,2', stroke: INK, 'stroke-width': 2, 'stroke-linecap': 'round' })) : null;
+    const confetti = S('g', { opacity: 0 });
+    for (let i = 0; i < 8; i += 1) confetti.appendChild(S('circle', { r: 3.5, fill: [sk.main, PAL.gold, '#fff', sk.light][i % 4], cx: 0, cy: -70 }));
+    inner.append(body, door, roof, S('g', null, pole), flag, clock, confetti);
+    root.append(sh, inner);
+    return {
+      el: root,
+      set(p) {
+        const w = p.win || 0; // 0..1 win bounce progress
+        const sy = 1 - 0.1 * Math.sin(w * Math.PI * 3) * (1 - w);
+        inner.setAttribute('transform', `scale(${(2 - sy).toFixed(3)} ${sy.toFixed(3)})`);
+        attr(flag, { transform: `rotate(${Math.sin((p.t || 0) * 5) * 4 + w * 12} 34 -116)` });
+        attr(confetti, { opacity: w > 0 && w < 1 ? 1 : 0 });
+        if (w > 0 && w < 1) {
+          [...confetti.children].forEach((c, i) => {
+            const a = (i / 8) * Math.PI * 2; const r = w * 70;
+            attr(c, { cx: Math.cos(a) * r, cy: -70 + Math.sin(a) * r - w * 20 + w * w * 50, opacity: 1 - w * 0.6 });
+          });
+        }
+        if (p.x != null) root.setAttribute('transform', `translate(${p.x} ${p.y}) scale(${p.s ?? 1})`);
+      },
+    };
+  }
+
+  /* ---------------- Yarn: the wait-for arrow. Red = real wait, pink dashed = about to wait ---------------- */
+  function createYarn() {
+    const root = S('g', { 'pointer-events': 'none' });
+    const shade = S('path', { fill: 'none', stroke: '#2b1d12', 'stroke-opacity': '.18', 'stroke-width': 8, 'stroke-linecap': 'round', filter: 'url(#soft)' });
+    const rope = S('path', { fill: 'none', stroke: PAL.yarn, 'stroke-width': 8, 'stroke-linecap': 'round' });
+    const twist = S('path', { fill: 'none', stroke: PAL.yarnLight, 'stroke-width': 3.2, 'stroke-linecap': 'round', 'stroke-dasharray': '2 8' });
+    const bead = S('g', { filter: 'url(#clay-sm)' }, S('circle', { r: 9, fill: PAL.yarn, stroke: '#8d1f1b', 'stroke-opacity': '.5', 'stroke-width': 1.6 }));
+    const beadHi = S('circle', { r: 2.6, fill: '#fff', 'fill-opacity': '.8' });
+    root.append(shade, S('g', { filter: 'url(#clay-sm)' }, rope), twist, bead, beadHi);
+    return {
+      el: root,
+      // a,b world points; taut 0 (slack) .. 1 (taut); ghost = pale dashed "intent" yarn
+      set(p) {
+        const { a, b } = p;
+        const t = p.t || 0;
+        const taut = p.taut ?? 1;
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        const sag = (1 - taut) * 46 + 4;
+        const trem = taut > 0.9 ? jit(t, p.k || 1) * 1.6 : 0;
+        const d = `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${(mx + trem).toFixed(1)},${(my + sag + trem).toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`;
+        const w = p.ghost ? 5 : 8 + taut * 1.5;
+        attr(rope, { d, 'stroke-width': w, stroke: p.ghost ? '#ff9d8e' : PAL.yarn, 'stroke-dasharray': p.ghost ? '1 11' : '', opacity: p.ghost ? 0.9 : 1 });
+        attr(shade, { d: d.replace(/ ([\d.]+),([\d.]+)$/, ' $1,$2'), opacity: p.ghost ? 0 : 1 });
+        attr(twist, { d, 'stroke-width': 3.2, opacity: p.ghost ? 0 : 0.85, 'stroke-dashoffset': (frame(t) % 5) * 0 });
+        // bead sits at the holder end; slightly before the target so it does not hide the face
+        const ex = lerp(b.x, mx, 0.0), ey = lerp(b.y, my + sag * 0.5, 0.0);
+        attr(bead, { transform: `translate(${ex.toFixed(1)} ${ey.toFixed(1)})`, opacity: p.ghost ? 0 : 1 });
+        attr(beadHi, { transform: `translate(${(ex - 3).toFixed(1)} ${(ey - 3).toFixed(1)})`, opacity: p.ghost ? 0 : 1 });
+      },
+    };
+  }
+
+  /* ---------------- Chock (Hold token): a doorstop wedge ---------------- */
+  function createChock(o = {}) {
+    const root = S('g');
+    const sh = shadow(34, 8, 4, 6);
+    const cid = nextId();
+    const WD = 'M-34,4 L-34,-3 Q-33,-6 -28,-8 L28,-30 Q38,-34 40,-24 L40,0 Q40,4 34,4 Z';
+    const wedge = lump(WD, { main: '#f0553f', dark: '#9b2a1c' }, { small: o.small });
+    const stripes = S('g', { 'clip-path': `url(#wc${cid})`, opacity: 0.96 }, S('clipPath', { id: `wc${cid}` }, S('path', { d: WD })));
+    [-18, -2, 14, 30].forEach((x) => stripes.appendChild(S('path', { d: `M${x},6 L${x + 14},-40`, stroke: '#fff3d6', 'stroke-width': 7, 'stroke-linecap': 'butt' })));
+    const stripe1 = S('g', { filter: 'url(#clay-sm)' }, stripes);
+    const rope = S('g');
+    const timer = S('g', { transform: 'translate(8 -48)', opacity: 0 });
+    const pie = S('path', { d: '', fill: '#fff6df', stroke: PAL.railDark, 'stroke-width': 2 });
+    timer.append(S('circle', { r: 10, fill: '#e7d9bd', stroke: PAL.railDark, 'stroke-width': 2 }), pie);
+    root.append(sh, S('g', { transform: o.flat ? '' : 'rotate(-4)' }, wedge, stripe1), rope, timer);
+    return {
+      el: root,
+      set(p) {
+        if (p.frac != null) {
+          attr(timer, { opacity: 1 });
+          const a = p.frac * Math.PI * 2 - Math.PI / 2;
+          attr(pie, { d: p.frac >= 0.999 ? 'M0,-9 A9,9 0 1 1 -0.01,-9 Z' : `M0,0 L0,-9 A9,9 0 ${p.frac > 0.5 ? 1 : 0} 1 ${(Math.cos(a) * 9).toFixed(2)},${(Math.sin(a) * 9).toFixed(2)} Z` });
+        } else attr(timer, { opacity: 0 });
+        const sq = p.squash || 0;
+        root.setAttribute('transform', `translate(${p.x || 0} ${p.y || 0}) rotate(${p.rot || 0}) scale(${(p.s || 1) * (1 + sq).toFixed(3)} ${((p.s || 1) * (1 - sq)).toFixed(3)})`);
+      },
+    };
+  }
+
+  /* ---------------- Ticket (Loan token): golden VIP ticket with a lease dot row ---------------- */
+  function createTicket(o = {}) {
+    const root = S('g');
+    const sh = shadow(38, 8, 4, 28);
+    const body = lump('M-36,-22 L36,-22 L36,-9 Q27,0 36,9 L36,22 L-36,22 L-36,9 Q-27,0 -36,-9 Z', { main: PAL.gold, dark: PAL.goldDark }, { small: o.small });
+    const perf = S('line', { x1: -22, y1: -22, x2: -22, y2: 22, stroke: PAL.goldDark, 'stroke-opacity': '.55', 'stroke-width': 2, 'stroke-dasharray': '3 4' });
+    const st = S('g', { transform: 'translate(8 0)' }, star(14, { fill: '#fff6bb' }));
+    const dots = S('g', { transform: 'translate(2 14)' });
+    for (let i = 0; i < 6; i += 1) dots.appendChild(S('circle', { cx: -18 + i * 7.5, cy: 0, r: 2.7, fill: '#8a5a00' }));
+    const sparkle = S('g', { opacity: 0 });
+    for (let i = 0; i < 4; i += 1) sparkle.appendChild(S('path', { d: starPath(6, 2), fill: '#fff9c8', transform: `translate(${[-40, 42, -28, 36][i]} ${[-24, -18, 24, 26][i]})` }));
+    root.append(sh, body, perf, st, dots, sparkle);
+    return {
+      el: root,
+      set(p) {
+        const n = p.frac == null ? 6 : Math.ceil(p.frac * 6);
+        [...dots.children].forEach((c, i) => attr(c, { 'fill-opacity': i < n ? 1 : 0.18 }));
+        attr(sparkle, { opacity: p.sparkle ? 1 : 0, transform: `rotate(${(frame(p.t || 0) % 4) * 12})` });
+        root.setAttribute('transform', `translate(${p.x || 0} ${p.y || 0}) rotate(${p.rot || 0}) scale(${p.s || 1})`);
+      },
+    };
+  }
+
+  /* ---------------- Sun / spotlight: the scheduler. It looks at whoever runs. ---------------- */
+  function createSun() {
+    const root = S('g');
+    const beam = S('path', { d: '', fill: 'url(#beam)', opacity: 0.9 });
+    const rays = S('g');
+    for (let i = 0; i < 10; i += 1) {
+      rays.appendChild(lump({ tag: 'rect', attrs: { x: -5, y: -66, width: 10, height: 20, rx: 5, transform: `rotate(${i * 36})` } }, { main: '#ffcf45', dark: '#c98a0b' }, { small: true, noThumb: true }));
+    }
+    const disc = lump(circ(0, 0, 44), { main: '#ffd54f', dark: '#c88a0a' });
+    const eyes = S('g'); const pupils = [];
+    [-15, 15].forEach((x) => {
+      eyes.appendChild(S('circle', { cx: x, cy: -6, r: 12, fill: 'url(#eyeW)', stroke: '#b9a77a', 'stroke-width': 1.2 }));
+      const p = S('circle', { cx: x, cy: -6, r: 5.2, fill: INK }); pupils.push(p); eyes.appendChild(p);
+    });
+    const mouth = S('path', { d: 'M-12,14 Q0,26 12,14', fill: 'none', stroke: INK, 'stroke-width': 4, 'stroke-linecap': 'round' });
+    const cheeks = S('g', { opacity: 0.45 }, S('circle', { cx: -28, cy: 12, r: 6, fill: '#ff8e63' }), S('circle', { cx: 28, cy: 12, r: 6, fill: '#ff8e63' }));
+    const glow = S('circle', { r: 70, fill: '#fff2a8', 'fill-opacity': 0.32, filter: 'url(#soft)' });
+    root.append(beam, glow, S('g', { class: 'rays' }, rays), disc, cheeks, eyes, mouth);
+    return {
+      el: root,
+      // target: world point it looks at / lights (or null = idle)
+      set(p) {
+        const t = p.t || 0;
+        const tg = p.target;
+        let lx = 0, ly = 0.3;
+        if (tg) { const dx = tg.x - p.x, dy = tg.y - p.y; const L = Math.hypot(dx, dy) || 1; lx = dx / L; ly = dy / L; }
+        pupils.forEach((pu, i) => attr(pu, { cx: (i ? 15 : -15) + lx * 5, cy: -6 + ly * 5 }));
+        attr(rays, { transform: `rotate(${(frame(t) % 30) * 1.2})` });
+        if (tg) {
+          const dx = tg.x - p.x, dy = tg.y - p.y; const L = Math.hypot(dx, dy) || 1; const nx = -dy / L, ny = dx / L;
+          const wTop = 12, wBot = 46;
+          attr(beam, { d: `M${nx * wTop},${ny * wTop} L${dx + nx * wBot},${dy + ny * wBot} L${dx - nx * wBot},${dy - ny * wBot} L${-nx * wTop},${-ny * wTop}Z`, opacity: 0.6 });
+        } else attr(beam, { opacity: 0 });
+        attr(mouth, { d: p.mood === 'o' ? 'M-6,16 Q0,24 6,16 Q0,10 -6,16Z' : 'M-12,14 Q0,26 12,14' });
+        const sc = (p.s || 1) * (1 + 0.02 * Math.sin(frame(t) * 0.7));
+        root.setAttribute('transform', `translate(${p.x} ${p.y}) scale(${sc})`);
+      },
+    };
+  }
+
+  /* ---------------- Candle: the deadline. It melts as time runs out. ---------------- */
+  function createCandle() {
+    const root = S('g');
+    const wax = lump(rrect(-8, -30, 16, 30, 5), { main: '#fff3d4', dark: '#c9b27a' }, { small: true, noThumb: true });
+    const drip = S('path', { d: 'M-8,-26 q-2,8 2,10 q4,2 2,-10Z', fill: '#fff3d4', stroke: '#c9b27a', 'stroke-opacity': '.5' });
+    const wick = S('line', { x1: 0, y1: -30, x2: 0, y2: -35, stroke: INK, 'stroke-width': 2, 'stroke-linecap': 'round' });
+    const flame = S('path', { d: 'M0,-52 Q9,-42 0,-33 Q-9,-42 0,-52Z', fill: '#ff9a2a' });
+    const core = S('path', { d: 'M0,-46 Q4,-41 0,-36 Q-4,-41 0,-46Z', fill: '#ffe27a' });
+    root.append(S('g', { class: 'candle' }, wax, drip, wick), flame, core);
+    return {
+      el: root,
+      set(p) {
+        const f = clamp(p.frac, 0.08, 1); // remaining time
+        const h = 30 * f;
+        const t = p.t || 0;
+        [...wax.children].forEach((c) => { if (c.tagName === 'path' || c.tagName === 'rect') attr(c, { y: -h, height: h }); });
+        const fy = -h + 30; // shift flame down as wax melts
+        const fl = 1 + jit(t, 3) * 0.12;
+        flame.setAttribute('transform', `translate(${jit(t, 4) * 1.2} ${fy}) scale(${fl} ${1 + jit(t, 5) * 0.1})`);
+        core.setAttribute('transform', `translate(${jit(t, 4) * 1.2} ${fy})`);
+        wick.setAttribute('transform', `translate(0 ${fy})`);
+        attr(drip, { opacity: f < 0.7 ? 1 : 0, transform: `translate(0 ${30 - h})` });
+        const low = f < 0.3;
+        attr(flame, { fill: low ? '#ff5a2a' : '#ff9a2a' });
+        root.setAttribute('transform', `translate(${p.x || 0} ${p.y || 0}) scale(${p.s || 1})`);
+      },
+    };
+  }
+
+  /* ---------------- Priority pennant: 1..3 gold stars on a little flag ---------------- */
+  function createPennant() {
+    const root = S('g');
+    const pole = S('rect', { x: -2, y: -58, width: 4, height: 58, rx: 2, fill: PAL.rail });
+    const cloth = lump('M2,-58 L50,-52 Q54,-40 50,-30 L2,-26 Z', { main: '#fff1cf', dark: '#b89c63' }, { small: true, noThumb: true });
+    const stars = S('g', { transform: 'translate(0 -42)' });
+    root.append(pole, cloth, stars);
+    let last = -1;
+    return {
+      el: root,
+      set(p) {
+        if (p.n !== last) {
+          stars.replaceChildren();
+          for (let i = 0; i < p.n; i += 1) stars.appendChild(S('g', { transform: `translate(${14 + i * 13} ${i % 2 ? 3 : -2})` }, star(6.5)));
+          last = p.n;
+        }
+        attr(stars, { opacity: 1 });
+        const wave = Math.sin((p.t || 0) * 6) * 3;
+        attr(cloth, { transform: `skewY(${wave})` });
+        root.setAttribute('transform', `translate(${p.x || 0} ${p.y || 0}) scale(${p.s || 1})`);
+      },
+    };
+  }
+
+
+  /* ---------------- Hand: the wordless teacher. Points, grabs, taps. Fingertip is the origin. ---------------- */
+  function createHand() {
+    const root = S('g', { 'pointer-events': 'none' });
+    const skin = { main: '#f3c6a2', dark: '#b97d56' };
+    const arm = S('g', { filter: 'url(#clay-sm)' }, S('path', { d: 'M20,70 L190,230', stroke: '#6fb4e0', 'stroke-width': 40, 'stroke-linecap': 'round', fill: 'none' }), S('path', { d: 'M18,66 L40,86', stroke: '#fff6df', 'stroke-width': 46, 'stroke-linecap': 'round', fill: 'none' }));
+    const point = S('g');
+    point.append(lump(rrect(-8, 0, 17, 56, 8.5), skin, { small: true, noThumb: true }), lump(circ(12, 62, 27), skin, { small: true }), lump(ell(-12, 70, 11, 16), skin, { small: true, noThumb: true }));
+    const grab = S('g');
+    grab.append(lump(circ(14, 40, 30), skin), ...[-14, 0, 14, 28].map((x) => lump(circ(x + 2, 14, 11), skin, { small: true, noThumb: true })), lump(ell(-18, 52, 11, 14), skin, { small: true, noThumb: true }));
+    const ring = S('circle', { cx: 0, cy: 0, r: 0, fill: 'none', stroke: '#fff', 'stroke-width': 4, opacity: 0 });
+    root.append(S('ellipse', { cx: 18, cy: 78, rx: 36, ry: 8, fill: 'url(#shadow)' }), arm, point, grab, ring);
+    return {
+      el: root,
+      // mode: 'point' | 'grab'; press 0..1 squashes down and pulses a ring (a tap)
+      set(p) {
+        const t = p.t || 0;
+        attr(point, { opacity: p.mode === 'grab' ? 0 : 1 }); attr(grab, { opacity: p.mode === 'grab' ? 1 : 0 });
+        const press = p.press || 0;
+        const wig = p.mode === 'grab' ? 0 : Math.sin(snap(t) * 7) * 2.2;
+        attr(ring, { r: press > 0 ? 8 + press * 30 : 0, opacity: press > 0 && press < 1 ? 1 - press : 0 });
+        root.setAttribute('transform', `translate(${p.x} ${p.y + press * 6}) rotate(${(p.rot || -18) + wig}) scale(${(p.s || 1) * (1 - press * 0.04)} ${(p.s || 1) * (1 + press * 0.03)})`);
+        root.setAttribute('opacity', p.opacity ?? 1);
+      },
+    };
+  }
+
+  /* ---------------- The diorama: sky, patchwork hills, hedges, meadow, soil lip ---------------- */
+  function createWorld(W = 1000, H = 700) {
+    const root = S('g');
+    const back = S('g', { transform: 'translate(0 -66)' });
+    const sky = S('rect', { x: -40, y: -40, width: W + 80, height: 400, fill: 'url(#skyG)' });
+    root.append(back);
+    back.append(sky);
+    // clouds: clay lumps
+    const clouds = S('g');
+    const cl = (x, y, s) => {
+      const g = S('g', { transform: `translate(${x} ${y}) scale(${s})` });
+      g.append(lump(ell(0, 0, 70, 26), '#ffffff', { noThumb: true }), lump(circ(-24, -18, 24), '#ffffff', { noThumb: true }), lump(circ(18, -24, 30), '#ffffff', { noThumb: true }));
+      return g;
+    };
+    const cloudA = cl(190, 70, 1), cloudB = cl(720, 44, 0.8), cloudC = cl(500, 110, 0.55);
+    clouds.append(cloudA, cloudB, cloudC);
+    back.append(clouds);
+    // far hills + patchwork fields
+    const hills = S('g');
+    hills.append(lump('M-40,240 C80,170 190,190 300,215 C420,150 560,165 650,205 C780,160 900,175 1050,235 L1050,300 L-40,300Z', { main: '#a8c86a', dark: '#789a3e' }, { seam: 1.6 }));
+    const fieldDefs = [
+      ['M20,222 L120,196 L170,232 L40,246Z', '#c3d77c'], ['M330,214 L430,176 L520,196 L450,236Z', '#b4cf6a'],
+      ['M700,196 L820,176 L900,214 L760,230Z', '#cfdf8a'], ['M560,200 L640,186 L690,214 L590,226Z', '#9fc260'],
+    ];
+    const fields = S('g', { opacity: 0.8 });
+    fieldDefs.forEach(([d, c]) => fields.append(S('path', { d, fill: c, stroke: '#7b9a47', 'stroke-opacity': '.5', 'stroke-width': 1.4, 'stroke-dasharray': '6 5' })));
+    hills.append(fields);
+    hills.append(lump('M-40,270 C120,215 260,238 400,252 C560,226 700,232 820,246 C920,236 1010,250 1050,262 L1050,330 L-40,330Z', { main: '#8dbb4a', dark: '#5c8f33' }, { seam: 1.6 }));
+    back.append(hills);
+    // hedge row of little clay bushes
+    const hedge = S('g');
+    for (let i = 0; i < 15; i += 1) {
+      const x = 10 + i * 68 + (i % 3) * 7;
+      hedge.append(lump(circ(x, 270 + (i % 2) * 6, 25 + (i % 3) * 4), { main: ['#4f8f3a', '#5a9d41', '#468533'][i % 3], dark: '#2e5e22' }, { small: true }));
+    }
+    back.append(hedge);
+    // a tree
+    const tree = S('g', { transform: 'translate(906 250)' });
+    tree.append(lump(rrect(-10, -10, 20, 56, 8), { main: '#8a5f3e', dark: '#4f3220' }, { small: true }), lump(circ(0, -42, 46), { main: '#4f9a3b', dark: '#2f6a24' }), lump(circ(-30, -22, 30), { main: '#5aa845', dark: '#2f6a24' }), lump(circ(30, -24, 32), { main: '#559f40', dark: '#2f6a24' }));
+    back.append(tree);
+    // meadow
+    const meadow = S('g');
+    meadow.append(lump(`M-40,238 C150,226 340,244 500,236 C700,228 860,244 1040,234 L1040,${H - 36} L-40,${H - 36}Z`, { main: '#8dbf49', dark: '#5f9738' }, { noThumb: false, seam: 0 }));
+    const tufts = S('g', { opacity: 0.55 });
+    for (let i = 0; i < 46; i += 1) {
+      const x = (i * 211) % 980 + 10, y = 262 + ((i * 97) % 380);
+      tufts.append(S('path', { d: `M${x},${y} q-3,-12 -7,-15 M${x},${y} q1,-13 1,-18 M${x},${y} q4,-11 8,-14`, stroke: '#4e8a2f', 'stroke-width': 3, fill: 'none', 'stroke-linecap': 'round' }));
+    }
+    meadow.append(tufts);
+    root.append(meadow);
+    // soil lip: the edge of the miniature set
+    root.append(lump(`M-40,${H - 40} L1040,${H - 40} L1040,${H + 40} L-40,${H + 40}Z`, { main: '#8b5e3c', dark: '#53351f' }, { seam: 0 }));
+    root.append(S('rect', { x: -40, y: H - 44, width: 1080, height: 10, fill: '#b0d868', opacity: 0.9 }));
+    return {
+      el: root,
+      set(t) {
+        const s = snap(t);
+        cloudA.setAttribute('transform', `translate(${190 + (s * 4) % 80 - 20} 70)`);
+        cloudB.setAttribute('transform', `translate(${720 - (s * 3) % 60 + 20} 44) scale(.8)`);
+        cloudC.setAttribute('transform', `translate(${500 + (s * 2.5) % 50} 110) scale(.55)`);
+      },
+    };
+  }
+
+  root.Clay = {
+    NS, cfg, snap, frame, jit, hash, clamp, lerp, ease, S, attr, SKINS, PAL, INK,
+    defs, lump, ell, circ, rrect, shadow, star, starPath,
+    createPad, createRail, createHut, createYarn, createChock, createTicket, createSun, createCandle, createPennant, createHand, createWorld,
+    nextId,
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* Dollop: our own cast. A lump of coloured clay with googly eyes, riding a
+ * chunky cart. Six skins, six silhouettes (hat), one face system. The face does
+ * the explaining: worry, shock, smug, shrug, delight.
+ * Clips are pure functions of local time -> pose; Clay.snap puts them on twos. */
+(function (root) {
+  const C = root.Clay;
+  const { S, attr, lump, ell, circ, rrect, SKINS, INK, jit, clamp, lerp, snap, frame } = C;
+
+  const mix = (a, b, t) => {
+    const pa = a.match(/\w\w/g).map((h) => parseInt(h, 16)); const pb = b.match(/\w\w/g).map((h) => parseInt(h, 16));
+    return '#' + pa.map((v, i) => Math.round(lerp(v, pb[i], t)).toString(16).padStart(2, '0')).join('');
+  };
+
+  function worm(d, color, w = 9, o = {}) {
+    return S('g', { filter: 'url(#clay-sm)' }, S('path', { d, fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', ...o }));
+  }
+
+  // silhouettes: sit on top of the head, which peaks near y=-126
+  function hat(i, sk) {
+    const g = S('g');
+    if (i === 0) { g.append(worm('M0,-124 C-16,-136 -12,-156 4,-152 C16,-148 10,-134 2,-138', sk.dark, 9)); }
+    else if (i === 1) {
+      g.append(worm('M-14,-122 Q-28,-150 -24,-166', sk.dark, 5), worm('M14,-122 Q28,-150 24,-166', sk.dark, 5),
+        lump(circ(-24, -168, 9), { main: sk.light, dark: sk.dark }, { small: true, noThumb: true }), lump(circ(24, -168, 9), { main: sk.light, dark: sk.dark }, { small: true, noThumb: true }));
+    } else if (i === 2) {
+      g.append(lump(ell(-36, -116, 15, 20), sk, { small: true }), lump(ell(36, -116, 15, 20), sk, { small: true }),
+        S('ellipse', { cx: -36, cy: -114, rx: 7, ry: 11, fill: '#f4a5a0', opacity: 0.8 }), S('ellipse', { cx: 36, cy: -114, rx: 7, ry: 11, fill: '#f4a5a0', opacity: 0.8 }));
+    } else if (i === 3) {
+      g.append(worm('M0,-122 Q4,-140 0,-150', '#5f9a3a', 5),
+        lump('M0,-150 Q-22,-160 -26,-142 Q-8,-134 0,-150Z', { main: '#7bc04a', dark: '#3f7a23' }, { small: true, noThumb: true }),
+        lump('M0,-150 Q22,-164 28,-146 Q10,-136 0,-150Z', { main: '#8cd058', dark: '#3f7a23' }, { small: true, noThumb: true }));
+    } else if (i === 4) {
+      g.append(lump('M-24,-122 L-18,-146 L-9,-124Z', sk, { small: true, noThumb: true }), lump('M-8,-124 L0,-154 L8,-124Z', sk, { small: true, noThumb: true }), lump('M9,-124 L18,-146 L24,-122Z', sk, { small: true, noThumb: true }));
+    } else {
+      g.append(lump(circ(0, -138, 16), { main: sk.light, dark: sk.dark }, { small: true }), lump('M-6,-124 L-20,-118 L-14,-132Z M6,-124 L20,-118 L14,-132Z', { main: '#ee6b58', dark: '#b3402f' }, { small: true, noThumb: true }));
+    }
+    return g;
+  }
+
+  const MOUTHS = {
+    smile: { d: 'M-13,0 Q0,13 13,0', fill: 'none' },
+    flat: { d: 'M-9,4 L9,4', fill: 'none' },
+    frown: { d: 'M-12,9 Q0,-4 12,9', fill: 'none' },
+    wavy: { d: 'M-15,5 q4,-7 7.5,0 t7.5,0 t7.5,0', fill: 'none' },
+    smirk: { d: 'M-11,4 Q4,11 13,-3', fill: 'none' },
+    o: { d: 'M0,-4 a6.5,8 0 1 0 0.01,0Z', fill: '#5b2330' },
+    grin: { d: 'M-17,-2 Q0,24 17,-2 Z', fill: '#5b2330' },
+    oh: { d: 'M-7,0 Q0,-6 7,0 Q0,14 -7,0Z', fill: '#5b2330' },
+  };
+  const BROWS = { // [left deg, right deg, lift]
+    neutral: [0, 0, 0], worried: [-22, 22, -2], angry: [20, -20, 2], up: [-6, 6, -6], smug: [14, -6, 1], confused: [-18, -4, -3], happy: [-8, 8, -5], sleepy: [8, -8, 3],
+  };
+
+  function create(o = {}) {
+    const sk = SKINS[(o.skin || 0) % 6];
+    const deep = mix(sk.main, sk.dark, 0.5);
+    const cid = C.nextId();
+    const root = S('g');
+    const shadow = C.shadow(66, 12, 8, 4);
+    const body = S('g');                      // squash/stretch/lean pivot at the ground
+    const critterG = S('g');                  // head group (bobs, tilts)
+    // critter lump (bean) + frost overlay
+    const bean = 'M-46,-80 C-50,-114 -24,-128 0,-128 C24,-128 50,-114 46,-80 C44,-52 22,-42 0,-42 C-22,-42 -44,-52 -46,-80Z';
+    const critter = lump(bean, sk);
+    const frost = S('path', { d: bean, fill: '#bfe3ff', opacity: 0 });
+    const cheeks = S('g', { opacity: 0.5 }, S('ellipse', { cx: -33, cy: -74, rx: 7, ry: 5, fill: '#ff8d7a' }), S('ellipse', { cx: 33, cy: -74, rx: 7, ry: 5, fill: '#ff8d7a' }));
+    // eyes (googly): sclera, pupil, lid
+    const eyeG = S('g'); const eyes = [];
+    [-18, 18].forEach((x, k) => {
+      const clip = S('clipPath', { id: `lid${cid}${k}` }, S('circle', { cx: x, cy: -92, r: 15.5 }));
+      const white = S('circle', { cx: x, cy: -92, r: 15.5, fill: 'url(#eyeW)', stroke: '#9a8a64', 'stroke-opacity': '.55', 'stroke-width': 1.6 });
+      const pupil = S('circle', { cx: x, cy: -92, r: 6.8, fill: INK });
+      const hi = S('circle', { cx: x - 2, cy: -94, r: 2.2, fill: '#fff' });
+      const lid = S('rect', { x: x - 17, y: -108, width: 34, height: 0, fill: sk.main, 'clip-path': `url(#lid${cid}${k})` });
+      const lidLine = S('line', { x1: x - 14, x2: x + 14, y1: -108, y2: -108, stroke: sk.dark, 'stroke-width': 2.2, 'stroke-linecap': 'round', opacity: 0, 'clip-path': `url(#lid${cid}${k})` });
+      eyeG.append(clip, S('g', { filter: 'url(#clay-sm)' }, white), pupil, hi, lid, lidLine);
+      eyes.push({ x, pupil, hi, lid, lidLine });
+    });
+    const brows = [-18, 18].map((x) => worm(`M${x - 9},0 L${x + 9},0`, sk.dark, 6));
+    const browG = S('g'); brows.forEach((b) => browG.appendChild(b));
+    const mouth = S('path', { d: MOUTHS.smile.d, fill: 'none', stroke: INK, 'stroke-width': 4.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    const teeth = S('rect', { x: -9, y: 0, width: 18, height: 6, rx: 2, fill: '#fff', opacity: 0 });
+    const mouthG = S('g', { transform: 'translate(0 -66)' }, mouth);
+    const sweat = S('path', { d: 'M0,0 q-6,10 0,13 q6,-3 0,-13Z', fill: '#bfe6ff', stroke: '#6aa8d8', 'stroke-width': 1.4, opacity: 0, transform: 'translate(44 -112)' });
+    critterG.append(hat(o.skin || 0, sk), critter, frost, cheeks, eyeG, browG, mouthG, sweat);
+
+    // cart: tub + two wheels (+ optional pennant / candle)
+    const tubD = 'M-64,-60 L64,-60 Q72,-60 70,-50 L62,-26 Q60,-19 52,-19 L-52,-19 Q-60,-19 -62,-26 L-70,-50 Q-72,-60 -64,-60Z';
+    const tub = lump(tubD, { main: deep, dark: sk.dark });
+    const band = S('path', { d: 'M-66,-56 L66,-56', stroke: sk.light, 'stroke-width': 6, 'stroke-linecap': 'round', opacity: 0.7 });
+    const bumperF = lump(rrect(60, -34, 14, 10, 5), { main: sk.light, dark: sk.dark }, { small: true, noThumb: true });
+    const wheelG = S('g'); const wheels = [];
+    [-38, 38].forEach((x) => {
+      const w = S('g', { transform: `translate(${x} -16)` });
+      const tire = lump(circ(0, 0, 18), { main: '#5e4a3c', dark: '#2a1e17' }, { small: true });
+      const hub = S('g', { class: 'hub' }, S('circle', { r: 8, fill: sk.light, stroke: sk.dark, 'stroke-opacity': '.6', 'stroke-width': 1.6 }), S('path', { d: 'M0,-8 L0,8 M-8,0 L8,0', stroke: sk.dark, 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-opacity': '.7' }));
+      w.append(tire, hub); wheels.push(hub); wheelG.append(w);
+    });
+    const pennant = C.createPennant();
+    const penG = S('g', { transform: 'translate(52 -58)' }, pennant.el);
+    const candle = C.createCandle();
+    const candleG = S('g', { transform: 'translate(-50 -58)' }, candle.el);
+    const cartG = S('g'); cartG.append(wheelG, tub, band, bumperF);
+
+    // overlays
+    const steam = S('g'); const puffs = [];
+    for (let i = 0; i < 3; i += 1) { const p = lump(circ(0, 0, 11 + i * 2), { main: '#ffffff', dark: '#b9c8d6' }, { small: true, noThumb: true }); puffs.push(p); steam.append(p); }
+    const q = S('text', { x: 0, y: 0, 'text-anchor': 'middle', 'font-size': 40, 'font-weight': 900, fill: '#ffd24a', stroke: '#8a5a00', 'stroke-width': 1.6, 'paint-order': 'stroke', 'font-family': 'ui-rounded, system-ui, sans-serif', opacity: 0 }, '?');
+    const zzz = S('text', { x: 0, y: 0, 'text-anchor': 'middle', 'font-size': 26, 'font-weight': 900, fill: '#fff', stroke: '#5a7aa0', 'stroke-width': 1.4, 'paint-order': 'stroke', 'font-family': 'ui-rounded, system-ui, sans-serif', opacity: 0 }, 'z');
+    const dizzy = S('g'); const dz = [0, 1, 2].map((i) => { const s = C.star(6, { fill: ['#ffd24a', '#fff', '#ff8e63'][i] }); dizzy.append(s); return s; });
+    const glow = S('ellipse', { cx: 0, cy: -80, rx: 82, ry: 80, fill: '#fff2a8', opacity: 0, filter: 'url(#soft)' });
+    const vipStar = C.createTicket({ small: true });
+    const vipG = S('g', { opacity: 0 }, vipStar.el);
+    const sparkG = S('g'); const sparks = [0, 1, 2, 3, 4].map(() => { const s = C.star(7, { fill: '#fff3a8' }); sparkG.append(s); return s; });
+
+    body.append(critterG, cartG, penG, candleG);
+    root.append(shadow, glow, body, steam, q, zzz, dizzy, vipG, sparkG);
+
+    const api = {
+      el: root, skin: o.skin || 0,
+      set(p) {
+        const t = p.t || 0;
+        const x = p.x || 0, y = p.y || 0, lift = p.lift || 0;
+        const sc = p.s || 1;
+        const sx = p.sx ?? 1, sy = p.sy ?? 1;
+        const j = p.boil === false ? 0 : 0.7;
+        root.setAttribute('transform', `translate(${(x + jit(t, 1) * j).toFixed(2)} ${(y + jit(t, 2) * j * 0.6).toFixed(2)}) scale(${sc})`);
+        attr(shadow, { transform: `scale(${(1 - lift / 160).toFixed(3)})`, opacity: clamp(1 - lift / 110, 0.35, 1) });
+        body.setAttribute('transform', `translate(0 ${(-lift).toFixed(2)}) rotate(${(p.rot || 0).toFixed(2)}) scale(${sx.toFixed(3)} ${sy.toFixed(3)})`);
+        critterG.setAttribute('transform', `translate(0 ${(p.bob || 0).toFixed(2)}) rotate(${(p.tilt || 0).toFixed(2)} 0 -60)`);
+        // eyes
+        const lk = p.look || { x: 0, y: 0 };
+        const L = Math.hypot(lk.x, lk.y) || 1; const m = Math.min(1, L) * 6.6;
+        const lx = (lk.x / L) * m, ly = (lk.y / L) * m;
+        eyes.forEach((e, k) => {
+          const jx = jit(t, 10 + k) * 0.35;
+          attr(e.pupil, { cx: e.x + lx + jx, cy: -92 + ly });
+          attr(e.hi, { cx: e.x + lx - 2 + jx, cy: -94 + ly });
+          const lid = clamp(p.lid || 0, 0, 1);
+          const h = lid * 31;
+          attr(e.lid, { y: -108, height: h, opacity: lid > 0.02 ? 1 : 0 });
+          attr(e.lidLine, { y1: -108 + h, y2: -108 + h, opacity: lid > 0.05 ? 0.9 : 0 });
+        });
+        const br = BROWS[p.brow || 'neutral'] || BROWS.neutral;
+        brows.forEach((b, k) => attr(b, { transform: `translate(0 ${-114 + br[2]}) rotate(${br[k]} ${k ? 18 : -18} 0)` }));
+        const mo = MOUTHS[p.mouth || 'smile'] || MOUTHS.smile;
+        attr(mouth, { d: mo.d, fill: mo.fill });
+        // overlays
+        attr(frost, { opacity: p.frost || 0 });
+        attr(sweat, { opacity: p.sweat ? 1 : 0, transform: `translate(${44} ${-112 + (frame(t) % 6)})` });
+        steam.setAttribute('opacity', p.steam ? 1 : 0);
+        if (p.steam) puffs.forEach((pf, i) => {
+          const ph = ((snap(t) * 0.9 + i / 3) % 1);
+          pf.setAttribute('transform', `translate(${(-26 + i * 26 + Math.sin(ph * 6 + i) * 6).toFixed(1)} ${(-132 - ph * 54 - lift).toFixed(1)}) scale(${(0.5 + ph * 0.9).toFixed(2)})`);
+          pf.setAttribute('opacity', (1 - ph).toFixed(2));
+        });
+        attr(q, { opacity: p.q ? 1 : 0, transform: `translate(52 ${-128 - (frame(t) % 4) * 1.5}) rotate(${12 + jit(t, 7) * 4})` });
+        attr(zzz, { opacity: p.zzz ? 1 : 0, transform: `translate(${48 + (frame(t) % 8) * 1.5} ${-122 - (frame(t) % 8) * 3}) scale(${0.8 + (frame(t) % 8) * 0.05})` });
+        dizzy.setAttribute('opacity', p.dizzy ? 1 : 0);
+        if (p.dizzy) dz.forEach((s, i) => { const a = snap(t) * 4 + (i * Math.PI * 2) / 3; s.setAttribute('transform', `translate(${(Math.cos(a) * 36).toFixed(1)} ${(-142 + Math.sin(a) * 9).toFixed(1)})`); });
+        attr(glow, { opacity: p.glow || 0 });
+        // wheels
+        wheels.forEach((w) => w.setAttribute('transform', `rotate(${(p.wheel || 0).toFixed(1)})`));
+        // pennant & candle
+        if (p.stars) { penG.setAttribute('opacity', 1); pennant.set({ n: p.stars, t, x: 0, y: 0 }); } else penG.setAttribute('opacity', 0);
+        if (p.candle != null) { candleG.setAttribute('opacity', 1); candle.set({ frac: p.candle, t }); } else candleG.setAttribute('opacity', 0);
+        // vip ticket floating over the head
+        if (p.ticket != null) {
+          vipG.setAttribute('opacity', 1);
+          vipStar.set({ frac: p.ticket, t, sparkle: true, x: -6 + jit(t, 21) * 0.8, y: -176 - lift + Math.sin(snap(t) * 5) * 3, rot: -8 + Math.sin(snap(t) * 3) * 4, s: 0.78 });
+        } else vipG.setAttribute('opacity', 0);
+        sparkG.setAttribute('opacity', p.sparkle ? 1 : 0);
+        if (p.sparkle) sparks.forEach((s, i) => {
+          const ph = (snap(t) * 1.4 + i / 5) % 1; const a = i * 1.26 + 0.4;
+          s.setAttribute('transform', `translate(${(Math.cos(a) * (30 + ph * 56)).toFixed(1)} ${(-100 + Math.sin(a) * (30 + ph * 50) - lift).toFixed(1)}) scale(${(1 - ph).toFixed(2)})`);
+        });
+      },
+    };
+    return api;
+  }
+
+  /* ---------------- clips: local time -> pose. All motion is quantised by the caller. ---------------- */
+  const sinc = (t, period, phase = 0) => Math.sin(((t / period) + phase) * Math.PI * 2);
+  function blink(t, seed = 0) { const k = (t + seed * 0.77) % 3.2; return k < 0.18 ? Math.sin((k / 0.18) * Math.PI) : 0; }
+  const CLIPS = {
+    idle: (t, o) => ({ sy: 1 + 0.015 * sinc(t, 2.4, o.seed * 0.13), sx: 1 - 0.01 * sinc(t, 2.4, o.seed * 0.13), lid: blink(t, o.seed || 0), look: { x: sinc(t, 5.5, (o.seed || 0) * 0.3), y: 0.2 * sinc(t, 3.1) }, mouth: 'smile', brow: 'neutral', wheel: 0 }),
+    roll: (t, o) => ({ sy: 1 + 0.035 * sinc(t, 0.5), sx: 1 - 0.02 * sinc(t, 0.5), rot: (o.dir || 1) * 3.2, bob: 1.5 * sinc(t, 0.5, 0.25), lift: 2.5 * Math.abs(sinc(t, 1)), look: { x: (o.dir || 1), y: 0 }, lid: blink(t, o.seed || 0), mouth: 'smile', brow: 'neutral', wheel: (o.dir || 1) * t * 420 }),
+    // anticipation -> launch -> settle. p in [0,1] over one move.
+    go: (t, o) => {
+      const p = clamp(t / 0.6, 0, 1);
+      const dir = o.dir || 1;
+      let sx = 1, sy = 1, rot = 0;
+      if (p < 0.3) { const k = C.ease(p / 0.3); sx = lerp(1, 1.1, k); sy = lerp(1, 0.86, k); rot = -5 * dir * k; }
+      else if (p < 0.55) { const k = C.ease((p - 0.3) / 0.25); sx = lerp(1.1, 0.92, k); sy = lerp(0.86, 1.1, k); rot = lerp(-5, 6, k) * dir; }
+      else { const k = (p - 0.55) / 0.45; const d = Math.exp(-4 * k) * Math.cos(k * 14); sx = 1 - 0.07 * d; sy = 1 + 0.08 * d; rot = 4 * dir * (1 - k); }
+      return { sx, sy, rot, look: { x: dir, y: 0 }, mouth: p < 0.3 ? 'flat' : 'smile', brow: p < 0.3 ? 'worried' : 'up', lid: blink(t, o.seed || 0) * 0.5, wheel: (o.dir || 1) * t * 300 };
+    },
+    wait: (t, o) => ({ sy: 1 + 0.02 * sinc(t, 1.2), look: o.look || { x: 1, y: 0 }, brow: 'worried', mouth: 'flat', sweat: frame(t) % 24 < 10, lid: 0, tilt: 2 * sinc(t, 1.6), rot: 0.6 * jit(t, 8) }),
+    bump: (t, o) => {
+      const p = clamp(t / 0.7, 0, 1); const d = Math.exp(-4 * p) * Math.cos(p * 16);
+      return { sx: 1 - 0.14 * d, sy: 1 + 0.12 * d, rot: (o.dir || 1) * 5 * d, look: o.look || { x: 1, y: 0 }, brow: 'worried', mouth: 'oh', sweat: p > 0.5 };
+    },
+    freeze: (t, o) => {
+      const looks = o.looks && o.looks.length ? o.looks : [{ x: 1, y: 0 }, { x: -1, y: 0.2 }];
+      const k = Math.floor(t * 2.2) % looks.length;
+      return { sx: 1 + 0.01 * jit(t, 5), sy: 1 + 0.012 * jit(t, 6), rot: 0.9 * jit(t, 3), bob: 0.8 * jit(t, 4), look: looks[k], brow: 'worried', mouth: 'wavy', steam: true, sweat: true, frost: 0.28 + 0.06 * sinc(t, 1.4), lid: 0, tilt: 1.5 * jit(t, 9) };
+    },
+    dance: (t, o) => {
+      const ph = sinc(t, 0.9, (o.seed || 0) * 0.08); const side = ph > 0 ? 1 : -1;
+      return { x: 13 * side, rot: 5 * side, sy: 1 + 0.03 * Math.abs(ph), look: { x: -side, y: 0 }, brow: 'worried', mouth: 'smile', sweat: true, tilt: -4 * side, wheel: side * t * 120, lid: 0 };
+    },
+    held: (t, o) => ({ sy: 1 + 0.02 * sinc(t, 2.8), lid: 0.5 + 0.12 * sinc(t, 2.8), look: { x: sinc(t, 3.4), y: 0.3 }, brow: 'sleepy', mouth: 'o', zzz: frame(t) % 16 < 12, tilt: 3 * sinc(t, 3.2) }),
+    vip: (t, o) => ({ sy: 1 + 0.04 * Math.abs(sinc(t, 0.5)), sx: 1 - 0.02 * Math.abs(sinc(t, 0.5)), lift: 3 * Math.abs(sinc(t, 0.5)), brow: 'up', mouth: 'grin', look: { x: 0, y: -0.7 }, glow: 0.5, sparkle: true, tilt: -2 * sinc(t, 1), wheel: t * 600, lid: 0 }),
+    smug: (t, o) => ({ sy: 1 + 0.02 * sinc(t, 0.6), lid: 0.42, brow: 'smug', mouth: 'smirk', look: { x: o.dir || 1, y: 0.1 }, wheel: (o.dir || 1) * t * 500, rot: (o.dir || 1) * 2, bob: 1.2 * sinc(t, 0.6), lift: 2 * Math.abs(sinc(t, 1.2)) }),
+    huh: (t, o) => {
+      const p = clamp(t / 1.4, 0, 1);
+      return { tilt: 14 * Math.sin(Math.min(1, p * 2) * Math.PI * 0.5) * (p < 0.8 ? 1 : 1 - (p - 0.8) * 5), brow: 'confused', mouth: 'o', q: p > 0.1 && p < 0.9, look: o.look || { x: 0, y: -0.6 }, sy: 1 + 0.02 * jit(t, 2), lid: 0 };
+    },
+    win: (t, o) => {
+      const per = 0.7; const k = (t % per) / per;
+      const lift = 34 * Math.sin(k * Math.PI) * (1 - 0.15 * Math.floor(t / per));
+      const land = k > 0.85 || k < 0.1;
+      return { lift: Math.max(0, lift), sx: land ? 1.12 : 0.94, sy: land ? 0.88 : 1.1, brow: 'happy', mouth: 'grin', look: { x: 0, y: -0.4 }, sparkle: true, glow: 0.35, wheel: t * 700, lid: 0, tilt: 5 * sinc(t, per) };
+    },
+    stunned: (t, o) => ({ dizzy: true, mouth: 'wavy', brow: 'worried', tilt: 6 * sinc(t, 0.8), look: { x: sinc(t, 0.6), y: sinc(t, 0.6, 0.25) * 0.8 }, sweat: true, sy: 1 + 0.02 * sinc(t, 0.8) }),
+  };
+  function pose(clip, t, o = {}) { return { t, ...(CLIPS[clip] || CLIPS.idle)(snap(t), o) }; }
+
+  C.Dollop = { create, pose, CLIPS, MOUTHS, BROWS };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* Specimen sheet: every piece, every state, looping. Uses only the art modules. */
+(function () {
+  const C = window.Clay, S = C.S;
+  const defsHost = document.getElementById('shared-defs');
+  defsHost.replaceWith(C.defs());
+  const main = document.getElementById('sheet');
+  const items = [];
+
+  function section(title, note) {
+    const sec = document.createElement('section');
+    sec.innerHTML = `<h2>${title}</h2>${note ? `<p>${note}</p>` : ''}<div class="grid"></div>`;
+    main.appendChild(sec);
+    return sec.querySelector('.grid');
+  }
+  // one stage = one little svg diorama tile with a caption
+  function stage(grid, label, w, h, build) {
+    const fig = document.createElement('figure');
+    const svg = S('svg', { viewBox: `0 0 ${w} ${h}`, width: '100%' });
+    svg.appendChild(S('rect', { x: 0, y: 0, width: w, height: h, fill: 'url(#plinth)' }));
+    const g = S('g'); svg.appendChild(g);
+    fig.appendChild(svg);
+    const cap = document.createElement('figcaption'); cap.textContent = label; fig.appendChild(cap);
+    grid.appendChild(fig);
+    const upd = build(g);
+    if (upd) items.push(upd);
+  }
+
+  // plinth gradient (stage floor)
+  const pl = S('linearGradient', { id: 'plinth', x1: 0, y1: 0, x2: 0, y2: 1 }, S('stop', { offset: 0, 'stop-color': '#cfe6f1' }), S('stop', { offset: 0.62, 'stop-color': '#e6f0d2' }), S('stop', { offset: 0.63, 'stop-color': '#a9cc62' }), S('stop', { offset: 1, 'stop-color': '#86b24a' }));
+  document.querySelector('svg defs').appendChild(pl);
+
+  const D = (skin, o = {}) => { const d = C.Dollop.create({ skin }); return d; };
+  const at = (d, g, x, y) => { g.appendChild(d.el); return d; };
+
+  /* 1. the cast */
+  let grid = section('The cast', 'Six Dollops. Colour is identity; the silhouette on top of the head backs it up. Eyes always do the talking.');
+  const names = ['curl', 'bobbles', 'ears', 'sprout', 'spikes', 'bun'];
+  for (let i = 0; i < 6; i += 1) stage(grid, `${C.SKINS[i].name} · ${names[i]}`, 220, 236, (g) => {
+    const d = D(i); g.appendChild(d.el);
+    return (t) => d.set({ ...C.Dollop.pose('idle', t, { seed: i }), x: 110, y: 196, s: 1.05 });
+  });
+
+  /* 2. faces */
+  grid = section('Faces', 'Eyes, brows and mouth are the whole vocabulary: worry, shock, smug, shrug, delight.');
+  const faces = [
+    ['calm', { brow: 'neutral', mouth: 'smile' }], ['worried (waiting)', { brow: 'worried', mouth: 'flat', sweat: true }],
+    ['shocked (frozen)', { brow: 'worried', mouth: 'wavy', steam: true, frost: 0.3 }], ['smug (hog)', { brow: 'smug', mouth: 'smirk', lid: 0.42 }],
+    ['huh? (no effect)', { brow: 'confused', mouth: 'o', q: true, tilt: 12 }], ['delight (win)', { brow: 'happy', mouth: 'grin', sparkle: true }],
+    ['sleepy (held)', { brow: 'sleepy', mouth: 'o', lid: 0.55, zzz: true }], ['dizzy (polite loop)', { brow: 'worried', mouth: 'wavy', dizzy: true, sweat: true }],
+  ];
+  faces.forEach(([label, p], i) => stage(grid, label, 220, 236, (g) => {
+    const d = D(i % 6); g.appendChild(d.el);
+    return (t) => d.set({ t, x: 110, y: 196, s: 1.05, look: { x: Math.sin(t * 1.3), y: 0.1 }, ...p });
+  }));
+
+  /* 3. motion clips */
+  grid = section('Movement', 'Squash and stretch, anticipation before a move, a settle after it, a small hand-made boil on every frame.');
+  const clip = (label, name, extra = {}) => stage(grid, label, 300, 236, (g) => {
+    const d = D(extra.skin ?? 0); g.appendChild(d.el);
+    return (t) => {
+      const L = extra.loopLen || 100;
+      const lt = t % (extra.period || 100);
+      const o = { dir: 1, seed: 1, ...(extra.opts || {}) };
+      let x = 150;
+      if (extra.travel) {
+        const per = extra.period; const k = (t % per) / per;
+        // anticipation 0..0.3 holds still, then glides
+        const m = k < 0.3 ? 0 : C.ease(Math.min(1, (k - 0.3) / 0.55));
+        x = 70 + m * 160;
+        o.dir = 1;
+      }
+      d.set({ ...C.Dollop.pose(name, extra.period ? lt : t, o), x, y: 196, s: 1 });
+    };
+  });
+  clip('idle', 'idle'); clip('go: anticipate → launch → settle', 'go', { period: 2.0, travel: true });
+  clip('roll', 'roll', { skin: 1 });
+  clip('wait (blocked)', 'wait', { skin: 2 }); clip('bump', 'bump', { skin: 3, period: 1.6 });
+  clip('freeze (deadlock)', 'freeze', { skin: 4, opts: { looks: [{ x: 1, y: 0 }, { x: -1, y: 0.2 }, { x: 0, y: -1 }] } });
+  clip('polite dance (livelock)', 'dance', { skin: 5 }); clip('held (chock)', 'held');
+  clip('VIP (ticket)', 'vip', { skin: 1 }); clip('hog (smug)', 'smug', { skin: 2 });
+  clip('huh? (wrong target)', 'huh', { skin: 3, period: 2.2 }); clip('win', 'win', { skin: 4 });
+  clip('stunned', 'stunned', { skin: 5 });
+
+  /* 4. pads */
+  grid = section('Pad (a section)', 'The mutex. The lamp turns the holder’s colour; the rim and inlay follow. Free pads stay green.');
+  [-1, 0, 1, 2, 3, 4, 5].forEach((own) => stage(grid, own < 0 ? 'free' : `held · ${C.SKINS[own].name}`, 260, 190, (g) => {
+    const p = C.createPad({ label: 'A' }); g.appendChild(p.el);
+    return (t) => p.set({ owner: own, x: 120, y: 110, labels: false });
+  }));
+
+  /* 5. rails, huts, yarn */
+  grid = section('Rail, hut, yarn', 'Rails link pads. A hut is a cart’s goal. Yarn is the wait: pink dashes = about to wait, slack red = waiting, taut red = nobody can move.');
+  stage(grid, 'rail', 300, 200, (g) => { g.appendChild(C.createRail({ x: 30, y: 150 }, { x: 270, y: 60 }).el); });
+  [0, 3].forEach((i) => stage(grid, `hut · ${C.SKINS[i].name}`, 240, 200, (g) => {
+    const h = C.createHut(i, { clock: i === 3 }); g.appendChild(h.el);
+    return (t) => h.set({ x: 120, y: 170, t, win: i === 3 ? (t % 2.4) / 1.6 : 0 });
+  }));
+  const yarnStage = (label, o) => stage(grid, label, 300, 200, (g) => {
+    const a = D(0), b = D(2); const y = C.createYarn();
+    g.append(a.el, b.el, y.el);
+    return (t) => {
+      a.set({ ...C.Dollop.pose(o.taut >= 1 ? 'freeze' : 'wait', t, { looks: [{ x: 1, y: 0 }] }), x: 70, y: 170, s: 0.8 });
+      b.set({ ...C.Dollop.pose('idle', t, { seed: 2 }), x: 230, y: 170, s: 0.8 });
+      y.set({ a: { x: 70, y: 100 }, b: { x: 230, y: 100 }, t, ...o });
+    };
+  });
+  yarnStage('yarn · about to wait', { ghost: true, taut: 0.2 }); yarnStage('yarn · waiting (slack)', { taut: 0.35 }); yarnStage('yarn · taut', { taut: 1 });
+  stage(grid, 'ring of yarn = deadlock', 300, 220, (g) => {
+    const ds = [0, 1, 2].map((i) => D(i)); const P = [{ x: 150, y: 60 }, { x: 240, y: 160 }, { x: 60, y: 160 }];
+    const ys = [0, 1, 2].map(() => C.createYarn());
+    ys.forEach((y) => g.appendChild(y.el)); ds.forEach((d) => g.appendChild(d.el));
+    return (t) => {
+      ds.forEach((d, i) => d.set({ ...C.Dollop.pose('freeze', t, { looks: [{ x: i === 0 ? 1 : i === 1 ? -1 : 0, y: 0.3 }] }), x: P[i].x, y: P[i].y + 36, s: 0.6 }));
+      ys.forEach((y, i) => y.set({ a: { x: P[i].x, y: P[i].y - 14 }, b: { x: P[(i + 1) % 3].x, y: P[(i + 1) % 3].y - 14 }, t, taut: 1, k: i }));
+    };
+  });
+
+  /* 6. tokens */
+  grid = section('Tokens', 'Two tools, two shapes. The wedge stops a cart; the golden ticket lends priority. Both carry a visible timer.');
+  [1, 0.5, 0.15].forEach((f) => stage(grid, `chock · lease ${Math.round(f * 100)}%`, 220, 150, (g) => {
+    const c = C.createChock(); g.appendChild(c.el); return (t) => c.set({ x: 110, y: 100, s: 1.6, frac: f });
+  }));
+  [1, 0.5, 0.15].forEach((f) => stage(grid, `ticket · lease ${Math.round(f * 100)}%`, 220, 150, (g) => {
+    const k = C.createTicket(); g.appendChild(k.el); return (t) => k.set({ x: 110, y: 80 + Math.sin(C.snap(t) * 3) * 4, s: 1.5, frac: f, sparkle: true, t, rot: -6 });
+  }));
+  stage(grid, 'chock on a cart', 300, 236, (g) => {
+    const d = D(0); const c = C.createChock({ small: true }); g.append(d.el, c.el);
+    return (t) => { d.set({ ...C.Dollop.pose('held', t), x: 140, y: 196 }); c.set({ x: 202, y: 200, s: 1.1, frac: 0.7 }); };
+  });
+  stage(grid, 'ticket on the holder', 300, 236, (g) => {
+    const d = D(4); g.append(d.el);
+    return (t) => d.set({ ...C.Dollop.pose('vip', t), x: 150, y: 196, ticket: 0.66, stars: 3 });
+  });
+
+  /* 7. priority, deadline, sun */
+  grid = section('Priority, deadline, sun', 'Stars on the pennant say who outranks whom. The candle melts toward a missed connection. The sun is the scheduler: it lights one cart at a time.');
+  [1, 2, 3].forEach((n) => stage(grid, `${n} star${n > 1 ? 's' : ''}`, 220, 236, (g) => {
+    const d = D(n); g.appendChild(d.el); return (t) => d.set({ ...C.Dollop.pose('idle', t, { seed: n }), x: 110, y: 196, stars: n });
+  }));
+  [1, 0.55, 0.15].forEach((f) => stage(grid, `candle · ${Math.round(f * 100)}% left`, 220, 236, (g) => {
+    const d = D(2); g.appendChild(d.el); return (t) => d.set({ ...C.Dollop.pose('wait', t), x: 110, y: 196, candle: f });
+  }));
+  stage(grid, 'sun looks at the runner', 360, 230, (g) => {
+    const s = C.createSun(); const a = D(0), b = D(1), m = D(2);
+    g.append(a.el, b.el, m.el, s.el);
+    return (t) => {
+      const k = Math.floor(t / 1.6) % 3; const xs = [70, 180, 290];
+      [a, b, m].forEach((d, i) => d.set({ ...C.Dollop.pose(i === k ? 'roll' : 'wait', t, { seed: i }), x: xs[i], y: 205, s: 0.62, stars: i + 1, look: { x: 0, y: -0.5 } }));
+      s.set({ x: 180, y: 52, s: 0.9, t, target: { x: xs[k] - 180, y: 150 } });
+    };
+  });
+
+  /* 8. little scenes */
+  grid = section('Scenes', 'The three moments the game is about.');
+  const sceneRing = (label, mode) => stage(grid, label, 360, 300, (g) => {
+    g.appendChild(S('rect', { x: 0, y: 0, width: 360, height: 300, fill: '#92bf52', opacity: 0.0 }));
+    const P = [{ x: 180, y: 70 }, { x: 290, y: 200 }, { x: 70, y: 200 }];
+    [0, 1, 2].forEach((i) => g.appendChild(C.createRail(P[i], P[(i + 1) % 3]).el));
+    const pads = P.map((p) => { const pd = C.createPad(); g.appendChild(pd.el); return pd; });
+    const ds = [0, 1, 2].map((i) => D(i)); const ys = [0, 1, 2].map(() => C.createYarn());
+    ys.forEach((y) => g.appendChild(y.el)); ds.forEach((d) => g.appendChild(d.el));
+    return (t) => {
+      const cyc = mode === 'freeze' ? 6 : 8; const k = (t % cyc);
+      pads.forEach((pd, i) => { pd.el.setAttribute('transform', `translate(${P[i].x} ${P[i].y}) scale(.5)`); pd.set({ owner: i }); pd.el.setAttribute('transform', `translate(${P[i].x} ${P[i].y}) scale(.5)`); });
+      ds.forEach((d, i) => {
+        if (mode === 'freeze') d.set({ ...C.Dollop.pose(k < 2 ? 'go' : 'freeze', k < 2 ? k : k - 2, { looks: [{ x: 1, y: 0 }, { x: -1, y: 0.2 }] }), x: P[i].x, y: P[i].y + 24, s: 0.52 });
+        else d.set({ ...C.Dollop.pose(k < 5 ? 'roll' : 'win', k, { seed: i }), x: P[i].x, y: P[i].y + 24, s: 0.52 });
+      });
+      ys.forEach((y, i) => y.set({ a: { x: P[i].x, y: P[i].y - 6 }, b: { x: P[(i + 1) % 3].x, y: P[(i + 1) % 3].y - 6 }, t, taut: mode === 'freeze' ? Math.min(1, Math.max(0, (k - 2) / 1.5)) : 0.2, ghost: mode !== 'freeze', k: i }));
+    };
+  });
+  sceneRing('ring closes: yarn tightens, steam', 'freeze'); sceneRing('after the hold: ring unwinds', 'unwind');
+
+  /* runner: repaint only when the 12 fps frame changes */
+  const smooth = document.getElementById('smooth');
+  smooth.addEventListener('change', () => { C.cfg.fps = smooth.checked ? 60 : 12; last = -1; });
+  let last = -1;
+  function loop(ms) {
+    const t = ms / 1000;
+    const f = C.cfg.fps === 12 ? Math.floor(t * 12) : Math.floor(t * 30);
+    if (f !== last) { last = f; for (const u of items) u(t); }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  window.__sheetReady = true;
+})();
+
+</script>
+</body>
+</html>

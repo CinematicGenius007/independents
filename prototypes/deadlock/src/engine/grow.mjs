@@ -39,17 +39,22 @@ const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const TAU = Math.PI * 2;
 const pt = (x, y) => ({ x: Math.round(x), y: Math.round(y) });
 
-function slotsFor(n) {
-  if (n === 1) return [{ cx: 500, cy: 400, s: 1 }];
-  if (n === 2) return [{ cx: 262, cy: 420, s: 0.72 }, { cx: 738, cy: 420, s: 0.72 }];
-  return Array.from({ length: n }, (_, i) => ({ cx: 200 + (i % 3) * 300, cy: 300 + Math.floor(i / 3) * 230, s: 0.55 }));
+// Districts share the diorama width in proportion to how much room they need.
+function slotsFor(districts) {
+  const weight = (d) => (d.t === 'pair' ? 0.8 : d.t === 'polite' ? 1.05 : (d.n >= 4 ? 1.3 : 1.1) + (d.drive ? 0.55 : 0) + (d.tails ? 0.15 : 0));
+  const ws = districts.map(weight); const sum = ws.reduce((x, y) => x + y, 0);
+  const total = districts.length === 1 ? 940 : 920; let x = (1000 - total) / 2;
+  return ws.map((w) => { const width = (w / sum) * total; const slot = { cx: x + width / 2, cy: 442, w: width, s: districts.length === 1 ? 1 : 0.72 }; x += width; return slot; });
 }
 
 export function buildLevel(spec, rng, seed, rung, opts = {}) {
   const canon = !!opts.canonical;
   const jit = (lo, hi) => (canon ? lo : pickInt(rng, lo, hi));
   const flip = !canon && rng() < 0.5;
-  const slots = slotsFor(spec.districts.length);
+  const slots = slotsFor(spec.districts);
+  // pieces shrink as the yard fills so a 6-cart board stays legible
+  const nCarts = spec.districts.reduce((n, d) => n + (d.t === 'ring' ? d.n + (d.tails || 0) : d.t === 'inv' ? (d.pairs || 1) * 2 + (d.hogs || 1) : 2), 0);
+  const pieceScale = nCarts <= 3 ? 0.9 : nCarts === 4 ? 0.8 : nCarts === 5 ? 0.7 : 0.62;
   const resources = [];
   const carts = [];
   const layout = { pads: {}, depots: {}, huts: {}, loops: {}, tails: [], districts: [] };
@@ -70,14 +75,17 @@ export function buildLevel(spec, rng, seed, rung, opts = {}) {
       const n = d.t === 'pair' ? 2 : d.n;
       const pads = Array.from({ length: n }, () => newRes());
       if (flip) pads.reverse();
-      const rx = (n === 2 ? 150 : 255) * (spec.districts.length === 1 ? 1 : 0.62 / 0.72 * 0.95) ;
-      const ry = (n === 2 ? 0 : 150) * (spec.districts.length === 1 ? 1 : 0.8);
-      const centre = { x: slot.cx, y: slot.cy };
+      const big = spec.districts.length === 1;
+      const dd = 128 * pieceScale;
+      const ext = d.drive ? 2.0 : 1.55;
+      const hw = slot.w / 2;
+      const rx = n === 2 ? Math.max(48, Math.min(165, hw - dd * ext)) : Math.max(58, Math.min(285, hw - dd * ext));
+      const ry = n === 2 ? 0 : Math.min(n === 3 ? 175 : n === 4 ? 150 : 140, rx * (n === 3 ? 0.78 : 0.6));
+      const centre = { x: slot.cx, y: slot.cy + (n === 3 ? (big ? 22 : 10) : 0) };
       const ang = (k) => (n === 2 ? (k === 0 ? Math.PI : 0) : -Math.PI / 2 + (TAU * k) / n);
       const pos = pads.map((_, k) => ({ x: centre.x + rx * Math.cos(ang(k)), y: centre.y + (n === 2 ? 0 : ry * Math.sin(ang(k))) }));
       const unit = (k) => (n === 2 ? { x: k === 0 ? -1 : 1, y: 0 } : { x: Math.cos(ang(k)), y: Math.sin(ang(k)) });
       pads.forEach((id, k) => { layout.pads[id] = pt(pos[k].x, pos[k].y); });
-      const dd = 108 * (d.drive ? 1.0 : 1) * (0.7 + 0.3 * s);
       const rot = (u, a) => ({ x: u.x * Math.cos(a) - u.y * Math.sin(a), y: u.x * Math.sin(a) + u.y * Math.cos(a) });
       const driveIds = [];
       for (let k = 0; k < n; k += 1) {
@@ -94,15 +102,15 @@ export function buildLevel(spec, rng, seed, rung, opts = {}) {
         const u = unit(k);
         const pad0 = pos[k];
         if (d.drive) {
-          layout.pads[driveIds[k]] = pt(pad0.x + u.x * dd, pad0.y + u.y * dd * 0.9);
-          layout.depots[id] = pt(pad0.x + u.x * dd * 1.95, pad0.y + u.y * dd * 1.75);
+          layout.pads[driveIds[k]] = pt(pad0.x + u.x * dd, pad0.y + u.y * dd * 0.6);
+          layout.depots[id] = pt(pad0.x + u.x * dd * 1.95, pad0.y + u.y * dd * 1.2);
         } else {
-          layout.depots[id] = pt(pad0.x + u.x * dd, pad0.y + u.y * dd * 0.9);
+          layout.depots[id] = pt(pad0.x + u.x * dd, pad0.y + u.y * dd * 0.6);
         }
         const u2 = unit((k + 1) % n);
-        const hv = n === 2 ? { x: u2.x, y: u2.y + (k === 0 ? 0.55 : -0.55) } : rot(u2, 0.62);
-        const hd = dd * (d.drive ? 1.75 : 1.25);
-        layout.huts[id] = pt(pos[(k + 1) % n].x + hv.x * hd, pos[(k + 1) % n].y + hv.y * hd * 0.8);
+        const hv = n === 2 ? { x: u2.x, y: u2.y + (k === 0 ? 0.55 : -0.55) } : rot(u2, 0.95);
+        const hd = dd * (d.drive ? 1.75 : 1.65);
+        layout.huts[id] = pt(pos[(k + 1) % n].x + hv.x * hd, pos[(k + 1) % n].y + hv.y * hd * 0.55);
       }
       // tails: carts that hang off the ring
       const tails = d.tails || 0;
@@ -125,13 +133,14 @@ export function buildLevel(spec, rng, seed, rung, opts = {}) {
       const A = newRes(), B = newRes();
       const b1 = jit(2, 3), b2 = jit(2, 3);
       const cx = slot.cx, cy = slot.cy;
-      layout.pads[A] = pt(cx - 120, cy); layout.pads[B] = pt(cx + 120, cy);
+      const K = Math.min(1, slot.w / 600); const pd = 120 * Math.max(0.55, K);
+      layout.pads[A] = pt(cx - pd, cy); layout.pads[B] = pt(cx + pd, cy);
       const p = newCart([travel(jit(1, 2)), lock(A), travel(1), tryLock(B, b1), travel(1), unlock(B), unlock(A), done()], { prio: 2 });
       const q = newCart([travel(jit(1, 2)), lock(B), travel(1), tryLock(A, b2), travel(1), unlock(A), unlock(B), done()], { prio: 1 });
-      layout.depots[p] = pt(cx - 300 * (spec.districts.length > 1 ? 0.6 : 1), cy - 70);
-      layout.depots[q] = pt(cx + 300 * (spec.districts.length > 1 ? 0.6 : 1), cy + 70);
-      layout.huts[p] = pt(cx + 300 * (spec.districts.length > 1 ? 0.6 : 1), cy - 85);
-      layout.huts[q] = pt(cx - 300 * (spec.districts.length > 1 ? 0.6 : 1), cy + 85);
+      layout.depots[p] = pt(cx - 300 * K, cy - 70);
+      layout.depots[q] = pt(cx + 300 * K, cy + 70);
+      layout.huts[p] = pt(cx + 300 * K, cy - 85);
+      layout.huts[q] = pt(cx - 300 * K, cy + 85);
     } else if (d.t === 'inv') {
       hasInv = true;
       const pairs = d.pairs || 1;
@@ -171,7 +180,7 @@ export function buildLevel(spec, rng, seed, rung, opts = {}) {
   const skins = canon ? carts.map((_, i) => i) : shuffled(rng, [0, 1, 2, 3, 4, 5]);
   carts.forEach((c, i) => { c.skin = skins[i % skins.length]; });
   const layoutOut = layout;
-  layoutOut.scale = spec.districts.length > 1 ? 0.82 : 1;
+  layoutOut.scale = pieceScale;
   const level = {
     id: `${seed}-${rung}`, seed, rung, name: spec.name, family: spec.family, mode,
     resources, carts, budget: { ...spec.budget }, holdTicks: 6, boostTicks: 6, horizon: 90,

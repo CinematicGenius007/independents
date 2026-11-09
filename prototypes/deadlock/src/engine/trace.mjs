@@ -10,14 +10,14 @@ import {
   allUnfinishedBlocked, dynKey,
 } from './sim.mjs';
 
-const cb = (c, i) => c.base + i * W;
+const cbase = (c, i) => c.base + i * W;
 
 export function viewOf(level, S, extra = {}) {
   const c = compile(level);
   const ids = level.resources;
   const carts = [];
   for (let i = 0; i < c.N; i += 1) {
-    const b = cb(c, i);
+    const b = cbase(c, i);
     const held = [];
     for (let r = 0; r < c.R; r += 1) if ((S[b + F.HELD] >> r) & 1) held.push(r);
     carts.push({
@@ -89,10 +89,10 @@ export function replay(level, plan = [], opts = {}) {
 
 // Which waiter is the loan lending priority from? (animation only)
 function findWaiter(c, S, i) {
-  const held = S[cb(c, i) + F.HELD];
+  const held = S[cbase(c, i) + F.HELD];
   let best = -1, bp = -1;
   for (let j = 0; j < c.N; j += 1) {
-    const b = cb(c, j);
+    const b = cbase(c, j);
     const r = S[b + F.BLK];
     if (r >= 0 && !S[b + F.DONE] && ((held >> r) & 1) && c.prio[j] > bp) { best = j; bp = c.prio[j]; }
   }
