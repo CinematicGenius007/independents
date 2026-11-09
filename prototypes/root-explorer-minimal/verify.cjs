@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* =====================================================================
-   Headless-Chromium certification for prototypes/root-explorer-minimal  (Revision 5: the whole page is a rising 3D spiral)
+   Headless-Chromium certification for prototypes/root-explorer-minimal  (Revision 6: the rising 3D spiral, now with the brand system: hero copy, LIVE / ROADMAP cover buttons, logo, favicon and 25 icons)
 
    Serves the repo root on a throwaway port, opens the page with software WebGL and proves, with real
    keyboard, mouse-wheel, mouse and touch events (touch goes through the DevTools protocol):
@@ -25,7 +25,11 @@
    7. the 390 x 844 phone: no sideways or vertical page scroll, a bottom sheet with the LIVE / ROADMAP
       switch, the plate framed above it, 44px touch targets, swipe travels, a tap pokes, the index is a
       sheet; in the map a swipe lifts the rising spiral and it fills the screen; the same 19 tracks are reachable;
-   8. zero console errors, zero page errors, zero failed requests.
+   8. zero console errors, zero page errors, zero failed requests;
+   9. the brand: the hero headline and lede carry no number and no "record" talk, the cover buttons say LIVE / ROADMAP (never
+      Side A / Side B) with their counts, icons and captions in dead-straight vertical columns (desktop and phone); the SVG favicon
+      is wired and loads; logo mark, lockup, favicon, poster, sprite and contact sheet all parse and decode as images; the inline
+      sprite holds the mark + 19 project icons + 6 UI icons and every <use> in the DOM resolves to one of them and paints.
 
    Run:   node prototypes/root-explorer-minimal/verify.cjs
    Shots: SHOTS=/some/dir node prototypes/root-explorer-minimal/verify.cjs
@@ -53,7 +57,7 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
     page.on("console", m => { if (m.type() === "error") errors.push("console.error: " + m.text()); });
     page.on("pageerror", e => errors.push("pageerror: " + (e.stack || e.message)));
     page.on("requestfailed", rq => { const u = rq.url(); if (!/fonts\.(googleapis|gstatic)\.com/.test(u)) errors.push("requestfailed: " + u); });
-    page.on("response", rs => { if (rs.status() >= 400 && rs.url().startsWith(`http://localhost:${port}`) && !/favicon/.test(rs.url())) errors.push("http " + rs.status() + ": " + rs.url()); });
+    page.on("response", rs => { if (rs.status() >= 400 && rs.url().startsWith(`http://localhost:${port}`)) errors.push("http " + rs.status() + ": " + rs.url()); });
   };
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } }); const page = await ctx.newPage(); watch(page);
   const I = (fn, arg) => page.evaluate(fn, arg);
@@ -80,7 +84,7 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   console.log("\n[2] nineteen tracks, written for a first-time visitor");
   const rows = await I(() => [...document.querySelectorAll("a.trk")].map(a => ({ n: a.querySelector(".n").textContent, t: a.querySelector(".t").textContent, d: a.querySelector(".d").textContent, sub: a.querySelector(".sub").textContent, href: a.getAttribute("href"), slug: a.dataset.slug, side: a.closest("ol").id, lead: getComputedStyle(a.querySelector(".lead")).height })));
   ok(rows.length === 19 && rows.map(r => r.n).join() === Array.from({ length: 19 }, (_, i) => String(i + 1).padStart(2, "0")).join(), "tracklist has 19 real rows numbered 01..19");
-  ok(rows.slice(0, 9).every(r => r.side === "sideA") && rows.slice(9).every(r => r.side === "sideB"), "nine LIVE (Side A) then ten ROADMAP (Side B)");
+  ok(rows.slice(0, 9).every(r => r.side === "sideA") && rows.slice(9).every(r => r.side === "sideB"), "nine LIVE then ten ROADMAP");
   ok(rows.every(r => r.lead === "1px"), "every row keeps its 1px hairline leader (the liner-notes soul)");
   ok(/fogwalk/i.test(rows[0].t) && rows[0].d === "05:00" && /bloomwright/i.test(rows[1].t) && rows[1].d === "04:12", "running times sit on the leaders: 01 FOGWALK 05:00, 02 BLOOMWRIGHT 04:12", rows.slice(0, 2));
   const missing = rows.filter(r => r.slug !== "longhaul" && !fs.existsSync(path.resolve(ROOT, "prototypes", "root-explorer-minimal", r.href.split("#")[0])));
@@ -107,7 +111,20 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   console.log("\n[4] desktop: interacting from the first moment");
   await page.reload({ waitUntil: "load" }); await page.waitForFunction(() => window.__independents && __independents.state().frames > 2, null, { timeout: 40000 }); await I(() => __independents.setAuto(false)); await step(300, true);
   const cov = await I(() => { const g = id => getComputedStyle(document.querySelector(id)); return { cover: g("#cover").opacity, card: g("#card").visibility, h1: document.querySelector("#cover h1").textContent, ctaA: !!document.querySelector('#cover [data-go="0"]'), ctaB: !!document.querySelector('#cover [data-go="9"]') }; });
-  ok(cov.cover === "1" && cov.card === "hidden" && /Nineteen small games/.test(cov.h1) && cov.ctaA && cov.ctaB, "first moment: a clear headline, the two side buttons, the record already alive behind it", cov);
+  ok(cov.cover === "1" && cov.card === "hidden" && /^The game is the\slink\.$/.test(cov.h1.trim()) && cov.ctaA && cov.ctaB, "first moment: a clear headline, the LIVE and ROADMAP buttons, the spiral already alive behind it", cov);
+  /* ---- brand copy + cover buttons ---- */
+  const NUM = /(\d|\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|nineteen|twenty|first|second|third|record|disc|vinyl|lp|side a|side b)\b)/i;
+  const copy = await I(() => ({ title: document.title, h1: document.querySelector("#cover h1").textContent, lede: document.querySelector("#cover .lede").textContent, eyebrow: document.querySelector("#cover .eyebrow").textContent, desc: document.querySelector('meta[name="description"]').content, icon: document.querySelector('link[rel="icon"]')?.getAttribute("href"), iconType: document.querySelector('link[rel="icon"]')?.getAttribute("type"), body: document.body.innerText }));
+  ok(!NUM.test(copy.h1) && !NUM.test(copy.lede) && !NUM.test(copy.eyebrow) && !NUM.test(copy.title.replace(/^Independents — /, "")) && !NUM.test(copy.desc), "hero headline, lede, eyebrow, <title> and meta description carry no number and no record / side talk", [copy.h1, copy.lede, copy.title]);
+  ok(copy.title === "Independents — the game is the link" && !/nineteen|one record/i.test(copy.title + copy.h1 + copy.lede + copy.desc), "the page title was renamed (and 'Nineteen small games, one record' is gone everywhere)", copy.title);
+  ok(copy.icon === "brand/favicon.svg" && copy.iconType === "image/svg+xml", "the SVG favicon is wired into <head>", [copy.icon, copy.iconType]);
+  ok(!/side\s*[ab]\b/i.test(copy.body), "no SIDE A / SIDE B anywhere in the visible page", (copy.body.match(/side\s*[ab]\b/i) || [])[0]);
+  const al = await I(() => { const btn = [...document.querySelectorAll("#cover .sideBtn")], q = (b, sel) => Math.round(b.querySelector(sel).getBoundingClientRect().left * 10) / 10, r = (b, sel) => Math.round(b.querySelector(sel).getBoundingClientRect().right * 10) / 10, y = (b, sel) => { const k = b.querySelector(sel).getBoundingClientRect(); return Math.round((k.top + k.height / 2) * 10) / 10; };
+    return { label: btn.map(b => b.querySelector(".sb-k").textContent), count: btn.map(b => b.querySelector(".sb-n").textContent), icon: btn.map(b => q(b, ".sb-i")), k: btn.map(b => q(b, ".sb-k")), nL: btn.map(b => q(b, ".sb-n")), nR: btn.map(b => r(b, ".sb-n")), dot: btn.map(b => q(b, ".sb-dot")), d: btn.map(b => q(b, ".sb-d")), go: btn.map(b => r(b, ".sb-go")), rowY: btn.map(b => y(b, ".sb-n")), sameRow: btn.map(b => [y(b, ".sb-k"), y(b, ".sb-n"), y(b, ".sb-dot"), y(b, ".sb-d")]), cls: btn.map(b => b.className), disp: getComputedStyle(btn[0]).display }; });
+  const col = k => al[k].length === 2 && Math.abs(al[k][0] - al[k][1]) < .6;
+  ok(al.label.join() === "LIVE,ROADMAP" && al.count.join() === "09,10", "cover buttons read LIVE 09 and ROADMAP 10", al);
+  ok(col("icon") && col("k") && col("nL") && col("nR") && col("dot") && col("d") && col("go"), "09 and 10 (and the icons, labels, dots and captions) align in dead-straight vertical columns", al);
+  ok(al.sameRow.every(r => Math.max(...r) - Math.min(...r) < 1.5) && al.cls.every(c => /sideBtn/.test(c)), "within each button the label, count, dot and caption share one baseline row (.sideBtn)", al.sameRow);
   await shot("01-cover-map");
   /* ---- the spiral: no disc, a thread, a rising helix ---- */
   const sc = await I(() => __independents.scene()), s1 = await st();
@@ -146,7 +163,7 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   await step(240); const pps = s1.helix.dy * s1.helix.ppu; const d0 = (await st()).flowT;
   await page.mouse.move(300, 780); await page.mouse.down(); for (let k = 1; k <= 8; k++) { await page.mouse.move(300, 780 - k * 30); await sleep(16); } await page.mouse.up(); const d1 = (await st()).flowT;
   ok(d1 - d0 > 240 / pps * .8 - .3, "dragging up on the spiral lifts it with your hand (about a station per station-height of finger travel)", { d0, d1, pps });
-  await step(300); const d2 = (await st()).flowT; await page.mouse.move(300, 560); await page.mouse.down(); for (let k = 1; k <= 8; k++) { await page.mouse.move(300, 560 + k * 30); await sleep(16); } await page.mouse.up(); await step(2); const d3 = (await st()).flowT;
+  await step(300); const d2 = (await st()).flowT; await page.mouse.move(760, 560); await page.mouse.down(); for (let k = 1; k <= 8; k++) { await page.mouse.move(760, 560 + k * 30); await sleep(16); } await page.mouse.up(); await step(2); const d3 = (await st()).flowT;
   ok(d3 - d2 < -240 / pps * .8 + 1, "dragging down scrubs it back the other way", { d2, d3 }); await step(300);
   /* click a plate: the camera glides in front of it */
   const pk = vis(await info()).filter(p => p.front > .5 && p.x > 640 && p.x < 1300).sort((a, b) => b.front - a.front)[0] || vis(await info())[0];
@@ -172,8 +189,8 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   await page.mouse.click(railBox.x, railBox.y); await step(240); s = await st(); ok(s.cur === 12, "the rail of nineteen ticks flies to any track", s.cur);
   const sideLive = await I(() => document.querySelector('#sides [data-side="A"]').getAttribute("aria-pressed")), sideRoad = await I(() => document.querySelector('#sides [data-side="B"]').getAttribute("aria-pressed"));
   ok(sideRoad === "true" && sideLive === "false", "the LIVE / ROADMAP switch follows the camera (track 13 is ROADMAP)", [sideLive, sideRoad]);
-  await page.click('#sides [data-side="A"]'); await step(200); s = await st(); ok(s.cur === 0, "choosing LIVE flies to Side A", s.cur);
-  await page.click('#sides [data-side="B"]'); await step(200); s = await st(); ok(s.cur === 9, "choosing ROADMAP flies to Side B", s.cur);
+  await page.click('#sides [data-side="A"]'); await step(200); s = await st(); ok(s.cur === 0, "choosing LIVE flies to track 01", s.cur);
+  await page.click('#sides [data-side="B"]'); await step(200); s = await st(); ok(s.cur === 9, "choosing ROADMAP flies to track 10", s.cur);
   await page.click("#card .nav[data-step='1']"); await step(80); s = await st(); const n1 = s.cur; await page.click("#card .nav[data-step='-1']"); await step(80); s = await st(); ok(n1 === 10 && s.cur === 9, "the card's next / previous buttons travel", [n1, s.cur]);
   const like = await I(() => document.querySelector("#card [data-like]").dataset.like); await page.click("#card [data-like]"); await step(160); s = await st(); ok(s.cur === +like, "TRY NEXT flies to the suggested neighbour", [like, s.cur]);
   /* the plate answers a click */
@@ -183,7 +200,7 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   await I(() => __independents.go(0)); await step(120); await page.mouse.move(520, 450); await sleep(650); await page.mouse.wheel(0, -120); await sleep(300); await step(90); s = await st(); ok(s.mode === "map", "wheel-up at track 01 returns to the whole record", s.mode);
   await page.keyboard.press("m"); await step(150); s = await st(); ok(s.mode === "walk", "M toggles between the map and the last track", s.mode);
   await page.keyboard.press("Escape"); await step(150); s = await st(); ok(s.mode === "map", "Esc rises back to the map", s.mode);
-  await page.click('#cover [data-go="9"]'); await step(200); s = await st(); ok(s.mode === "walk" && s.cur === 9, "the cover's SIDE B button dives into track 10", { mode: s.mode, cur: s.cur });
+  await page.click('#cover [data-go="9"]'); await step(200); s = await st(); ok(s.mode === "walk" && s.cur === 9, "the cover's ROADMAP button dives into track 10", { mode: s.mode, cur: s.cur });
   await I(() => __independents.go(5)); await step(160, true); await page.mouse.move(520, 450); await step(40, true); await shot("04-walk-6");
   await I(() => __independents.go(16)); await step(200, true); await shot("05-walk-17");
 
@@ -199,7 +216,7 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
 
   console.log("\n[6] the index (tracklist)");
   await I(() => __independents.toMap()); await step(100); await page.keyboard.press("i"); await css(); const ix = await I(() => { const r = document.querySelector("#index").getBoundingClientRect(); return { l: r.left, w: r.width, op: document.body.classList.contains("index-open"), h2: [...document.querySelectorAll("#index h2")].map(h => h.textContent) }; });
-  ok(ix.op && ix.l >= -1 && ix.w <= 600 && ix.h2.length === 2 && /LIVE/.test(ix.h2[0]) && /ROADMAP/.test(ix.h2[1]), "I opens the tracklist: SIDE A — LIVE, SIDE B — ROADMAP", ix); await shot("06-index");
+  ok(ix.op && ix.l >= -1 && ix.w <= 600 && ix.h2.length === 2 && /LIVE/.test(ix.h2[0]) && /ROADMAP/.test(ix.h2[1]), "I opens the index: LIVE, then ROADMAP", ix); await shot("06-index");
   await page.click('a.trk[data-slug="driftwatch"]'); await step(200); s = await st(); ok(s.cur === 11 && s.mode === "walk" && !s.indexOpen, "a row flies to its plate and closes the sheet", s);
   await page.keyboard.press("i"); await css(); await page.keyboard.press("Escape"); await css(); ok(!(await st()).indexOpen, "Esc closes the tracklist");
 
@@ -214,10 +231,12 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   const ov = await mI(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth, sh: document.documentElement.scrollHeight, ih: innerHeight, phone: __independents.state().layout.phone, canvas: (() => { const r = document.querySelector("#world").getBoundingClientRect(); return [r.width, r.height]; })() }));
   ok(ov.sw <= ov.iw && ov.sh <= ov.ih && ov.phone && ov.canvas[0] === 390 && ov.canvas[1] === 844, "no sideways or vertical page scroll; the canvas is 390 x 844", ov);
   const cv = await mI(() => ({ h1: document.querySelector("#cover h1").getBoundingClientRect().bottom, sideA: document.querySelector('#cover [data-go="0"]').getBoundingClientRect(), sideB: document.querySelector('#cover [data-go="9"]').getBoundingClientRect(), tb: [...document.querySelectorAll(".tb")].map(b => b.getBoundingClientRect().height), cx: __independents.state().layout })); await mshot("07-phone-cover");
-  ok(cv.sideA.height >= 44 && cv.sideB.height >= 44 && cv.tb.every(h => h >= 44) && cv.sideA.left >= 0 && cv.sideA.right <= 390, "phone cover: headline, two 44px side buttons and 44px MAP / INDEX", cv);
+  ok(cv.sideA.height >= 44 && cv.sideB.height >= 44 && cv.tb.every(h => h >= 44) && cv.sideA.left >= 0 && cv.sideA.right <= 390, "phone cover: headline, LIVE / ROADMAP 44px buttons and 44px MAP / INDEX", cv);
+  const pal = await mI(() => { const btn = [...document.querySelectorAll("#cover .sideBtn")], L = sel => btn.map(b => Math.round(b.querySelector(sel).getBoundingClientRect().left * 10) / 10), R = sel => btn.map(b => Math.round(b.querySelector(sel).getBoundingClientRect().right * 10) / 10); return { k: L(".sb-k"), nL: L(".sb-n"), nR: R(".sb-n"), dot: L(".sb-dot"), d: L(".sb-d"), right: R(".sb-d"), sw: document.documentElement.scrollWidth }; });
+  ok(["k", "nL", "nR", "dot", "d"].every(k => Math.abs(pal[k][0] - pal[k][1]) < .6) && pal.right.every(r => r <= 390) && pal.sw <= 390, "phone cover: 09 and 10 stay in one straight column and nothing spills past the screen edge", pal);
   await touch("touchStart", 195, 640); await touch("touchEnd"); await mstep(5); /* an empty tap on the cover does nothing odd */
   await m.tap('#cover [data-go="0"]'); await mstep(260, true); await mcss(); let ms = await mst();
-  ok(ms.mode === "walk" && ms.cur === 0, "tapping SIDE A dives into track 01", { mode: ms.mode, cur: ms.cur });
+  ok(ms.mode === "walk" && ms.cur === 0, "tapping LIVE dives into track 01", { mode: ms.mode, cur: ms.cur });
   const dock = await mI(() => { const d = document.querySelector("#dock").getBoundingClientRect(), side = document.querySelector("#dock #sides"), els = [...document.querySelectorAll("#dock button, #dock a")].filter(b => b.getBoundingClientRect().width > 0).map(b => [b.className || b.dataset.side, Math.round(b.getBoundingClientRect().height), Math.round(b.getBoundingClientRect().width)]); return { top: d.top, bottom: d.bottom, w: d.width, sideInDock: !!side, els, visible: getComputedStyle(document.querySelector("#card")).visibility }; });
   ok(dock.sideInDock && dock.bottom <= 844 && dock.w <= 390 && dock.top > 380, "the LIVE / ROADMAP switch moves into the bottom sheet; the sheet stays in the lower half", dock);
   ok(dock.els.length >= 5 && dock.els.every(e => e[1] >= 44), "every control in the sheet is at least 44px tall", dock.els.filter(e => e[1] < 44));
@@ -227,7 +246,7 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   await swipe(300, 420, 300, 190); ms = await mst(); ok(ms.cur === 2, "swiping up also travels forward", ms.cur);
   await swipe(100, 330, 300, 330); ms = await mst(); ok(ms.cur === 1, "swiping right goes back", ms.cur);
   const pl2 = await mI(() => __independents.projectPlate(__independents.state().cur)); const pk0 = (await mst()).pokes; await m.touchscreen.tap(pl2.x, pl2.y); await mstep(8); ok((await mst()).pokes === pk0 + 1, "tapping the plate pokes the preview", [(await mst()).pokes, pk0]);
-  await m.tap('#dock #sides [data-side="B"]'); await mstep(200, true); ms = await mst(); ok(ms.cur === 9, "tapping ROADMAP in the sheet goes to Side B", ms.cur);
+  await m.tap('#dock #sides [data-side="B"]'); await mstep(200, true); ms = await mst(); ok(ms.cur === 9, "tapping ROADMAP in the sheet goes to track 10", ms.cur);
   await m.tap("#card .nav[data-step='1']"); await mstep(80); ok((await mst()).cur === 10, "the sheet's next button works with a thumb");
   await m.tap("#mapBtn"); await mstep(220, true); await mcss(); ms = await mst(); ok(ms.mode === "map", "MAP rises back over the record", ms.mode);
   const dockHidden = await mI(() => getComputedStyle(document.querySelector("#dock")).opacity); ok(dockHidden === "0", "the sheet gets out of the way in the map", dockHidden); await mshot("09-phone-map");
@@ -248,6 +267,29 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   const ng = await np.evaluate(() => ({ nogl: document.body.classList.contains("nogl"), canvas: getComputedStyle(document.querySelector("#world")).display, rows: [...document.querySelectorAll("#index a.trk")].filter(a => a.getBoundingClientRect().width > 0).length, scroll: document.documentElement.scrollHeight > innerHeight, cover: getComputedStyle(document.querySelector("#cover")).display, sw: document.documentElement.scrollWidth <= innerWidth }));
   ok(ng.nogl && ng.canvas === "none" && ng.rows === 19 && ng.scroll && ng.cover === "none" && ng.sw, "without WebGL the page degrades to a plain scrolling list of 19 real links", ng);
   await nctx.close();
+
+  console.log("\n[9] the brand system: favicon, logos, poster, 25 icons");
+  const AS = ["favicon.svg", "logo-mark.svg", "logo-lockup.svg", "brand-poster.svg", "icons.svg", "icon-sheet.svg"];
+  const asset = await I(async list => { const out = []; for (const f of list) { const res = await fetch("brand/" + f), txt = await res.text(), doc = new DOMParser().parseFromString(txt, "image/svg+xml"); const bad = !!doc.querySelector("parsererror"); const img = await new Promise(r => { const i = new Image(); i.onload = () => r({ w: i.naturalWidth, h: i.naturalHeight }); i.onerror = () => r(null); i.src = "brand/" + f + "?v=" + Math.random(); }); out.push({ f, status: res.status, type: res.headers.get("content-type"), bad, img, vb: doc.documentElement.getAttribute("viewBox"), bytes: txt.length, hex: [...new Set((txt.match(/#[0-9A-Fa-f]{6}/g) || []).map(x => x.toUpperCase()))] }); } return out; }, AS);
+  ok(asset.every(a => a.status === 200 && /svg/.test(a.type) && !a.bad && a.img && (a.f === "icons.svg" || a.img.w > 0)), "all six brand SVGs serve as image/svg+xml, parse with no errors and decode as images", asset.filter(a => a.status !== 200 || a.bad || !a.img || (a.f !== "icons.svg" && !(a.img.w > 0))));
+  const A = Object.fromEntries(asset.map(a => [a.f, a]));
+  ok(A["brand-poster.svg"].img.w === 1200 && A["brand-poster.svg"].img.h === 630 && A["favicon.svg"].vb === "0 0 32 32" && A["logo-mark.svg"].vb === "0 0 64 64", "poster is exactly 1200 x 630; the favicon is a 32 grid and the mark a 64 grid", [A["brand-poster.svg"].img, A["favicon.svg"].vb, A["logo-mark.svg"].vb]);
+  ok(asset.every(a => a.hex.every(h => ["#151516", "#EAE8E3", "#9C9B97", "#EE6A3C"].includes(h))), "brand SVGs use only the four palette colours (charcoal, chalk, mute, ember)", asset.map(a => [a.f, a.hex]).filter(([, h]) => h.some(x => !["#151516", "#EAE8E3", "#9C9B97", "#EE6A3C"].includes(x))));
+  const SLUGS = ["fogwalk", "bloomwright", "tonguecracker", "sealed-orders", "hushword", "scribble-club", "azulejo", "longhaul", "sudoku", "sporefront", "terrarium", "driftwatch", "loomweight", "deadlock", "byzantine", "gc", "cartel", "shadow", "lexicon"], UIS = ["live", "roadmap", "map", "index", "play", "peek"];
+  const spr = await I(([P, U]) => { const have = [...document.querySelectorAll("svg symbol")].map(x => x.id), box = id => { const s = document.getElementById(id), g = s && s.querySelector("g"); const b = g ? g.getBBox() : { width: 0, height: 0 }; return { w: b.width, h: b.height, strokeW: g ? getComputedStyle(g).strokeWidth : null }; };
+    const used = [...document.querySelectorAll("use")].map(u => u.getAttribute("href").slice(1)); return { n: have.length, miss: [...P.map(x => "i-" + x), ...U.map(x => "i-" + x), "i-mark"].filter(id => !have.includes(id)), dup: have.length - new Set(have).size, thin: P.concat(U).filter(x => { const b = box("i-" + x); return b.w < 6 || b.h < 6 || b.w > 24.1 || b.h > 24.1 || b.strokeW !== "1px"; }), dangling: used.filter(id => !have.includes(id)), usedN: used.length, acc: P.concat(U).filter(x => !document.querySelector("#i-" + x + " .ac")) }; }, [SLUGS, UIS]);
+  ok(spr.n === 26 && spr.miss.length === 0 && spr.dup === 0, "the inline sprite holds the mark, 19 project icons and 6 UI icons (26 symbols, no duplicates)", spr);
+  ok(spr.thin.length === 0 && spr.acc.length === 0, "every icon is a 1px monoline inside the 24 grid and carries exactly its one ember mark", spr);
+  ok(spr.dangling.length === 0 && spr.usedN >= 10, "every <use> in the page points at a real symbol", spr);
+  const painted = await I(() => ({ marks: [...document.querySelectorAll(".mark .logo")].map(x => { const r = x.getBoundingClientRect(); return [r.width, r.height]; }), tracks: [...document.querySelectorAll("a.trk .ti")].map(x => { const r = x.getBoundingClientRect(); return Math.round(r.width); }), ids: [...document.querySelectorAll("a.trk .ti use")].map(u => u.getAttribute("href")) }));
+  ok(painted.marks.length === 1 && painted.marks[0][0] === 28 && painted.tracks.length === 19 && new Set(painted.ids).size === 19, "the header wears the crest and every index row wears its own project icon (19 different ones)", painted);
+  await page.evaluate(() => __independents.go(2)); await step(60); await css();
+  const cardIc = await I(() => ({ title: !!document.querySelector("#card .c-title svg.pi use[href='#i-tonguecracker']"), tag: !!document.querySelector("#card .c-head .tag svg use[href='#i-live']"), open: !!document.querySelector("#card a.open svg use[href='#i-play']"), tagText: document.querySelector("#card .c-head .tag").textContent.trim(), w: document.querySelector("#card .c-title svg.pi").getBoundingClientRect().width }));
+  ok(cardIc.title && cardIc.tag && cardIc.open && cardIc.tagText === "LIVE" && cardIc.w === 30, "the liner card wears the project icon, the LIVE badge icon and the PLAY icon", cardIc);
+  await page.evaluate(() => __independents.go(11)); await step(60); await css();
+  const cardR = await I(() => ({ tag: document.querySelector("#card .c-head .tag").textContent.trim(), peek: !!document.querySelector("#card a.open svg use[href='#i-peek']"), road: !!document.querySelector("#card .c-head .tag svg use[href='#i-roadmap']") }));
+  ok(cardR.tag === "ROADMAP" && cardR.peek && cardR.road, "a ROADMAP card says ROADMAP and wears the PEEK icon", cardR);
+  await I(() => __independents.toMap()); await step(60); await shot("12-brand-cover");
 
   console.log("\n[8] errors");
   ok(errors.length === 0, "zero console errors, zero page errors, zero failed requests", errors.slice(0, 6));

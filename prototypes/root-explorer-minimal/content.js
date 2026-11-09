@@ -1,15 +1,15 @@
 /* The whole copy deck. Nineteen tracks, written for a first-time visitor: what it is, what you do, who plays, how long.
    No engineering vocabulary lives on the page; the formal lineage stays in each project's own README.
-   side A = LIVE (the nine apps that exist), side B = ROADMAP (the ten concepts in the workshop). */
+   side 'A' = LIVE (the nine apps that exist), side 'B' = ROADMAP (the ten concepts in the workshop); the letters are internal keys only and never shown. */
 
 export const SITE = {
   title: 'INDEPENDENTS',
   subtitle: 'SCATTERED WORKS',
-  catalog: 'IND-LP-019',
-  headline: 'Nineteen small games, one record.',
-  lede: 'Each one opens in a browser tab, with nothing to install and no account. Nine are ready to play today. Ten are still in the workshop.',
-  sideA: { key: 'LIVE', count: 9, long: 'Side A', note: 'Ready to play' },
-  sideB: { key: 'ROADMAP', count: 10, long: 'Side B', note: 'In the workshop' },
+  eyebrow: 'BROWSER GAMES · NO INSTALL',
+  headline: 'The game is the link.',
+  lede: 'Odd little worlds with rules of their own, folded into a web address. Open a link and you are already playing, with no install and no account.',
+  live: { key: 'LIVE', count: 9, note: 'PLAY NOW' },
+  roadmap: { key: 'ROADMAP', count: 10, note: 'IN THE WORKSHOP' },
 };
 
 /* slug, title, side, sitting (mm:ss on the leader), word on the plate, hook, what you do, who plays, try-next, where it opens */
@@ -24,13 +24,13 @@ export const TRACKS = [
     you: 'Program your orders, send the link, and reveal together. Nobody can peek and nobody can cheat.', who: 'Two players', like: 'shadow', href: '../../apps/sealed-orders/', look: '#35c9e0' },
   { slug: 'hushword', name: 'Hushword', side: 'A', time: '04:05', word: 'REDACTED', hook: 'The word game where some of the clues are blacked out.',
     you: 'Guess the word from partial hints. Every link is its own puzzle with its own hidden letters.', who: 'Solo, or pass the link', like: 'sealed-orders', href: '../../apps/hushword/', look: '#d9a521' },
-  { slug: 'pictionary', name: 'Scribble Club', side: 'A', time: '06:10', word: 'SKETCH', hook: 'Draw it. They guess it.',
+  { slug: 'pictionary', icon: 'scribble-club', name: 'Scribble Club', side: 'A', time: '06:10', word: 'SKETCH', hook: 'Draw it. They guess it.',
     you: 'Sketch a secret word while friends race to name it, all on one shared page of paper.', who: 'You and friends', like: 'cartel', href: '../../apps/pictionary/', look: '#f4efe3' },
-  { slug: 'azul', name: 'Azulejo', side: 'A', time: '07:20', word: 'TILES', hook: 'Lay tiles. Build the wall.',
+  { slug: 'azul', icon: 'azulejo', name: 'Azulejo', side: 'A', time: '07:20', word: 'TILES', hook: 'Lay tiles. Build the wall.',
     you: 'Draft coloured tiles, fill your pattern lines, and score a wall the way Portuguese tile masters would.', who: 'Two to four players', like: 'cartel', href: '../../apps/azul/', look: '#6d9be0' },
   { slug: 'longhaul', name: 'Long Haul', side: 'A', time: '05:55', word: 'BALLAST', hook: 'Eat the stones. Then dump them behind you.',
     you: 'Haul a growing pile of stones through a maze, slowing down as it grows, and drop it to block the devils.', who: 'Just you', like: 'driftwatch', href: '../../apps/longhaul/', look: '#ff9b3e', pending: true },
-  { slug: 'boards', name: 'Sudoku & Tic-Tac-Toe', side: 'A', time: '03:33', word: 'GRIDS', hook: 'One grid that solves itself, and one grid inside a grid.',
+  { slug: 'boards', icon: 'sudoku', name: 'Sudoku & Tic-Tac-Toe', side: 'A', time: '03:33', word: 'GRIDS', hook: 'One grid that solves itself, and one grid inside a grid.',
     you: 'Solve a Sudoku with a helpful solver, or play tic-tac-toe where every move sends your opponent to a different board.', who: 'Solo, or two players', like: 'sporefront', href: '../../apps/sudoku-solver/', look: '#58e6a9' },
 
   { slug: 'sporefront', name: 'Sporefront', side: 'B', time: '04:40', word: 'SPORES', hook: 'Scatter a few spores and watch a living board decide what to do.',
@@ -60,3 +60,4 @@ export const pad2 = n => String(n).padStart(2, '0');
 export const sideName = t => t.side === 'A' ? 'LIVE' : 'ROADMAP';
 export const openLabel = t => t.pending ? 'ARRIVING SOON' : t.side === 'A' ? 'PLAY ' + t.name.toUpperCase() : 'PEEK AT ' + t.name.toUpperCase();
 export const openUrl = t => t.href + (t.href.includes('#') ? '&' : '#') + 'from=root&v=1';
+export const iconId = t => 'i-' + (t.icon || t.slug);

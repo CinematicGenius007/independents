@@ -2,8 +2,8 @@
    THE SPIRAL — the whole page is one Three.js scene.
 
    Nineteen plates hang along one hairline thread that winds up through the screen as a 3D helix, entering below
-   the bottom edge and leaving above the top. Side A (live, solid thread) climbs first, then a gap, then Side B
-   (roadmap, dashed thread). Two ways of being in it:
+   the bottom edge and leaving above the top. the live games (solid thread) climb first, then a gap, then the roadmap
+   (dashed thread). Two ways of being in it:
 
      MAP   the whole spiral at once, and it flows upward by itself, forever: a plate that leaves the top comes back
            in from the bottom. Hover a plate and the flow slows and the plate lifts; drag or scroll to scrub or
@@ -16,7 +16,8 @@
    bright, back plates smaller and dim.
    ===================================================================== */
 import * as THREE from 'three';
-import { SITE, TRACKS, pad2, sideName, openLabel, openUrl } from './content.js';
+import { SITE, TRACKS, pad2, sideName, openLabel, openUrl, iconId } from './content.js';
+const ico = (id, cls = 'ic') => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
 import { makePreview, PW, PH } from './previews.js';
 
 /* ---------- utilities ---------- */
@@ -51,7 +52,7 @@ let toastT = 0; const toast = (s, ms = 2600) => { els.toast.textContent = s; els
 
 TRACKS.forEach((tr, i) => {
   const a = document.createElement('a'); a.className = 'trk'; a.href = tr.href; a.dataset.slug = tr.slug; a.dataset.i = i;
-  a.innerHTML = `<span class="n">${pad2(i + 1)}</span><span class="t">${tr.name}</span><i class="lead"></i><span class="d">${tr.time}</span><span class="sub">${tr.hook}</span>`;
+  a.innerHTML = `<span class="n">${pad2(i + 1)}</span>${ico(iconId(tr), 'ic ti')}<span class="t">${tr.name}</span><i class="lead"></i><span class="d">${tr.time}</span><span class="sub">${tr.hook}</span>`;
   $(tr.side === 'A' ? '#sideA' : '#sideB').appendChild(a);
 });
 /* rail: nineteen ticks, grouped by side */
@@ -64,15 +65,15 @@ TRACKS.forEach((tr, i) => {
 function renderCard(i) {
   const tr = TRACKS[i], nx = TRACKS.find(t => t.slug === tr.like);
   els.card.innerHTML = `
-    <div class="c-head"><span>${pad2(i + 1)} / 19</span><span class="tag ${tr.side === 'A' ? 'live' : ''}">${sideName(tr)} · ${tr.side === 'A' ? 'SIDE A' : 'SIDE B'}</span></div>
-    <h2 class="c-title"><span>${tr.name}</span><i class="lead"></i><time>${tr.time}</time></h2>
+    <div class="c-head"><span>${pad2(i + 1)} / 19</span><span class="tag ${tr.side === 'A' ? 'live' : ''}">${ico(tr.side === 'A' ? 'i-live' : 'i-roadmap')}${sideName(tr)}</span></div>
+    <h2 class="c-title">${ico(iconId(tr), 'ic pi')}<span>${tr.name}</span><i class="lead"></i><time>${tr.time}</time></h2>
     <p class="c-hook">${tr.hook}</p>
     <p class="c-you">${tr.you}</p>
     <div class="row"><b>PLAYERS</b><i class="lead"></i><span>${tr.who}</span></div>
     <div class="row"><b>STATUS</b><i class="lead"></i><span>${tr.side === 'A' ? 'Open now, in your browser' : 'A playable sketch, still being finished'}</span></div>
     <div class="row like"><b>TRY NEXT</b><i class="lead"></i><button type="button" data-like="${nx.i}">${nx.name}</button></div>
     <div class="c-act"><button type="button" class="nav" data-step="-1" aria-label="Previous track" ${i === 0 ? 'disabled' : ''}>←</button>
-      <a class="open ${tr.pending ? 'pending' : ''}" href="${openUrl(tr)}" data-slug="${tr.slug}"><span>${openLabel(tr)}</span><span aria-hidden="true">${tr.pending ? '' : '↗'}</span></a>
+      <a class="open ${tr.pending ? 'pending' : ''}" href="${openUrl(tr)}" data-slug="${tr.slug}"><span>${tr.pending ? '' : ico(tr.side === 'A' ? 'i-play' : 'i-peek')}${openLabel(tr)}</span><span aria-hidden="true">${tr.pending ? '' : '↗'}</span></a>
       <button type="button" class="nav" data-step="1" aria-label="Next track" ${i === N - 1 ? 'disabled' : ''}>→</button></div>`;
   els.card.classList.remove('swap'); void els.card.offsetWidth; els.card.classList.add('swap');
 }
@@ -127,7 +128,7 @@ const TA = new THREE.Vector3(), TB = new THREE.Vector3();
 if (renderer) {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setClearColor(CARD, 1);
 
-  /* the thread: a 1px hairline that follows the helix. Solid for Side A, dashed for Side B, nothing in the gaps. It is rebuilt every
+  /* the thread: a 1px hairline that follows the helix. Solid for LIVE, dashed for ROADMAP, nothing in the gaps. It is rebuilt every
      frame from the flow, so the dashes ride up with the plates. */
   const mk = t => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(t.pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(t.col, 3)); g.setDrawRange(0, 0); const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true })); l.frustumCulled = false; rec.add(l); return l; };
   threadA = mk(tA); threadB = mk(tB);
@@ -166,7 +167,7 @@ function updateThread(flow) {
     for (let c = 0; c < 2; c++) { t.col[o + c * 3] = CH[0] * e; t.col[o + c * 3 + 1] = CH[1] * e; t.col[o + c * 3 + 2] = CH[2] * e; } t.n++;
   }
   for (const [t, l] of [[tA, threadA], [tB, threadB]]) { l.geometry.setDrawRange(0, t.n * 2); l.geometry.attributes.position.needsUpdate = true; l.geometry.attributes.color.needsUpdate = true; }
-  /* the two small accent ticks that mark the run-out gap between Side A and Side B */
+  /* the two small accent ticks that mark the run-out gap between LIVE and ROADMAP */
   let n = 0; for (const q of [Q[SIDE_A - 1] + .3, Q[SIDE_A] - .3]) { const s = mod(q + flow, LOOP), ph = (s - LOOP / 2) * DTH, sn = Math.sin(ph), cs = Math.cos(ph), y = (s - LOOP / 2) * G.dy + G.yoff, e = edgeFade(s), o = n * 6;
     gtPos[o] = (G.R - 1.4) * sn; gtPos[o + 1] = y; gtPos[o + 2] = (G.R - 1.4) * cs; gtPos[o + 3] = (G.R + 1.4) * sn; gtPos[o + 4] = y; gtPos[o + 5] = (G.R + 1.4) * cs;
     for (let c = 0; c < 2; c++) { gtCol[o + c * 3] = .933 * e; gtCol[o + c * 3 + 1] = .416 * e; gtCol[o + c * 3 + 2] = .235 * e; } n++; }
