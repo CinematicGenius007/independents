@@ -7,8 +7,18 @@
 
    1. all 19 deterministic ports pass their self-test tape (run twice, same
       hash) and all 19 painters draw something;
-   2. the tracklist is 19 hairline-leader rows, 01..19, Side A then Side B,
-      every href points at a file that exists in this repo;
+   2. the tracklist is 19 hairline-leader rows, 01..19, Side A then Side B, each
+      with a two-word formal sub-caption, a par/metric and a mechanism tag, every
+      href points at a file that exists in this repo; html, body and the sleeve are
+      one full-bleed #151516 card (no plaster, petals, margin or shadow); the top
+      ensemble credits, the Scattered Days liner-note blocks, the IND-LP-019
+      colophon and the multi-ring sigil are all present;
+   2b. the world is dense: survey fiducials, elevation ticks, five etched
+      territories, a compass rose that answers the camera, groove micro-landmarks,
+      chalk motes; every landmark is a 3-layer (z -0.35 / 0 / +0.35) paper-cut with a
+      moving mechanism, a numbered plinth and a pennant; the lantern ring and the
+      bearing line follow the wanderer; the stage has callouts, a live FPS / tick
+      HUD and one clickable keycap per port action;
    3. WASD and the arrow keys walk the wanderer; clicking the ground walks it;
    4. clicking any of the 19 track rows pins it, the camera glides to its
       landmark, the paper board hinges up, the liner notes name its state
@@ -66,9 +76,32 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok(rows.every(r => r.lead === "1px"), "every leader is a 1px hairline");
   const missing = rows.filter(r => r.slug !== "longhaul" && !fs.existsSync(path.resolve(ROOT, "prototypes", "root-explorer-minimal", r.href.split("#")[0], r.href.endsWith("/") ? "" : "")) && !fs.existsSync(path.resolve(ROOT, "prototypes", "root-explorer-minimal", r.href.split("#")[0])));
   ok(missing.length === 0, "every row href resolves to a path in this repo (except Long Haul, not on main yet)", missing.map(r => r.href));
-  ok(await I(() => getComputedStyle(document.querySelector(".sleeve")).backgroundColor) === "rgb(21, 21, 22)", "sleeve is #151516 cardstock");
-  ok(await I(() => getComputedStyle(document.documentElement).getPropertyValue("--plaster").trim().toLowerCase()) === "#dcdad7", "plaster is #DCDAD7");
-  ok((await I(() => document.querySelectorAll(".petal").length)) >= 5, "botanical petals present");
+  const fb = await I(() => { const cs = (x, p) => getComputedStyle(x, p), s = document.querySelector(".sleeve"), r = s.getBoundingClientRect();
+    return { html: cs(document.documentElement).backgroundColor, body: cs(document.body).backgroundColor, sleeve: cs(s).backgroundColor, shadow: cs(s).boxShadow, mt: cs(s).marginTop, ml: cs(s).marginLeft, mr: cs(s).marginRight,
+      left: r.left, top: r.top, w: r.width, h: r.height, cw: document.documentElement.clientWidth, ih: innerHeight, sw: document.documentElement.scrollWidth, petals: document.querySelectorAll(".petal").length,
+      plaster: cs(document.documentElement).getPropertyValue("--plaster").trim(), petalDefs: document.querySelectorAll("#pt,#pf,#pb").length, tooth: cs(document.body, "::before").content,
+      grain: cs(s).getPropertyValue("--grain").trim().slice(0, 22), vig: cs(s, "::after").backgroundImage.includes("radial-gradient"), vigPos: cs(s, "::after").position, fibre: cs(s, "::before").backgroundImage.includes("url(") }; });
+  ok(fb.html === "rgb(21, 21, 22)" && fb.body === "rgb(21, 21, 22)" && fb.sleeve === "rgb(21, 21, 22)", "html, body and main.sleeve are all #151516 charcoal cardstock", fb);
+  ok(fb.left === 0 && fb.top === 0 && Math.abs(fb.w - fb.cw) < 1 && fb.h >= fb.ih - 1 && fb.sw <= fb.cw, "the sleeve is full-bleed: 100% of the viewport width, at least its height, no overflow", fb);
+  ok(fb.mt === "0px" && fb.ml === "0px" && fb.mr === "0px" && fb.shadow === "none", "no outer margin and no card drop-shadow", fb);
+  ok(fb.petals === 0 && fb.petalDefs === 0 && fb.plaster === "" && fb.tooth === "none", "plaster, petals and the plaster tooth layer are gone", fb);
+  ok(fb.grain.startsWith("url(") && fb.fibre && fb.vig && fb.vigPos === "fixed", "procedural paper fibre + chalk dust grain and a viewport vignette cover the whole screen", fb);
+
+  console.log("\n[2b] ensemble credits, liner-note blocks, colophon, sigil");
+  const ens = await I(() => { const e = document.querySelector("#ensemble"); return { next: document.querySelector("h1").nextElementSibling?.id, cols: e.querySelectorAll(".col").length, rows: [...e.querySelectorAll(".cr")].map(r => ({ b: r.querySelector("b").textContent, v: r.querySelector("span").textContent, lead: getComputedStyle(r.querySelector("i")).height })) }; });
+  ok(ens.next === "ensemble" && ens.cols === 2 && ens.rows.length === 6, "two-column ensemble block sits right under the header", ens);
+  ok(["AUTOMATA", "COMMIT-REVEAL", "WEBRTC", "60 HZ", "CELLULAR"].every(k => ens.rows.some(r => r.b.toUpperCase().includes(k))), "ensemble credits the five formal mechanisms", ens.rows.map(r => r.b));
+  ok(ens.rows.some(r => /ČERNÝ 1964/i.test(r.v)) && ens.rows.some(r => /LAMPORT/i.test(r.v)) && ens.rows.some(r => /LINDENMAYER 1968/i.test(r.v)), "and their mathematical lineages", ens.rows.map(r => r.v));
+  ok(ens.rows.every(r => r.lead === "1px") && /with special guest/i.test(ens.rows[5].b) && /2\.5D PERSPECTIVE STAGE/i.test(ens.rows[5].v), "every credit has a 1px underline leader; with special guest ____ 2.5D PERSPECTIVE STAGE", ens.rows[5]);
+  const sub = await I(() => [...document.querySelectorAll("a.trk")].map(a => ({ sub: a.querySelector(".sub")?.textContent, pm: a.querySelector(".pm")?.textContent, tag: a.querySelector(".d em")?.textContent, l2: getComputedStyle(a.querySelector(".lead2")).height })));
+  ok(sub.every(r => /^\S+ \S+$/.test(r.sub)), "every row has a two-word formal sub-caption", sub.filter(r => !/^\S+ \S+$/.test(r.sub)));
+  ok(sub.every(r => r.pm && r.pm.length > 2 && r.tag && r.l2 === "1px") && sub[0].pm === "PAR 5", "every row has a hairline leader to a par/metric (Fogwalk's par is the computed BFS optimum, 5) and a mechanism tag", sub[0]);
+  const idleLabels = await I(() => [...document.querySelectorAll(".credits b")].map(b => b.textContent.toUpperCase()));
+  ok(["PRODUCED BY", "ENGINEERED BY", "FORMAL CITE", "CERTIFIED AT", "TRANSPORT", "STATE HASH"].every(k => idleLabels.includes(k)), "liner notes carry PRODUCED BY / ENGINEERED BY / FORMAL CITE / CERTIFIED AT / TRANSPORT / STATE HASH", idleLabels);
+  const colo = await I(() => { const l = document.querySelector("#colophon").getBoundingClientRect(), sg = document.querySelector("#sigil").getBoundingClientRect(); return { lno: document.querySelector("#colophon .lno").textContent, l: l.left, sgR: sg.right, iw: document.documentElement.clientWidth, sgTop: sg.top, lTop: l.top }; });
+  ok(colo.lno === "IND-LP-019" && colo.l < 90 && colo.sgR > colo.iw - 90, "IND-LP-019 label colophon bottom-left, sigil bottom-right", colo);
+  const sg = await I(() => ({ groups: ["sgOut", "sgRing", "sgMid", "sgIn"].filter(i => document.getElementById(i)).length, circles: document.querySelectorAll("#sigil circle").length, lines: document.querySelectorAll("#sigil line").length, polys: document.querySelectorAll("#sigil polygon").length }));
+  ok(sg.groups === 4 && sg.circles >= 14 && sg.lines >= 85 && sg.polys >= 6, "the sigil is a four-group multi-ring monoline mark (gauge, 19-gon, hexagram, pentagram, 16-star)", sg);
   ok(await I(() => document.querySelectorAll("#sgRing .tick").length) === 19, "sigil carries 19 ticks, one per track");
 
   console.log("\n[3] keyboard walking + click-to-walk");
@@ -90,6 +123,29 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await page.mouse.click(pt.x, pt.y); await step(150, false); const w7 = (await st()).wan;
   ok(Math.hypot(w7[0] - tgt[0], w7[1] - tgt[1]) < .6, "clicking the ground walks the wanderer there", { tgt, w7 });
 
+  console.log("\n[3b] the dense world: ground layer, micro-landmarks, layered landmarks, lantern, compass");
+  const D = await I(() => { const w = __independents.world, d = w.DETAIL; return { ...d, totems: w.totems.map(t => ({ slug: t.art.slug, z: t.layers.map(l => l.position.z), mechs: t.mechs.length, plinth: t.txt.userData.text, pennant: t.num.userData.text, n: t.art.n })) }; });
+  ok(D.fiducials >= 300, `survey grid of + fiducial crosshairs across y = 0 (${D.fiducials})`, D.fiducials);
+  ok(D.elevTicks >= 30 && D.elevLabels >= 4 && D.axisLabels >= 10, `elevation index ticks (${D.elevTicks}), spot heights (${D.elevLabels}) and grid margin labels (${D.axisLabels})`, D);
+  ok(JSON.stringify(D.territories) === JSON.stringify(["I · AUTOMATA RIDGE", "II · SEALED BASIN", "III · CELLULAR FLATS", "IV · LOCKSTEP TRENCH", "V · PEER COMMONS"]), "five etched territory labels lie on the ground", D.territories);
+  ok(D.rose && D.rose.r >= 6, "a large compass rose / azimuth ring is etched into the ground", D.rose);
+  ok(D.posts >= 8 && D.cairns >= 8 && D.flags >= 4 && D.reeds >= 100 && D.motes >= 200, `micro-landmarks along the groove: ${D.posts} mile-marker posts, ${D.cairns} cairns, ${D.flags} survey flags, ${D.reeds} reed clusters, ${D.motes} chalk motes`, D);
+  ok(D.totems.length === 19 && D.totems.every(t => t.z.join() === "-0.35,0,0.35"), "all 19 landmarks are 3-layer paper-cuts at z = -0.35, 0, +0.35", D.totems.filter(t => t.z.join() !== "-0.35,0,0.35"));
+  ok(D.totems.every(t => t.mechs >= 1) && D.totems.filter(t => t.mechs > 1).length >= 2, "each has a moving mechanical sub-element (Deadlock and Byzantine Choir have two)", D.totems.filter(t => !t.mechs));
+  ok(D.totems.every(t => t.plinth === String(t.n).padStart(2, "0") && t.pennant === t.plinth), "each has an etched plinth and a pennant badge lettered 01..19");
+  const mechState = () => I(() => __independents.world.totems.map(t => t.mechs.map(m => [m.g.position.x, m.g.position.y, m.g.rotation.z, m.g.scale.x].map(v => v.toFixed(4)).join()).join("|")));
+  const m0 = await mechState(); await step(37, false); const m1 = await mechState();
+  ok(m0.every((v, i) => v !== m1[i]), "every mechanism moved after 37 frames of uTime", m0.map((v, i) => v === m1[i] ? i : null).filter(v => v !== null));
+  const kick = await I(() => { const a = __independents.ART[0], t = __independents.world.totems[0]; a.session.do("up"); __independents.stepSim(1, 1 / 60, false); const k1 = a.kick, mc = t.mechs[0], p0 = mc.ph; __independents.stepSim(30, 1 / 60, false); return { k1, k2: a.kick, dph: mc.ph - p0 }; });
+  ok(kick.k1 > .9 && kick.k2 < kick.k1, "a session action kicks its landmark's mechanism (revision counter -> speed boost) and it settles", kick);
+  const lan = await I(() => { const w = __independents.world; return { vis: w.lantern.visible, parent: w.lantern.parent === w.scene.children.find(c => c === w.lantern.parent), colA: w.ringA.material.color.getHexString(), colB: w.ringB.material.color.getHexString(), rs: w.ringA.scale.x, y: w.ringA.geometry ? 1 : 0, vis2: w.ringA.visible && w.ringB.visible }; });
+  ok(lan.vis && lan.vis2 && lan.colA === "ee6a3c" && lan.colB === "ee6a3c" && lan.rs > 1.4, "the wanderer carries a lantern light ring projected on the ground", lan);
+  const rose0 = await I(() => { const w = __independents.world; return { d: w.roseDial.rotation.y, c: w.camMark.rotation.y, o: w.roseMat.opacity, az: w.CAM.az }; });
+  await I(() => __independents.pin("fogwalk")); await step(150, false);
+  const rose1 = await I(() => { const w = __independents.world; return { d: w.roseDial.rotation.y, c: w.camMark.rotation.y, o: w.roseMat.opacity, az: w.CAM.az }; });
+  ok(Math.abs(rose1.d - rose0.d) > .05 && Math.abs(rose1.c - rose0.c) > .015 && rose1.o > rose0.o + .03, "the compass rose responds to the camera's angle (dial turns, marker moves, ring brightens as the camera drops)", { rose0, rose1 });
+  await I(() => __independents.unpin()); await step(120, false);
+
   console.log("\n[4] all 19 tracks: row click -> camera, board, liner notes, live board click");
   const unresponsive = [];
   for (let i = 0; i < 19; i++) {
@@ -98,7 +154,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await page.locator(`a.trk[data-slug="${slug}"]`).click({ position: { x: 20, y: 6 } });
     await step(110);
     const s = await st();
-    const g = await page.evaluate(i => { const w = __independents.world, p = __independents.POS[i]; return { dx: Math.hypot(w.CAM.look.x - (p.x + 3.55), w.CAM.look.z - p.z), dist: w.CAM.dist, el: w.CAM.el }; }, i);
+    const g = await page.evaluate(i => { const w = __independents.world, p = __independents.POS[i]; return { dx: Math.hypot(w.CAM.look.x - (p.x + __independents.FOCUS_DX), w.CAM.look.z - p.z), dist: w.CAM.dist, el: w.CAM.el }; }, i);
     const live = await I(() => { const d = __independents.inkCv.getContext("2d").getImageData(0, 0, 512, 384).data; let lit = 0, acc = 0; for (let k = 0; k < d.length; k += 16) { if (d[k] > 170 && d[k + 1] > 165) lit++; if (d[k] > 180 && d[k + 2] < 110) acc++; } return { lit, acc }; });
     const liner = await I(() => ({ hash: document.querySelector("#hashVal")?.textContent, rowOn: document.querySelector("a.trk.on")?.dataset.slug, play: document.querySelector("#playA").disabled }));
     const good = s.pin === slug && s.boardSlug === slug && s.boardOpen > .9 && g.dx < .9 && g.dist < 22 && g.el < .6 && liner.rowOn === slug && !liner.play && /^[0-9a-f]{8}$/.test(liner.hash || "") && live.lit > 40;
@@ -115,6 +171,16 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const liner2 = await I(() => document.querySelector("#hashVal")?.textContent), real2 = await page.evaluate(i => __independents.ART[i].session.hash(), i);
     await step(20, false);
     if (moved) { const lh = await I(() => document.querySelector("#hashVal")?.textContent); ok(/^[0-9a-f]{8}$/.test(lh), `${slug}: a real mouse click on the board moved the session (${h0} → ${real2})`); void liner2; }
+    // stage furniture: a live FPS / tick HUD, drafting callouts, and one clickable keycap per port action (spied, so no-op actions count too)
+    await step(20, false);
+    const stage = await page.evaluate(i => { const w = __independents.world, a = __independents.ART[i], want = a.session.actions.filter(x => x.ui !== false).slice(0, 18).map(x => x.id), on = w.keycaps.filter(k => k.on).map(k => k.id), d = w.hud.material.map.image.getContext("2d").getImageData(0, 0, 1024, 64).data; let lit = 0; for (let k = 3; k < d.length; k += 16) if (d[k] > 60) lit++;
+      window.__calls = []; const o = a.session.do; a.session.do = function (id, arg) { window.__calls.push(id); return o.call(this, id, arg); }; a.__od = o; return { want, on, lit, hud: { ...w.hudInfo }, kids: w.board.children.length }; }, i);
+    const kcOk = JSON.stringify(stage.want) === JSON.stringify(stage.on) && stage.want.length > 0;
+    for (let j = 0; j < stage.want.length; j++) { const kp = await page.evaluate(j => __independents.world.keycapPoint(j), j); await page.mouse.click(kp.x, kp.y); await step(2, false); }
+    const calls = await page.evaluate(i => { const a = __independents.ART[i], c = window.__calls; a.session.do = a.__od; delete a.__od; return c; }, i);
+    ok(kcOk && JSON.stringify(calls) === JSON.stringify(stage.want) && stage.lit > 150 && /^FPS \d+ · [\d.]+ MS$/.test(stage.hud.l) && /^(TICK 60 HZ|TURN-BASED) · REV \d+$/.test(stage.hud.r) && stage.kids >= 3,
+      `${slug}: stage has ${stage.want.length} keycaps, a real click on each fired its action (${calls.join(",")}), HUD "${stage.hud.l}" / "${stage.hud.r}"`, { stage, calls });
+    await step(5, false);
   }
   ok(unresponsive.length === 0, "every board answered a real mouse click", unresponsive);
 
@@ -124,8 +190,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   let s = await st();
   ok(s.hover === "driftwatch" && s.eff === "driftwatch" && !s.pin && s.boardSlug === "driftwatch" && s.boardOpen > .9, "hovering a row previews its landmark and raises the board", s);
   ok(await I(() => document.querySelector('a.trk[data-slug="driftwatch"]').classList.contains("hot")), "hovered row is marked hot, not pinned");
+  const brg = await I(() => { const w = __independents.world, a = __independents.ART.find(x => x.slug === "driftwatch"), dx = a.pos.x - w.WAN.p.x, dz = a.pos.z + 1 - w.WAN.p.z, want = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360, t = document.querySelector(".tag.brg"); return { vis: w.bear.visible && w.bearEnd.visible, txt: t.textContent, op: t.style.opacity, want, range: Math.hypot(dx, dz), sx: w.bear.scale.x }; });
+  const got = +(/BRG (\d{3})°/.exec(brg.txt) || [])[1];
+  ok(brg.vis && Math.abs(((got - brg.want + 540) % 360) - 180) <= 1 && new RegExp(`· ${brg.range.toFixed(1)} U$`).test(brg.txt) && brg.sx > 5, `the lantern throws a compass bearing line to the hovered track: ${brg.txt}`, brg);
   await page.mouse.move(700, 60); await step(110); s = await st();
   ok(!s.hover && !s.eff && s.boardOpen < .1, "leaving the row folds the board back down", s);
+  ok(!(await I(() => __independents.world.bear.visible)), "the bearing line goes away with the focus");
   await I(() => __independents.toggleMap(true)); await step(200); await shot("06-map");
   const lp = await I(() => __independents.world.landmarkPoint("gc"));
   await page.mouse.move(lp.x, lp.y); await step(2, false);
@@ -133,6 +203,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await page.mouse.click(lp.x, lp.y); await step(480, false); await step(10); s = await st();
   ok(s.pin === "gc" && s.boardSlug === "gc" && !s.map, "clicking a landmark pins its track (and leaves the map)", s);
   ok(await I(() => document.querySelector("a.trk.on")?.dataset.slug) === "gc", "its row is the pinned row");
+  const pl = await I(() => ({ labels: [...document.querySelectorAll(".credits b")].map(b => b.textContent.toUpperCase()), hash: document.querySelector("#hashVal")?.textContent }));
+  ok(["PRODUCED BY", "ENGINEERED BY", "FORMAL CITE", "CERTIFIED AT", "TRANSPORT", "STATE HASH", "WITH SPECIAL GUEST"].every(k => pl.labels.includes(k)) && /^[0-9a-f]{8}$/.test(pl.hash), "pinned liner notes keep the six Scattered Days blocks, now about the track, plus a special guest", pl);
   const sp = await I(() => { const a = __independents.ART.find(a => a.slug === "gc"); return [a.pos.x + .4, a.pos.z + 2.8]; });
   ok(Math.hypot(s.wan[0] - sp[0], s.wan[1] - sp[1]) < 1.2, "the wanderer walked to the landmark's standing spot", { wan: s.wan, sp });
   await shot("03-focus-gc");

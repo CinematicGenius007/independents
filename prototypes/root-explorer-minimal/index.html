@@ -17,48 +17,47 @@
 </script>
 <style>
 :root{
-  --plaster:#DCDAD7; --card:#151516; --chalk:#EAE8E3; --mute:#8E8D8A; --accent:#EE6A3C;
+  --card:#151516; --chalk:#EAE8E3; --mute:#8E8D8A; --accent:#EE6A3C;
   --hair:rgba(234,232,227,.42); --hair2:rgba(234,232,227,.2);
   --mono:'IBM Plex Mono','Space Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --pad:clamp(18px,3vw,56px);
 }
 *{box-sizing:border-box}
-html{background:
-    radial-gradient(ellipse 70% 55% at 50% 38%,rgba(255,255,255,.34),rgba(255,255,255,0) 70%),
-    radial-gradient(ellipse 120% 100% at 50% 50%,rgba(0,0,0,0) 52%,rgba(52,47,40,.34) 100%),
-    var(--plaster);
-  background-attachment:fixed;min-height:100%}
-body{margin:0;min-height:100vh;color:var(--chalk);font:400 13px/1.55 var(--mono);letter-spacing:.04em;text-transform:uppercase;
-  background:none;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-/* plaster tooth: a fixed turbulence layer, multiplied into the stone */
-body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55;mix-blend-mode:multiply;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='360' height='360'><filter id='p' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .53  0 0 0 0 .5  0 0 0 .55 -.12'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>")}
+/* the whole viewport is the card: no wall, no frame, no shadow */
+html,body{margin:0;padding:0;width:100%;min-height:100vh;background:var(--card)}
+body{color:var(--chalk);font:400 13px/1.55 var(--mono);letter-spacing:.04em;text-transform:uppercase;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 button{font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 :focus-visible{outline:1px solid var(--accent);outline-offset:3px}
 
-/* ---- petals on the plaster ------------------------------------------------ */
-.petal{position:fixed;z-index:0;pointer-events:none;width:var(--w);height:calc(var(--w) * .62);left:var(--x);top:var(--y);right:var(--xr);bottom:var(--yb);
-  transform:rotate(var(--r));filter:drop-shadow(0 7px 9px rgba(44,40,34,.24));opacity:.82}
-.petal svg{width:100%;height:100%;display:block;overflow:visible;animation:drift var(--t,19s) ease-in-out infinite alternate}
-@keyframes drift{from{transform:translate3d(0,0,0) rotate(0)}to{transform:translate3d(4px,-6px,0) rotate(2.2deg)}}
-
-/* ---- the sleeve ------------------------------------------------------------ */
-.sleeve{position:relative;z-index:1;width:min(1180px,calc(100vw - 40px));margin:clamp(20px,5vw,60px) auto clamp(28px,6vw,72px);
-  padding:clamp(22px,3.6vw,46px) clamp(20px,3.8vw,50px) clamp(22px,3vw,38px);background:var(--card);
-  box-shadow:0 0 0 1px rgba(255,255,255,.035) inset,0 1px 2px rgba(0,0,0,.4),0 14px 26px -6px rgba(36,32,26,.42),0 46px 90px -28px rgba(36,32,26,.55)}
+/* ---- the sleeve: 100% full-bleed matte charcoal cardstock ------------------- */
+.sleeve{position:relative;z-index:1;display:block;width:100%;min-height:100vh;margin:0;
+  padding:clamp(22px,2.6vw,40px) var(--pad) clamp(24px,2.8vw,44px);background:var(--card)}
 .sleeve::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.9;background-size:512px 512px,300px 300px;background-image:var(--grain,none),
   url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='g' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='2' seed='11'/><feColorMatrix values='0 0 0 0 .92  0 0 0 0 .91  0 0 0 0 .88  0 0 0 .5 -.14'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>")}
-.sleeve::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 60% 40% at 18% 12%,rgba(234,232,227,.045),transparent 70%),radial-gradient(ellipse 50% 36% at 84% 88%,rgba(234,232,227,.04),transparent 70%),linear-gradient(180deg,rgba(0,0,0,.0),rgba(0,0,0,.18))}
+/* a quiet vignette pinned to the viewport, so the card reads as one lit sheet at any scroll */
+.sleeve::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 88% 78% at 50% 46%,rgba(0,0,0,0) 48%,rgba(0,0,0,.4) 100%),radial-gradient(ellipse 60% 40% at 16% 10%,rgba(234,232,227,.045),transparent 70%),radial-gradient(ellipse 50% 36% at 86% 90%,rgba(234,232,227,.04),transparent 70%)}
 .sleeve>*{position:relative;z-index:1}
 h1{margin:0;font-weight:500;font-size:13px;letter-spacing:.78em;word-spacing:1.25em;line-height:1.7}
-.stage{display:grid;grid-template-columns:minmax(0,1.34fr) minmax(0,1fr);gap:clamp(24px,3.6vw,52px);margin-top:clamp(24px,3.4vw,40px);align-items:start}
+.stage{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(440px,1fr);gap:clamp(24px,3.2vw,56px);margin-top:clamp(20px,2.6vw,34px);align-items:start}
+
+/* ---- ensemble credits (the top block of the liner notes) -------------------- */
+.ensemble{display:grid;grid-template-columns:1fr 1fr;gap:3px clamp(24px,5vw,84px);margin-top:clamp(10px,1.4vw,18px);max-width:1180px}
+.ensemble .col{display:flex;flex-direction:column;gap:3px}
+.cr{display:flex;align-items:baseline;gap:10px;padding:1px 0;min-height:1.55em}
+.cr b{font-weight:600;white-space:nowrap}
+.cr i{flex:0 0 clamp(26px,3.6vw,50px);height:1px;background:var(--hair);transform:translateY(-.34em)}
+.cr span{min-width:0;overflow-wrap:anywhere;transition:color .25s}
+.ensemble .cr span{color:var(--mute)}
+.cr.guest{margin-top:1.1em}.cr.guest b{font-weight:600;text-transform:none;letter-spacing:.05em}
+.ensemble .cr.guest span{color:var(--chalk)}
 
 /* ---- the world ------------------------------------------------------------- */
 #world{margin:0;position:relative}
-#frame{position:relative;aspect-ratio:21/20;min-height:340px;max-height:78vh;width:100%;touch-action:none}
+#frame{position:relative;height:clamp(540px,calc(100vh - 250px),1000px);width:100%;touch-action:none}
 #gl{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none;cursor:crosshair;
-  -webkit-mask-image:radial-gradient(ellipse 76% 74% at 50% 50%,#000 58%,transparent 100%);mask-image:radial-gradient(ellipse 76% 74% at 50% 50%,#000 58%,transparent 100%)}
+  -webkit-mask-image:radial-gradient(ellipse 82% 80% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 82% 80% at 50% 50%,#000 62%,transparent 100%)}
 .reg{position:absolute;width:15px;height:15px;pointer-events:none;border:0 solid var(--hair)}
 .reg.tl{left:0;top:0;border-width:1px 0 0 1px}.reg.tr{right:0;top:0;border-width:1px 1px 0 0}
 .reg.bl{left:0;bottom:0;border-width:0 0 1px 1px}.reg.br{right:0;bottom:0;border-width:0 1px 1px 0}
@@ -68,12 +67,13 @@ h1{margin:0;font-weight:500;font-size:13px;letter-spacing:.78em;word-spacing:1.2
 .mapmode .tag:not(.on):not(.lm) span{display:none}.tag.lm b,.tag.lm{color:var(--chalk)}
 .tag.on{color:var(--accent)}.tag.on b{color:var(--accent)}
 .tag.bd{color:var(--accent);letter-spacing:.2em}
+.tag.brg{color:var(--accent);letter-spacing:.16em;font-size:9.5px}
 #where{position:absolute;left:22px;top:20px;font-size:10px;letter-spacing:.2em;color:var(--mute);pointer-events:none}
 #where b{color:var(--chalk);font-weight:600}
 #toast{position:absolute;left:22px;top:38px;font-size:10px;letter-spacing:.2em;color:var(--accent);opacity:0;transition:opacity .35s;pointer-events:none}
 #toast.show{opacity:1}
 #hint{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;margin-top:14px;min-height:4.6em}
-#hintText{font-size:10px;line-height:1.55;letter-spacing:.1em;color:var(--mute);max-width:56ch;text-transform:none}
+#hintText{font-size:10px;line-height:1.55;letter-spacing:.1em;color:var(--mute);max-width:70ch;text-transform:none}
 .play{white-space:nowrap;font-size:11px;font-weight:600;letter-spacing:.2em;padding:7px 11px 6px;border:1px solid var(--hair);transition:border-color .2s,color .2s,background .2s,opacity .2s}
 .play:hover:not(:disabled),.play:focus-visible{border-color:var(--accent);color:var(--accent)}
 .play:disabled{opacity:.28;cursor:default}
@@ -86,79 +86,86 @@ figcaption{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:
 #nogl{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:30px;color:var(--mute);font-size:11px;letter-spacing:.14em}
 body.nogl #nogl{display:flex}body.nogl #gl,body.nogl #tags{display:none}
 
-/* ---- tracklist ------------------------------------------------------------- */
+/* ---- tracklist: number, title, formal sub-caption, hairline leader, par/metric, mechanism tag ---- */
 .side{margin:0 0 6px;font-weight:400;font-size:11px;letter-spacing:.5em;color:var(--mute)}
-ol.tracks{list-style:none;margin:0 0 24px;padding:0}
-.trk{display:flex;align-items:baseline;gap:0;padding:2.5px 6px 2px;margin:0 -6px;border-left:1px solid transparent;transition:background .2s,border-color .2s}
-.trk .n{flex:0 0 3.1ch;color:var(--mute);transition:color .2s}
-.trk .t{font-weight:600;white-space:nowrap}
-.trk .lead{flex:1 1 14px;min-width:14px;height:1px;margin:0 10px;background:var(--hair);transform:translateY(-.34em);transition:background .2s}
-.trk .d{white-space:nowrap;text-align:right}
+ol.tracks{list-style:none;margin:0 0 20px;padding:0}
+.trk{display:grid;grid-template-columns:3.1ch auto minmax(14px,1fr) auto;align-items:baseline;column-gap:0;padding:3px 6px 3px;margin:0 -6px;border-left:1px solid transparent;transition:background .2s,border-color .2s}
+.trk .n{grid-column:1;grid-row:1;color:var(--mute);transition:color .2s}
+.trk .t{grid-column:2;grid-row:1;font-weight:600;white-space:nowrap}
+.trk .lead{grid-column:3;grid-row:1;height:1px;margin:0 10px;background:var(--hair);transform:translateY(-.34em);transition:background .2s}
+.trk .d{grid-column:4;grid-row:1;white-space:nowrap;text-align:right}
 .trk .d em{font-style:normal;color:var(--mute);margin-left:.7ch}
+.trk .sub{grid-column:2;grid-row:2;font-size:9.5px;letter-spacing:.16em;color:var(--mute);white-space:nowrap;line-height:1.35;opacity:.86}
+.trk .lead2{grid-column:3;grid-row:2;background:var(--hair2)}
+.trk .pm{grid-column:4;grid-row:2;font-size:9.5px;letter-spacing:.16em;color:var(--mute);white-space:nowrap;text-align:right;line-height:1.35}
+.trk .lead2{transform:translateY(-.22em)}
 .trk:hover,.trk:focus-visible{background:rgba(234,232,227,.05);outline:none}
-.trk.hot .n,.trk.on .n{color:var(--chalk)}.trk.hot .lead{background:var(--chalk)}
+.trk.hot .n,.trk.on .n{color:var(--chalk)}.trk.hot .lead:not(.lead2){background:var(--chalk)}
 .trk.on{border-left-color:var(--accent);background:rgba(238,106,60,.07)}
-.trk.on .n,.trk.on .t{color:var(--accent)}.trk.on .lead{background:var(--accent)}
+.trk.on .n,.trk.on .t{color:var(--accent)}.trk.on .lead:not(.lead2){background:var(--accent)}
+.trk.on .sub,.trk.on .pm{color:var(--chalk)}
 .trk.off .t{color:var(--mute)}
 
 /* ---- liner-note credits ---------------------------------------------------- */
-.credits{display:grid;grid-template-columns:1fr 1fr;gap:6px clamp(24px,4vw,56px);margin-top:clamp(26px,4vw,48px)}
-.cr{display:flex;align-items:baseline;gap:10px;padding:1px 0;min-height:1.55em}
-.cr b{font-weight:600;white-space:nowrap}
-.cr i{flex:0 0 clamp(26px,3.6vw,50px);height:1px;background:var(--hair);transform:translateY(-.34em)}
-.cr span{min-width:0;overflow-wrap:anywhere;transition:color .25s}
-.cr.guest{margin-top:1.1em}.cr.guest b{font-weight:600;text-transform:none;letter-spacing:.05em}
+.lnh{margin-top:clamp(26px,3.4vw,46px)}
+.credits{display:grid;grid-template-columns:1fr 1fr;gap:6px clamp(24px,5vw,84px);margin-top:6px}
+.credits .col{display:flex;flex-direction:column;gap:2px}
 .credits .play{margin-top:14px;align-self:flex-start}
-.credits .col{display:flex;flex-direction:column}
 
 /* ---- footer ---------------------------------------------------------------- */
-footer{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:clamp(14px,3vw,34px);align-items:end;margin-top:clamp(32px,5vw,64px);font-size:10px;line-height:1.55;letter-spacing:.08em;color:var(--chalk)}
-footer .mark{font-weight:600;font-size:15px;line-height:1.05;letter-spacing:.06em;border:1px solid var(--chalk);padding:7px 9px 6px;text-align:center}
-footer .mark small{display:block;font-size:8.5px;font-weight:500;letter-spacing:.28em;margin-top:3px}
+footer{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:clamp(14px,3vw,40px);align-items:end;margin-top:clamp(30px,4.4vw,60px);font-size:10px;line-height:1.55;letter-spacing:.08em;color:var(--chalk)}
+footer .label{border:1px solid var(--chalk);padding:9px 12px 8px;min-width:190px}
+footer .label .lno{font-weight:600;font-size:17px;line-height:1.05;letter-spacing:.14em;padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--hair)}
+footer .label small{display:block;font-size:8.5px;font-weight:500;letter-spacing:.24em;color:var(--mute);line-height:1.7}
+footer .label small b{color:var(--chalk);font-weight:600}
 footer p{margin:0 0 7px;text-transform:none}
 footer .cat{color:var(--chalk)}
-#sigil{width:clamp(70px,9vw,100px);height:auto;display:block;cursor:pointer;overflow:visible;-webkit-tap-highlight-color:transparent}
+#sigil{width:clamp(96px,10vw,150px);height:auto;display:block;cursor:pointer;overflow:visible;-webkit-tap-highlight-color:transparent}
 #sigil *{fill:none;stroke:var(--chalk);stroke-width:1;vector-effect:non-scaling-stroke;stroke-linejoin:round}
 #sigil .tick.on{stroke:var(--accent)}
 #sigil .dot{fill:var(--accent);stroke:none}
+#sigil .faint{stroke:var(--hair)}
 
-@media (max-width:980px){
+@media (max-width:1180px){
   .stage{grid-template-columns:minmax(0,1fr)}
-  #frame{aspect-ratio:1/1;max-height:none}
+  #frame{height:clamp(440px,72vh,860px)}
+}
+@media (max-width:980px){
+  #frame{height:auto;aspect-ratio:1/1}
 }
 @media (max-width:620px){
   body{font-size:12px}
   h1{letter-spacing:.42em;word-spacing:.9em;font-size:11.5px}
-  .credits{grid-template-columns:1fr}
-  .trk .d em{display:none}
+  .credits,.ensemble{grid-template-columns:1fr}
+  .trk .d em,.trk .pm,.trk .lead2{display:none}
   footer{grid-template-columns:1fr auto}footer .fine{grid-column:1/-1;order:3}
   #hint{flex-direction:column;align-items:flex-start;gap:10px;min-height:0}
 }
-@media (prefers-reduced-motion:reduce){.petal svg{animation:none}}
 </style>
 </head>
 <body>
 
-<!-- botanical petals on the plaster, peeking out around the sleeve -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <linearGradient id="pf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".6" stop-color="#f1efec" stop-opacity=".8"/><stop offset="1" stop-color="#cdcac5" stop-opacity=".62"/></linearGradient>
-  <filter id="pb" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation=".7"/></filter>
-  <symbol id="pt" viewBox="0 0 160 100"><path d="M3 64C4 30 40 3 94 2c36-1 62 17 58 43-4 28-52 52-98 46C26 88 2 80 3 64Z" fill="url(#pf)" filter="url(#pb)"/><path d="M3 64C30 56 96 50 150 40C120 62 70 78 30 84C14 80 3 74 3 64Z" fill="rgba(70,64,56,.07)"/><path d="M12 62C50 54 96 46 146 36" stroke="rgba(60,56,50,.14)" stroke-width="1" fill="none"/><path d="M30 76C62 68 98 58 128 48" stroke="rgba(60,56,50,.08)" stroke-width="1" fill="none"/><ellipse cx="86" cy="26" rx="34" ry="10" fill="rgba(255,255,255,.55)" transform="rotate(-12 86 26)"/></symbol>
-</defs></svg>
-<div class="petal" style="--w:190px;--x:-58px;--y:-22px;--r:-24deg"><svg><use href="#pt"/></svg></div>
-<div class="petal" style="--w:130px;--x:-34px;--y:120px;--r:34deg;--t:23s"><svg><use href="#pt"/></svg></div>
-<div class="petal" style="--w:98px;--x:calc(100vw - 54px);--y:-26px;--r:152deg;--t:17s"><svg><use href="#pt"/></svg></div>
-<div class="petal" style="--w:210px;--xr:-70px;--yb:-34px;--r:-168deg;--t:21s"><svg><use href="#pt"/></svg></div>
-<div class="petal" style="--w:120px;--x:-30px;--yb:-18px;--r:12deg;--t:25s"><svg><use href="#pt"/></svg></div>
-<div class="petal" style="--w:104px;--xr:-26px;--y:42vh;--r:196deg;--t:18s"><svg><use href="#pt"/></svg></div>
-
 <main class="sleeve" id="sleeve">
   <h1 aria-label="Independents — Scattered Works">Independents — Scattered Works</h1>
+
+  <!-- the ensemble: five formal mechanisms with their lineages, and one special guest -->
+  <section class="ensemble" id="ensemble" aria-label="Ensemble credits">
+    <div class="col">
+      <div class="cr"><b>Automata / Grammars</b><i></i><span>Černý 1964 · Lindenmayer 1968</span></div>
+      <div class="cr"><b>Commit-Reveal Crypto</b><i></i><span>Hash commitment · Lamport–Shostak–Pease 1982</span></div>
+      <div class="cr"><b>WebRTC P2P</b><i></i><span>Ordered data channels · replicated state machine</span></div>
+    </div>
+    <div class="col">
+      <div class="cr"><b>60 Hz Fixed-Point Sim</b><i></i><span>Integer lockstep · replayable input tapes</span></div>
+      <div class="cr"><b>Cellular / Emergent</b><i></i><span>Life-like B/S rules · local rule, global result</span></div>
+      <div class="cr guest"><b>with special guest</b><i></i><span>2.5D Perspective Stage</span></div>
+    </div>
+  </section>
 
   <div class="stage">
     <figure id="world">
       <div id="frame">
-        <canvas id="gl" tabindex="0" aria-label="A flat chalk landscape seen in 3D perspective. Nineteen upright monoline landmarks stand on it, one per game. Walk with WASD or the arrow keys, click the ground to walk, click a landmark or a track to open its live micro-board. The tracklist is the same set of links."></canvas>
+        <canvas id="gl" tabindex="0" aria-label="A flat chalk landscape seen in 3D perspective, with a survey grid, contours, territory labels and a compass rose etched into the ground. Nineteen upright three-layer paper-cut landmarks stand on it, one per game. Walk with WASD or the arrow keys, click the ground to walk, click a landmark or a track to open its live micro-board, and click the keycaps in front of the board to play it. The tracklist is the same set of links."></canvas>
         <div id="tags" aria-hidden="true"></div>
         <i class="reg tl"></i><i class="reg tr"></i><i class="reg bl"></i><i class="reg br"></i>
         <div id="where" aria-live="polite"></div>
@@ -167,7 +174,7 @@ footer .cat{color:var(--chalk)}
       </div>
       <div id="hint"><div id="hintText"></div><button class="play" id="playA" disabled>▶ Play track ↵</button></div>
       <figcaption>
-        <span>Fig. 1 — the ground is flat, the tracks stand up</span>
+        <span>Fig. 1 — the ground is flat, the tracks stand up in three layers</span>
         <span class="keys"><button id="kThreads" title="Space"><kbd>Space</kbd> Threads</button><button id="kMap" title="O"><kbd>O</kbd> Map</button><button id="kBack" title="Esc"><kbd>Esc</kbd> Back</button></span>
       </figcaption>
     </figure>
@@ -180,19 +187,20 @@ footer .cat{color:var(--chalk)}
     </section>
   </div>
 
+  <h2 class="side lnh">Liner notes — Scattered Days</h2>
   <section class="credits" aria-label="Liner notes" aria-live="polite">
     <div class="col" id="credL"></div>
     <div class="col" id="credR"></div>
   </section>
 
   <footer>
-    <div class="mark">INDEP.<small>RECORDS</small></div>
+    <div class="label" id="colophon"><div class="lno">IND-LP-019</div><small><b>Independents Records</b></small><small>33⅓ RPM · Scattered Works</small><small>Side A · 9 shipped &nbsp;/&nbsp; Side B · 10 prototypes</small><small>Mastered in a browser, 2026</small></div>
     <div class="fine">
       <p class="cat">ID019<br>Independents, scattered works, 2026</p>
       <p>No build, no server, no account. Every session is deterministic and the hash in the link is the whole proof.</p>
     </div>
-    <svg id="sigil" viewBox="-52 -52 104 104" role="button" tabindex="0" aria-label="Sigil: click to toggle the constellation threads"><title>Sigil — click toggles threads</title>
-      <g id="sgRing"><circle r="43"/></g><g id="sgMid"><circle r="25"/></g><g id="sgIn"></g>
+    <svg id="sigil" viewBox="-62 -62 124 124" role="button" tabindex="0" aria-label="Sigil: click to toggle the constellation threads"><title>Sigil — click toggles threads</title>
+      <g id="sgOut"></g><g id="sgRing"><circle r="43"/></g><g id="sgMid"><circle r="25"/></g><g id="sgIn"></g>
     </svg>
   </footer>
 </main>
@@ -2642,6 +2650,18 @@ const META = {
   sporefront: ['04:40', 'LIFE-LIKE'], terrarium: ['05:15', 'GENOME'], driftwatch: ['06:02', 'FLOW FIELD'], loomweight: ['04:44', 'POLYRHYTHM'], deadlock: ['03:57', 'COFFMAN'],
   byzantine: ['05:31', 'QUORUM'], gc: ['04:19', 'TRICOLOR'], cartel: ['07:08', 'COVENANT'], shadow: ['03:26', 'SEALED BID'], lexicon: ['04:51', 'LIBERTIES'],
 };
+const SUBCAP = {
+  fogwalk: 'SYNCHRONIZING WORD', bloomwright: 'TURTLE REWRITING', tonguecracker: 'GENERATED GRAMMAR', 'sealed-orders': 'HASH COMMITMENT', hushword: 'SELECTIVE DISCLOSURE',
+  pictionary: 'ORDERED CHANNELS', azul: 'REPLICATED STATE', longhaul: 'INTEGER PURSUIT', boards: 'CONSTRAINT PROPAGATION', sporefront: 'LIFE-LIKE AUTOMATON',
+  terrarium: 'TOTALISTIC GENOME', driftwatch: 'STREAMFUNCTION FLOW', loomweight: 'POLYRHYTHM CARDS', deadlock: 'COFFMAN CYCLES', byzantine: 'GENERALS QUORUM',
+  gc: 'TRICOLOR MARKING', cartel: 'COVENANT FILTERS', shadow: 'SEALED AUCTION', lexicon: 'LIBERTY CAPTURE',
+};
+const METRIC = { // par / metric: fogwalk's par is the computed breadth-first optimum, the rest name the unit each port is scored in
+  fogwalk: () => `PAR ${FSOL.par}`, bloomwright: () => 'GEN 3 · BOX-COUNT', tonguecracker: () => '3 CUES', 'sealed-orders': () => 'SHA-256', hushword: () => '2-PASS RULE',
+  pictionary: () => '2 PEERS', azul: () => '2–4 PLAYERS', longhaul: () => '60 HZ · LOAD', boards: () => '4² / 3⁴ CELLS', sporefront: () => '64² · 24 GEN',
+  terrarium: () => '18-BIT B/S', driftwatch: () => '60 HZ · 1 VALVE', loomweight: () => '3:4 · 12 PICK', deadlock: () => 'WAIT-FOR CYCLE', byzantine: () => 'N ≥ 3F + 1',
+  gc: () => '3 COLOURS', cartel: () => '3 REALMS', shadow: () => '5×5 · 2 BIDS', lexicon: () => '2 ROLES',
+};
 const NETWORK = { none: 'NONE (OFFLINE)', link: 'LINK FRAGMENT', webrtc: 'WEBRTC DATA CHANNEL' };
 const entryOf = e => e.href || (e.status === 'shipped' ? '../../' + e.dir.split(' ')[0] + '/' : null);
 function handoffUrl(art) { // same contract as the Fish Night page: route first, then v / h / (s)
@@ -2735,7 +2755,7 @@ function toast(s, ms = 2600) { T.toast.textContent = s; T.toast.classList.add('s
 for (const a of ART) {
   const li = document.createElement('li'), el = document.createElement('a'), href = entryOf(a.e);
   el.className = 'trk' + (href ? '' : ' off'); el.href = href || '#a=' + a.slug; el.dataset.slug = a.slug;
-  el.innerHTML = `<span class="n">${pad2(a.n)}</span><span class="t">${esc(a.title)}</span><i class="lead"></i><span class="d">${a.time}<em>· ${esc(a.tag)}</em></span>`;
+  el.innerHTML = `<span class="n">${pad2(a.n)}</span><span class="t">${esc(a.title)}</span><i class="lead"></i><span class="d">${a.time}<em>· ${esc(a.tag)}</em></span><span class="sub">${esc(SUBCAP[a.slug])}</span><i class="lead lead2"></i><span class="pm">${esc(METRIC[a.slug]())}</span>`;
   li.appendChild(el); (a.i < 9 ? T.sideA : T.sideB).appendChild(li); rowEl[a.slug] = el;
   el.addEventListener('mouseenter', () => setHover(a.slug)); el.addEventListener('mouseleave', () => setHover(null));
   el.addEventListener('focus', () => setHover(a.slug)); el.addEventListener('blur', () => setHover(null));
@@ -2744,19 +2764,20 @@ for (const a of ART) {
 
 function cr(label, val, cls = '', id = '') { return `<div class="cr ${cls}"><b>${label}</b><i></i><span${id ? ` id="${id}"` : ''}>${val}</span></div>`; }
 function renderLiner() {
-  const a = FOC.eff ? artBySlug[FOC.eff] : null;
+  const a = FOC.eff ? artBySlug[FOC.eff] : null, selfTest = x => `${PORT_REPORT.find(r => r.slug === x.slug)?.ok ? '✓ PORT' : '✗ PORT'} · ${PAINT_REPORT.find(r => r.slug === x.slug)?.ok ? '✓ PAINTER' : '✗ PAINTER'}`;
   if (a) {
     const e = a.e, nb = NEIGHBOURS[a.slug].slice(0, 2), base = entryOf(e);
-    T.credL.innerHTML = cr('MECHANISM', esc(FAM[e.family].name.toUpperCase())) + cr('FORMAL CITE', esc(e.formal.map(f => f[1]).join(' · ').toUpperCase())) + cr('TRANSPORT', NETWORK[e.network] || esc(e.network.toUpperCase())) +
-      cr('STATE HASH', a.session.hash(), '', 'hashVal') + cr('SEE ALSO', nb.length ? nb.map(n => esc(artBySlug[n.slug].title)).join(' · ') : '—');
-    T.credR.innerHTML = cr('TRACK', `${pad2(a.n)} · ${esc(a.title)} · ${a.time}`) + cr('PORT', `${a.session.actions.length} ACTIONS · ${a.session.tick ? '60 HZ LOCKSTEP' : 'TURN-BASED'} · SEED ${e.seed}`) +
-      cr('ENTRY', base ? esc(base.toUpperCase()) : 'NOT ON MAIN YET') + cr('SELF-TEST', `${PORT_REPORT.find(r => r.slug === a.slug)?.ok ? '✓ PORT' : '✗ PORT'} · ${PAINT_REPORT.find(r => r.slug === a.slug)?.ok ? '✓ PAINTER' : '✗ PAINTER'}`) +
+    T.credL.innerHTML = cr('PRODUCED BY', `INDEPENDENTS · ${esc(FAM[e.family].short)} · ${esc(e.status.toUpperCase())}`) + cr('ENGINEERED BY', `${esc(e.adapter.toUpperCase())} PORT · SEED ${e.seed} · ${a.session.tick ? '60 HZ LOCKSTEP' : 'TURN-BASED'}`) +
+      cr('FORMAL CITE', esc(e.formal.map(f => f[1]).join(' · ').toUpperCase())) + cr('CERTIFIED AT', selfTest(a)) + cr('TRANSPORT', NETWORK[e.network] || esc(e.network.toUpperCase())) + cr('STATE HASH', a.session.hash(), '', 'hashVal');
+    T.credR.innerHTML = cr('TRACK', `${pad2(a.n)} · ${esc(a.title)} · ${a.time}`) + cr('MECHANISM', esc(FAM[e.family].name.toUpperCase())) + cr('PORT', `${a.session.actions.length} ACTIONS · ${esc(METRIC[a.slug]())}`) +
+      cr('ENTRY', base ? esc(base.toUpperCase()) : 'NOT ON MAIN YET') + cr('SEE ALSO', nb.length ? nb.map(n => esc(artBySlug[n.slug].title)).join(' · ') : '—') +
       (nb[0] ? `<div class="cr guest"><b>with special guest</b></div>` + cr(esc(artBySlug[nb[0].slug].title), esc(nb[0].via.toUpperCase())) : '') + `<button class="play go">▶ ${FOC.pin ? 'Dive in' : 'Play track'} ↵</button>`;
   } else {
     const cites = REG.reduce((n, e) => n + e.formal.length, 0);
-    T.credL.innerHTML = cr('MECHANISM', 'AUTOMATA · COMMITMENT · P2P · LOCKSTEP · CELLULAR') + cr('FORMAL CITE', `${cites} CITATIONS ACROSS 19 WORKS`) + cr('TRANSPORT', 'LINK FRAGMENT · WEBRTC · NONE') + cr('STATE HASH', ROOT_HASH, '', 'hashVal');
-    T.credR.innerHTML = cr('PORTS', '19 DETERMINISTIC SESSIONS, NO DOM, NO CLOCK') + cr('SELF-TEST', `${PORTS_OK === 19 ? '✓' : '✗'} ${PORTS_OK}/19 PORTS · ${PAINT_OK === 19 ? '✓' : '✗'} ${PAINT_OK}/19 PAINTERS`) + cr('ENTRY', '9 APPS · 10 PROTOTYPES') +
-      `<div class="cr guest"><b>with special guest</b></div>` + cr('THE WANDERER', 'ONE LANTERN') + `<button class="play go" disabled>▶ Play track ↵</button>`;
+    T.credL.innerHTML = cr('PRODUCED BY', 'INDEPENDENTS RECORDS · 2026') + cr('ENGINEERED BY', '19 DETERMINISTIC PORTS · NO DOM, NO CLOCK') + cr('FORMAL CITE', `${cites} CITATIONS ACROSS 19 WORKS`) +
+      cr('CERTIFIED AT', `${PORTS_OK === 19 ? '✓' : '✗'} ${PORTS_OK}/19 PORTS · ${PAINT_OK === 19 ? '✓' : '✗'} ${PAINT_OK}/19 PAINTERS`) + cr('TRANSPORT', 'LINK FRAGMENT · WEBRTC · NONE') + cr('STATE HASH', ROOT_HASH, '', 'hashVal');
+    T.credR.innerHTML = cr('MECHANISM', 'AUTOMATA · COMMITMENT · P2P · LOCKSTEP · CELLULAR') + cr('ENTRY', '9 APPS · 10 PROTOTYPES') + cr('THE WANDERER', 'ONE LANTERN · ONE COMPASS') + cr('THE STAGE', 'ONE POP-UP BOARD · EVERY ACTION A KEYCAP') +
+      `<div class="cr guest"><b>with special guest</b></div>` + cr('2.5D PERSPECTIVE STAGE', 'THREE LAYERS · ONE LANTERN') + `<button class="play go" disabled>▶ Play track ↵</button>`;
   }
   T.play = [...document.querySelectorAll('.play')]; syncPlay();
 }
@@ -2814,7 +2835,7 @@ addEventListener('pageshow', e => { if (e.persisted && FOC.diving) { FOC.diving 
    6. THE WORLD — flat chalk landscape, tilted by a perspective camera. three.js, 1px monolines (LineSegments2).
    ===================================================================== */
 const WORLD = { bx: 52, bz: 40 };
-const BOARD_W = 6.6, BOARD_H = BOARD_W * 0.75, BOARD_DX = 5.5;
+const BOARD_W = 6.6, BOARD_H = BOARD_W * 0.75, BOARD_DX = 5.5, FOCUS_DX = 3.1;
 const POS = (() => { // serpentine over a 5/5/5/4 scatter: consecutive tracks stay neighbours, every landmark has room for its board
   const rows = [5, 5, 5, 4], r = mulberry32(19), out = []; let k = 0;
   rows.forEach((n, ri) => { for (let j = 0; j < n; j++) { const c = ri % 2 ? n - 1 - j : j; out.push({ x: (c - (n - 1) / 2) * 18.5 + (r() - .5) * 3.4 - 2, z: (ri - 1.5) * 17 + (r() - .5) * 3 }); k++; } });
@@ -2884,6 +2905,73 @@ function contourSegments(step, lv0, lv1, dl) {
   return { minor, major };
 }
 
+/* --- the 2.5D layers: every landmark is three paper-cut sheets at local z = -0.35 (backdrop), 0 (the monoline glyph) and +0.35 (mechanism, pennant). --- */
+const LAYER_Z = [-.35, 0, .35];
+const ell = (cx, cy, rx, ry, n = 20) => Array.from({ length: n + 1 }, (_, i) => { const a = i / n * 6.2832; return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)]; });
+const FAM_OF = Object.fromEntries(REG.map(e => [e.slug, e.family]));
+function backdropPolys(slug, i) { // the rear sheet: a family-shaped paper panel, a ridge cut-out and a hatched ground band
+  const r = mulberry32(900 + i * 17), W = 1.75, out = [], fam = FAM_OF[slug];
+  const panel = {
+    seal: [[-W, .15], [-W, 3.3], ...circ(0, 3.3, W, 22, Math.PI, 0), [W, .15], [-W, .15]],
+    p2p: [[-W, .15], [-W, 3.75], [-W + .6, 4.4], [W - .6, 4.4], [W, 3.75], [W, .15], [-W, .15]],
+    automata: [[-W, .15], [-W, 3.55], [-.95, 3.55], [-.95, 4.35], [.95, 4.35], [.95, 3.55], [W, 3.55], [W, .15], [-W, .15]],
+    lockstep: [[-W, .15], [-W, 4.1], [-W + .5, 4.1], [-W + .5, 4.4], [W - .5, 4.4], [W - .5, 4.1], [W, 4.1], [W, .15], [-W, .15]],
+    cellular: rect(-W, .15, 2 * W, 4.2),
+  }[fam];
+  out.push(panel);
+  const ridge = Array.from({ length: 10 }, (_, k) => [-W + k * (2 * W) / 9, .62 + r() * .62 + (k % 3 === 1 ? .22 : 0)]); out.push(ridge);
+  out.push(...hatch(-W, .15, 2 * W, .44, .26));
+  if (fam === 'cellular') out.push(seg(-W / 3, .15, -W / 3, 4.35), seg(W / 3, .15, W / 3, 4.35), seg(-W, 4.3 - .9, W, 4.3 - .9).map(p => p));
+  if (fam === 'seal') out.push(circ(0, 3.3, W - .22, 22, Math.PI, 0));
+  if (fam === 'p2p') out.push(seg(-W + .6, 4.4, -W + .6, 3.75), seg(W - .6, 4.4, W - .6, 3.75));
+  if (fam === 'automata') out.push(seg(-W, 3.55, W, 3.55));
+  if (fam === 'lockstep') out.push(...[-1, -.5, 0, .5, 1].map(x => seg(x * W * .8, 4.1, x * W * .8, 4.4)));
+  return out;
+}
+/* mechanisms: the moving sub-element of each landmark. p = pivot in glyph space; l = polylines about the pivot; spin / rot (rad) / sx, sy (units) / pu (scale) are the motions; s = angular speed (rad/s), ph0 = phase. All are advanced by uTime and sped up by the session's own revision counter. */
+const wheel = (r, n) => [circ(0, 0, r, 20), circ(0, 0, r * .28, 8), ...Array.from({ length: n }, (_, k) => seg(0, 0, r * Math.cos(k / n * 6.2832), r * Math.sin(k / n * 6.2832)))];
+const MECH = {
+  fogwalk: [{ p: [0, 1.8], l: [seg(0, 0, .95, 0), circ(.95, 0, .06, 8)], spin: 1, s: 1.1 }],
+  bloomwright: [{ p: [0, 4.0], l: [seg(0, 0, 0, .45), seg(0, .22, .22, .46), seg(0, .22, -.22, .46)], rot: .32, s: 1.4 }],
+  tonguecracker: [{ p: [0, 3.95], l: [circ(0, 0, .3, 10, -.6, .6), circ(0, 0, .5, 12, -.6, .6), circ(0, 0, .7, 14, -.6, .6)], pu: .18, s: 3 }],
+  'sealed-orders': [{ p: [0, 4.35], l: [seg(0, 0, 0, -.5), circ(0, -.62, .12, 10)], rot: .5, s: 1.6 }],
+  hushword: [{ p: [0, 3.95], l: [seg(-.16, 0, .16, 0), seg(0, 0, 0, .2)], sx: 1.1, s: 1.3 }],
+  pictionary: [{ p: [0, .5], l: [[[-.06, -.02], [.1, .42], [.22, .36], [.08, -.04], [-.06, -.02]]], sx: 1.25, sy: .12, s: 1.7 }],
+  azul: [{ p: [0, 1.85], l: [rect(-.2, -.2, .4, .4)], spin: 1, s: .9 }],
+  longhaul: [{ p: [0, 3.97], l: [rect(-.2, 0, .4, .16), circ(-.1, 0, .06, 6), circ(.1, 0, .06, 6)], sx: 1.2, s: 1.9 }],
+  boards: [{ p: [0, 2.2], l: [seg(-.18, -.18, .18, .18), seg(-.18, .18, .18, -.18)], spin: 1, s: .8 }],
+  sporefront: [{ p: [1.95, 2.0], l: wheel(.38, 8), spin: 1, s: 1.4 }],
+  terrarium: [{ p: [0, 3.4], l: [circ(-.4, 0, .06, 6), circ(0, .3, .06, 6), circ(.4, .1, .06, 6)], sy: -.55, s: 1.6 }],
+  driftwatch: [{ p: [1.25, 2.4], l: [rect(-.22, -.22, .44, .44), seg(-.22, 0, .22, 0), seg(0, -.22, 0, .22), seg(0, .22, 0, 1.9)], sy: .55, s: .9 }],
+  loomweight: [{ p: [0, 2.2], l: [[[-.22, 0], [-.08, .07], [.22, 0], [-.08, -.07], [-.22, 0]]], sx: .85, s: 2.2 }],
+  deadlock: [{ p: [-.9, 3.95], l: [seg(0, 0, .7, 0), circ(.7, 0, .07, 6)], rot: .7, s: 1.2 }, { p: [.9, 3.95], l: [seg(0, 0, -.7, 0), circ(-.7, 0, .07, 6)], rot: .7, s: 1.2, ph0: Math.PI }],
+  byzantine: [{ p: [0, 3.4], l: [seg(-.7, 0, .7, 0), circ(.7, 0, .07, 6), circ(-.7, 0, .07, 6)], rot: .9, s: 1.5 }, { p: [0, 1.35], l: [seg(0, 0, 0, -.8), circ(0, -.9, .1, 8)], rot: .45, s: 2 }],
+  gc: [{ p: [0, 2.2], l: [seg(-1.45, 0, 1.45, 0), seg(-1.45, -.08, -1.45, .08), seg(1.45, -.08, 1.45, .08)], sy: 1.5, s: .9 }],
+  cartel: [{ p: [0, 2.2], l: [seg(0, 0, 0, .95), [[-.1, .75], [0, .95], [.1, .75]]], spin: 1, s: .7 }],
+  shadow: [{ p: [1.5, 3.4], l: [seg(0, 0, 0, -.7), rect(-.17, -1.0, .34, .3)], rot: .5, s: 1.3 }],
+  lexicon: [{ p: [0, 2.2], l: [circ(0, 0, .1, 8), seg(.1, 0, .4, 0)], sx: 1.0, s: 1.1 }],
+};
+
+/* --- etched territories and the compass rose --- */
+const TERR = [['I · AUTOMATA RIDGE', -22, -17], ['II · SEALED BASIN', 22, -17], ['III · CELLULAR FLATS', -24, 0], ['IV · LOCKSTEP TRENCH', 24, 0], ['V · PEER COMMONS', 0, 17]];
+const ROSE = { x: 50, z: -2, r: 7.4 };
+
+/* --- chalk lettering lying on (or standing in) the world: canvas text on a plane, fixed-advance so the font arriving late only repaints --- */
+const TXT = new Map(), TXT_FONT = '"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace';
+function paintText(e) {
+  const PX = 64, adv = PX * (.6 + e.track), cv = e.cv, g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
+  g.font = `${e.weight} ${PX}px ${TXT_FONT}`; g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.textAlign = 'center';
+  [...e.text].forEach((c, i) => g.fillText(c, 8 + adv * i + PX * .3, cv.height / 2 + 2)); e.tex.needsUpdate = true;
+}
+function textMesh(text, h, { op = 1, track = .14, weight = 600, color = CHALK_HEX, flat = false } = {}) {
+  const k = `${text}|${weight}|${track}`; let e = TXT.get(k);
+  if (!e) { const PX = 64, cv = document.createElement('canvas'); cv.width = Math.ceil(PX * (.6 + track) * [...text].length + 16); cv.height = Math.round(PX * 1.5);
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; e = { text, track, weight, cv, tex, aspect: cv.width / cv.height }; TXT.set(k, e); paintText(e); }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: e.tex, transparent: true, opacity: op, color: new THREE.Color(color), depthWrite: false, toneMapped: false }));
+  m.scale.set(h * e.aspect, h, 1); m.userData.w = h * e.aspect; m.userData.text = text; if (flat) m.rotation.x = -Math.PI / 2; return m;
+}
+document.fonts?.ready?.then(() => TXT.forEach(paintText)).catch(() => { });
+
 function buildWorld() {
   const canvas = $('#gl'), frame = $('#frame');
   let renderer;
@@ -2897,22 +2985,108 @@ function buildWorld() {
   const lineObj = (flat, m) => { const g = new LineSegmentsGeometry(); g.setPositions(flat); const l = new LineSegments2(g, m); l.frustumCulled = false; return l; };
   const polysToFlat = (polys, f = ([x, y]) => [x, y, 0]) => { const a = []; for (const p of polys) for (let i = 0; i < p.length - 1; i++) a.push(...f(p[i]), ...f(p[i + 1])); return a; };
 
+  /* ---------- the cartographic ground layer ---------- */
+  const DETAIL = { fiducials: 0, elevTicks: 0, elevLabels: 0, axisLabels: 0, territories: [], posts: 0, cairns: 0, flags: 0, reeds: 0, motes: 0, rose: null };
+  const uTime = { value: 0 };
+  const flat3 = ([x, z]) => [x, 0, z];
+
+  /* survey grid: a fine lattice of + fiducial crosshairs across y = 0, every fifth one drawn longer */
+  { const a = []; let n = 0;
+    for (let x = -66; x <= 66; x += 6) for (let z = -48; z <= 48; z += 6) { const L = (Math.round(x / 6) + Math.round(z / 6)) % 5 === 0 ? .62 : .34; a.push(x - L, .004, z, x + L, .004, z, x, .004, z - L, x, .004, z + L); n++; }
+    DETAIL.fiducials = n; scene.add(lineObj(a, mat(CHALK_HEX, .3))); }
+  /* grid coordinates lettered along the south and west margins */
+  for (let x = -60; x <= 60; x += 20) { const t = textMesh(`X ${x > 0 ? '+' : ''}${x}`, .85, { flat: true, op: .45, track: .2 }); t.position.set(x, .006, 48.2); scene.add(t); DETAIL.axisLabels++; }
+  for (let z = -40; z <= 40; z += 20) { const t = textMesh(`Z ${z > 0 ? '+' : ''}${z}`, .85, { flat: true, op: .45, track: .2 }); t.position.set(-62.5, .006, z); scene.add(t); DETAIL.axisLabels++; }
+
   /* contours: the whole ground is 1px topographic ridges; every fourth level is an index contour */
   const C = contourSegments(.85, -1.7, 3.7, .26);
   scene.add(lineObj(C.minor, mat(CHALK_HEX, .27)), lineObj(C.major, mat(CHALK_HEX, .55)));
+  /* elevation index: downslope hachure ticks along the index contours, with a few spot heights lettered flat on the ground */
+  { const a = [], M = C.major, labs = []; let k = 0;
+    for (let i = 0; i + 5 < M.length; i += 6, k++) { if (k % 7) continue; const x = (M[i] + M[i + 3]) / 2, z = (M[i + 2] + M[i + 5]) / 2, e = .05, gx = heightField(x + e, z) - heightField(x - e, z), gz = heightField(x, z + e) - heightField(x, z - e), gl = Math.hypot(gx, gz) || 1;
+      a.push(x, .006, z, x - gx / gl * .55, .006, z - gz / gl * .55); DETAIL.elevTicks++; if (k % 49 === 0 && labs.length < 12) labs.push([x, z, heightField(x, z)]); }
+    scene.add(lineObj(a, mat(CHALK_HEX, .55)));
+    for (const [x, z, v] of labs) { const t = textMesh(`EL ${v >= 0 ? '+' : ''}${v.toFixed(1)}`, .62, { flat: true, op: .55, track: .16 }); t.position.set(x + .5, .008, z - .55); scene.add(t); DETAIL.elevLabels++; } }
+
+  /* five territories etched in 3D perspective onto the ground, each underlined with a boundary rule */
+  for (const [label, x, z] of TERR) {
+    const t = textMesh(label, 1.9, { flat: true, op: .5, track: .38, weight: 500 }); t.position.set(x, .007, z); scene.add(t); const w = t.userData.w;
+    scene.add(lineObj(polysToFlat([seg(-w / 2, 1.5, w / 2, 1.5), seg(-w / 2, 1.2, -w / 2, 1.8), seg(w / 2, 1.2, w / 2, 1.8), seg(-w / 2 + 1.4, 1.5, -w / 2 + 1.4, 1.35), seg(w / 2 - 1.4, 1.5, w / 2 - 1.4, 1.35)], ([px, pz]) => [x + px, .006, z + pz]), mat(CHALK_HEX, .3)));
+    DETAIL.territories.push(label);
+  }
+
+  /* compass rose / azimuth ring: a 1px monoline dial etched into the ground; the inner dial and the camera marker answer the camera's azimuth, the whole rose brightens as the camera drops */
+  const rose = new THREE.Group(); rose.position.set(ROSE.x, .012, ROSE.z); scene.add(rose);
+  const roseMat = mat(CHALK_HEX, .4), roseAcc = mat(ACCENT_HEX, .8, 1);
+  { const R = ROSE.r, o = [circ(0, 0, R, 90), circ(0, 0, R - .45, 90), circ(0, 0, R + 1.05, 90)];
+    for (let d = 0; d < 360; d += 5) { const a = d * Math.PI / 180, r1 = d % 30 === 0 ? R - 1.5 : d % 15 === 0 ? R - 1.05 : R - .45 - 0; o.push(seg((R - .45) * Math.cos(a), (R - .45) * Math.sin(a), r1 * Math.cos(a), r1 * Math.sin(a))); if (d % 30 === 0) o.push(seg(R * Math.cos(a), R * Math.sin(a), (R + 1.05) * Math.cos(a), (R + 1.05) * Math.sin(a))); }
+    rose.add(lineObj(polysToFlat(o, flat3), roseMat)); }
+  const roseDial = new THREE.Group(); rose.add(roseDial);
+  { const R = ROSE.r, o = [circ(0, 0, 4.7, 64), circ(0, 0, 3.3, 48), circ(0, 0, 1.0, 20)];
+    o.push(Array.from({ length: 33 }, (_, k) => { const a = k * Math.PI / 16 - Math.PI / 2, r = k % 2 ? 1.5 : 4.5; return [r * Math.cos(a), r * Math.sin(a)]; }));
+    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 - Math.PI / 2; o.push(seg(1.0 * Math.cos(a), 1.0 * Math.sin(a), (R - 1.5) * Math.cos(a), (R - 1.5) * Math.sin(a))); }
+    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 - Math.PI / 4; o.push(seg(1.0 * Math.cos(a), 1.0 * Math.sin(a), 3.3 * Math.cos(a), 3.3 * Math.sin(a))); }
+    roseDial.add(lineObj(polysToFlat(o, flat3), roseMat)); roseDial.add(lineObj(polysToFlat([[[0, -(R - 1.5)], [-.7, -1.2], [0, -.4], [.7, -1.2], [0, -(R - 1.5)]]], flat3), roseAcc)); }
+  const camMark = new THREE.Group(); rose.add(camMark); camMark.add(lineObj(polysToFlat([[[0, ROSE.r + 1.3], [-.55, ROSE.r + 2.1], [.55, ROSE.r + 2.1], [0, ROSE.r + 1.3]], seg(0, ROSE.r + 2.1, 0, ROSE.r + 2.7)], flat3), roseAcc));
+  for (const [ch, x, z, acc] of [['N', 0, -(ROSE.r + 2.1), 1], ['E', ROSE.r + 2.1, 0, 0], ['S', 0, ROSE.r + 2.1, 0], ['W', -(ROSE.r + 2.1), 0, 0]]) { const t = textMesh(ch, 1.3, { flat: true, op: acc ? 1 : .7, color: acc ? ACCENT_HEX : CHALK_HEX }); t.position.set(x, .004, z); rose.add(t); }
+  { const t = textMesh('AZIMUTH RING · 360°', .62, { flat: true, op: .5, track: .3 }); t.position.set(0, .004, ROSE.r + 3.5); rose.add(t); DETAIL.rose = { x: ROSE.x, z: ROSE.z, r: ROSE.r }; }
 
   /* the groove: a dashed double hairline through the nineteen landmarks in track order, like the run-out of a record */
-  { const curve = new THREE.CatmullRomCurve3(ART.map(a => new THREE.Vector3(a.pos.x, 0, a.pos.z + 2.6)), false, 'catmullrom', .5), pts = curve.getSpacedPoints(520), a = [];
+  const curve = new THREE.CatmullRomCurve3(ART.map(a => new THREE.Vector3(a.pos.x, 0, a.pos.z + 2.6)), false, 'catmullrom', .5), groovePts = curve.getSpacedPoints(520);
+  { const pts = groovePts, a = [];
     for (let i = 0; i < pts.length - 1; i++) { if (i % 6 > 3) continue; const p = pts[i], q = pts[i + 1], dx = q.x - p.x, dz = q.z - p.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l * .32, nz = dx / l * .32; a.push(p.x + nx, .01, p.z + nz, q.x + nx, .01, q.z + nz, p.x - nx, .01, p.z - nz, q.x - nx, .01, q.z - nz); }
     scene.add(lineObj(a, mat(CHALK_HEX, .3))); }
 
-  /* the nineteen landmarks */
+  /* micro-landmarks along the groove: mile-marker posts, cairns, survey flags, chalk reeds */
+  const flags = [];
+  { const P = groovePts, R = mulberry32(331), nrm = i => { const p = P[Math.max(0, i - 1)], q = P[Math.min(P.length - 1, i + 1)], dx = q.x - p.x, dz = q.z - p.z, l = Math.hypot(dx, dz) || 1; return [-dz / l, dx / l]; };
+    const avoid = (x, z) => ART.some(a => Math.hypot(x - a.pos.x, z - a.pos.z) < 3.4 || (x > a.pos.x + 1.8 && x < a.pos.x + 9.2 && z > a.pos.z - 5.2 && z < a.pos.z + 3.6));
+    const up = (px, pz, polys) => polysToFlat(polys, ([x, y]) => [px + x, y, pz]);
+    const posts = [], cairns = [], reeds = [], poleF = [], flagF = []; let pk = 0, fk = 0;
+    for (let i = 14; i < P.length - 1; i += 22) { const [nx, nz] = nrm(i); let sd = pk % 2 ? 1 : -1, x = P[i].x + nx * 1.6 * sd, z = P[i].z + nz * 1.6 * sd; if (avoid(x, z)) { sd = -sd; x = P[i].x + nx * 1.6 * sd; z = P[i].z + nz * 1.6 * sd; if (avoid(x, z)) continue; }
+      const tally = []; for (let j = 0; j <= pk % 5; j++) tally.push(seg(-.13 + j * .065, .68, -.13 + j * .065, .95));
+      posts.push(...up(x, z, [seg(0, 0, 0, 1.15), seg(-.26, 1.15, .26, 1.15), rect(-.2, .62, .4, .4), ...tally]));
+      const t = textMesh(`M${pad2(pk + 1)}`, .42, { flat: true, op: .5, track: .2 }); t.position.set(x, .008, z + .72); scene.add(t); pk++; }
+    for (let i = 11; i < P.length - 1; i += 29) { const [nx, nz] = nrm(i), sd = (i / 29 | 0) % 2 ? -1 : 1, x = P[i].x + nx * 2.1 * sd, z = P[i].z + nz * 2.1 * sd; if (avoid(x, z)) continue;
+      cairns.push(...up(x, z, [ell(0, .11, .4, .11), ell(.02, .33, .27, .1), ell(-.02, .52, .15, .07), seg(-.4, .11, -.4, .0), seg(.4, .11, .4, .0)])); DETAIL.cairns++; }
+    for (let i = 21; i < P.length - 1; i += 47) { const [nx, nz] = nrm(i), sd = fk % 2 ? 1 : -1, x = P[i].x + nx * 1.9 * sd, z = P[i].z + nz * 1.9 * sd; if (avoid(x, z)) continue;
+      poleF.push(...up(x, z, [seg(0, 0, 0, 1.7), seg(0, .5, -.3, 0), seg(0, .5, .3, 0), circ(0, 1.74, .05, 6)]));
+      const g = new THREE.Group(); g.position.set(x, 1.7, z); g.add(lineObj(polysToFlat([[[0, 0], [0, -.55], [.85, -.27], [0, 0]], seg(.1, -.27, .6, -.27)]), mat(CHALK_HEX, .8))); scene.add(g); flags.push({ g, k: fk }); fk++; DETAIL.flags++; }
+    for (let i = 3; i < P.length - 1; i += 4) for (const sd of [-1, 1]) { const [nx, nz] = nrm(i), d = 1.0 + R() * 2.2, x = P[i].x + nx * d * sd, z = P[i].z + nz * d * sd; if (avoid(x, z) || R() < .25) continue;
+      const n = 3 + (R() * 3 | 0), strokes = []; for (let s = 0; s < n; s++) { const bx = (R() - .5) * .5, h = .3 + R() * .5, lean = (R() - .5) * .55; strokes.push([[bx, 0], [bx + lean * .4, h * .55], [bx + lean, h]]); }
+      reeds.push(...up(x, z, strokes)); DETAIL.reeds++; }
+    DETAIL.posts = pk; scene.add(lineObj(posts, mat(CHALK_HEX, .6)), lineObj(cairns, mat(CHALK_HEX, .5)), lineObj(poleF, mat(CHALK_HEX, .7)), lineObj(reeds, mat(CHALK_HEX, .36))); }
+
+  /* floating chalk-dust motes: points drifting above the plane, moved entirely in the vertex shader by uTime */
+  { const N = 320, pos = new Float32Array(N * 3), sd = new Float32Array(N), R = mulberry32(4242);
+    for (let i = 0; i < N; i++) { pos[i * 3] = (R() - .5) * 120; pos[i * 3 + 1] = .35 + R() * 7; pos[i * 3 + 2] = (R() - .5) * 92; sd[i] = R(); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(sd, 1));
+    const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uTime, uPx: { value: DPR }, uCol: { value: new THREE.Color(CHALK_HEX) } },
+      vertexShader: 'uniform float uTime; uniform float uPx; attribute float aSeed; varying float vA; void main(){ vec3 p = position; p.x += sin(uTime*.18 + aSeed*40.)*1.6 + uTime*.05*(aSeed-.5); p.y += sin(uTime*.31 + aSeed*17.)*.55; p.z += cos(uTime*.15 + aSeed*23.)*1.3; vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv; gl_PointSize = clamp(uPx*(.5+aSeed)*26./max(-mv.z,1.), 1., 4.5*uPx); vA = .25 + .75*(.5+.5*sin(uTime*1.3 + aSeed*31.)); }',
+      fragmentShader: 'uniform vec3 uCol; varying float vA; void main(){ float d = length(gl_PointCoord-.5); if(d>.5) discard; gl_FragColor = vec4(uCol, (1.-d*2.)*vA*.7); }' });
+    const pts = new THREE.Points(g, m); pts.frustumCulled = false; scene.add(pts); DETAIL.motes = N; }
+
+  /* the nineteen landmarks: three paper-cut sheets (z -0.35 / 0 / +0.35), a moving mechanism, an etched plinth and a pennant badge */
   const totems = ART.map(a => {
     const root = new THREE.Group(); root.position.copy(a.pos); const stand = new THREE.Group(); root.add(stand);
-    const m = mat(CHALK_HEX, .78, 1), glyph = lineObj(polysToFlat(GLYPH[a.slug]()), m); stand.add(glyph);
-    const rm = mat(CHALK_HEX, .34, 1), ring = lineObj(polysToFlat([circ(0, 0, 1.95, 48), circ(0, 0, 1.45, 40)], ([x, z]) => [x, .012, z]), rm); root.add(ring);
+    const back = new THREE.Group(), mid = new THREE.Group(), front = new THREE.Group(); [back, mid, front].forEach((g, k) => { g.position.z = LAYER_Z[k]; stand.add(g); });
+    const m = mat(CHALK_HEX, .78, 1), mb = mat(CHALK_HEX, .3, 1), mf = mat(CHALK_HEX, .92, 1);
+    const glyph = lineObj(polysToFlat(GLYPH[a.slug]()), m); mid.add(glyph);
+    back.add(lineObj(polysToFlat(backdropPolys(a.slug, a.i)), mb));
+    /* front sheet: pole and pennant badge (number lettered on the cloth), then the mechanism */
+    const pole = lineObj(polysToFlat([seg(-1.75, 0, -1.75, 4.55), circ(-1.75, 4.6, .05, 6)]), mf); front.add(pole);
+    const flag = new THREE.Group(); flag.position.set(-1.75, 4.5, 0); front.add(flag);
+    flag.add(lineObj(polysToFlat([[[0, 0], [0, -.8], [-1.25, -.4], [0, 0]], seg(0, -.1, -.25, -.1)]), mf));
+    const num = textMesh(pad2(a.n), .38, { op: 1, track: .1 }); num.position.set(-.5, -.4, .01); flag.add(num);
+    const mechs = (MECH[a.slug] || []).map(d => { const g = new THREE.Group(); g.position.set(d.p[0], d.p[1], 0); g.add(lineObj(polysToFlat(d.l), mf)); front.add(g); return { ...d, g, ph: d.ph0 || 0, ph0: d.ph0 || 0 }; });
+    /* ground: dial ring, a plinth with the track number etched into it */
+    const ringPolys = [circ(0, 0, 1.95, 48)]; for (let k = 0; k < 36; k++) { const q = k / 36 * 6.2832, L = k % 3 ? 1.78 : 1.62; ringPolys.push(seg(1.95 * Math.cos(q), 1.95 * Math.sin(q), L * Math.cos(q), L * Math.sin(q))); }
+    ringPolys.push(rect(-1.15, .5, 2.3, 1.0), rect(-1.04, .6, 2.08, .8), seg(-1.15, 1.0, -.82, 1.0), seg(.82, 1.0, 1.15, 1.0));
+    const rm = mat(CHALK_HEX, .34, 1), ring = lineObj(polysToFlat(ringPolys, ([x, z]) => [x, .012, z]), rm); root.add(ring);
+    const txt = textMesh(pad2(a.n), .62, { flat: true, op: .9, track: .5 }); txt.position.set(0, .016, 1.0); root.add(txt);
     const hit = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 5.0), new THREE.MeshBasicMaterial({ visible: false })); hit.position.set(0, 2.3, 0); hit.userData.art = a; stand.add(hit);
-    scene.add(root); return { art: a, root, stand, glyph, m, rm, hit };
+    scene.add(root); a.kick = 0; a.lastRev = a.session.rev | 0;
+    return { art: a, root, stand, glyph, m, mb, mf, rm, hit, back, mid, front, flag, num, txt, mechs, layers: [back, mid, front] };
   });
   const hits = totems.map(t => t.hit);
 
@@ -2942,6 +3116,17 @@ function buildWorld() {
     const halo = new THREE.Mesh(new THREE.CircleGeometry(.42, 20), new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: .16, depthWrite: false })); halo.position.set(.9, 1.05, 0); body.add(halo); WAN.halo = halo; WAN.lamp = lamp;
     const sh = new THREE.Mesh(new THREE.CircleGeometry(.55, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .55, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = .015; sh.scale.set(1, .55, 1); wanderer.add(sh); }
   scene.add(wanderer);
+  /* the lantern's light ring, projected on the ground plane: a soft pool, a pulsing ring and a slowly turning dashed ring with four compass ticks */
+  const lantern = new THREE.Group(); wanderer.add(lantern);
+  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), q = g.createRadialGradient(64, 64, 0, 64, 64, 64); q.addColorStop(0, 'rgba(238,106,60,.6)'); q.addColorStop(.42, 'rgba(238,106,60,.2)'); q.addColorStop(1, 'rgba(238,106,60,0)'); g.fillStyle = q; g.fillRect(0, 0, 128, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, opacity: .5, fog: false })); pool.rotation.x = -Math.PI / 2; pool.position.y = .011; pool.scale.setScalar(8); lantern.add(pool);
+  const ringA = lineObj(polysToFlat([circ(0, 0, 1, 64)], ([x, z]) => [x, .016, z]), mat(ACCENT_HEX, .6)); lantern.add(ringA);
+  const dashPolys = Array.from({ length: 16 }, (_, k) => circ(0, 0, 1, 5, k / 16 * 6.2832, k / 16 * 6.2832 + .28)); for (let k = 0; k < 4; k++) { const q = k * Math.PI / 2; dashPolys.push(seg(Math.cos(q) * .9, Math.sin(q) * .9, Math.cos(q) * 1.14, Math.sin(q) * 1.14)); }
+  const ringB = lineObj(polysToFlat(dashPolys, ([x, z]) => [x, .016, z]), mat(ACCENT_HEX, .42)); lantern.add(ringB);
+  /* the bearing line: a dashed accent rule on the ground from the wanderer to the hovered or pinned track, lettered with its compass bearing and range */
+  const bear = new THREE.Group(), bearArr = []; for (let i = 0; i < 44; i++) bearArr.push(i / 44, .02, 0, (i + .55) / 44, .02, 0);
+  bear.add(lineObj(bearArr, mat(ACCENT_HEX, .85))); bear.visible = false; scene.add(bear);
+  const bearEnd = lineObj(polysToFlat([circ(0, 0, .42, 18), seg(-.7, 0, -.42, 0), seg(.42, 0, .7, 0), seg(0, -.7, 0, -.42), seg(0, .42, 0, .7)], ([x, z]) => [x, .02, z]), mat(ACCENT_HEX, .85)); bearEnd.visible = false; scene.add(bearEnd);
   const steps = new THREE.InstancedMesh(new THREE.CircleGeometry(.13, 8), new THREE.MeshBasicMaterial({ color: chalk, transparent: true, opacity: .5, depthWrite: false }), 40); steps.frustumCulled = false;
   const _o = new THREE.Object3D(); for (let i = 0; i < 40; i++) { _o.position.set(0, -9, 0); _o.scale.setScalar(0); _o.updateMatrix(); steps.setMatrixAt(i, _o.matrix); } scene.add(steps); const stepAge = new Float32Array(40).fill(9); let stepI = 0;
 
@@ -2951,6 +3136,40 @@ function buildWorld() {
   const board = new THREE.Mesh(boardG, new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, fog: false })); board.visible = false;
   const frameLines = lineObj(polysToFlat([rect(-BOARD_W / 2 - .09, -.09, BOARD_W + .18, BOARD_H + .18), seg(-BOARD_W / 2 - .09, 0, BOARD_W / 2 + .09, 0), ...[[-1, 1], [1, 1], [1, -1], [-1, -1]].map(([sx, sy]) => [[sx * (BOARD_W / 2 + .09), BOARD_H / 2 + sy * (BOARD_H / 2 + .09) - sy * .0], [sx * (BOARD_W / 2 + .3), BOARD_H / 2 + sy * (BOARD_H / 2 + .09)]])]), mat(CHALK_HEX, .95, 1)); board.add(frameLines);
   const footprint = lineObj(polysToFlat([rect(-BOARD_W / 2, -BOARD_H, BOARD_W, BOARD_H)], ([x, z]) => [x, .02, z]), mat(CHALK_HEX, .22, 1)); const boardRoot = new THREE.Group(); boardRoot.add(board, footprint); boardRoot.visible = false; scene.add(boardRoot);
+  /* stage furniture: drafting callouts on the sheet, a live FPS / tick HUD, a ground scale bar, and one clickable keycap per port action */
+  { const W2 = BOARD_W / 2, d = [], y = BOARD_H + .42; d.push(seg(-W2, y, W2, y), seg(-W2, y - .12, -W2, y + .12), seg(W2, y - .12, W2, y + .12), [[-W2 + .22, y + .07], [-W2, y], [-W2 + .22, y - .07]], [[W2 - .22, y + .07], [W2, y], [W2 - .22, y - .07]]);
+    const x = W2 + .5; d.push(seg(x, 0, x, BOARD_H), seg(x - .12, 0, x + .12, 0), seg(x - .12, BOARD_H, x + .12, BOARD_H), [[x - .07, .22], [x, 0], [x + .07, .22]], [[x - .07, BOARD_H - .22], [x, BOARD_H], [x + .07, BOARD_H - .22]]);
+    for (let i = 0; i <= 8; i++) { const tx = -W2 + BOARD_W * i / 8, L = i % 2 ? .1 : .18; d.push(seg(tx, BOARD_H + .09, tx, BOARD_H + .09 + L)); }
+    for (let i = 0; i <= 6; i++) { const ty = BOARD_H * i / 6, L = i % 2 ? .1 : .18; d.push(seg(-W2 - .09, ty, -W2 - .09 - L, ty)); }
+    board.add(lineObj(polysToFlat(d), mat(CHALK_HEX, .6))); }
+  const hudCv = document.createElement('canvas'); hudCv.width = 1024; hudCv.height = 64; const hudTex = new THREE.CanvasTexture(hudCv); hudTex.colorSpace = THREE.SRGBColorSpace;
+  const hud = new THREE.Mesh(new THREE.PlaneGeometry(BOARD_W, BOARD_W * 64 / 1024), new THREE.MeshBasicMaterial({ map: hudTex, transparent: true, opacity: .9, depthWrite: false, toneMapped: false, fog: false })); hud.position.set(0, BOARD_H + .78, 0); board.add(hud);
+  let hudAcc = 9, fpsEma = 60; const hudInfo = { l: '', c: '', r: '' };
+  function paintHud(a) { const g = hudCv.getContext('2d'); g.clearRect(0, 0, 1024, 64); g.font = `600 26px ${TXT_FONT}`; g.fillStyle = '#EAE8E3'; g.textBaseline = 'middle';
+    const tk = a.session.tick ? 'TICK 60 HZ' : 'TURN-BASED', ms = (1000 / Math.max(1, fpsEma)).toFixed(1);
+    hudInfo.l = `FPS ${fpsEma.toFixed(0)} · ${ms} MS`; hudInfo.c = `W ${BOARD_W.toFixed(2)} × H ${BOARD_H.toFixed(2)} U`; hudInfo.r = `${tk} · REV ${a.session.rev | 0}`;
+    g.textAlign = 'left'; g.fillText(hudInfo.l, 6, 34); g.textAlign = 'center'; g.fillStyle = '#8E8D8A'; g.fillText(hudInfo.c, 512, 34);
+    g.fillStyle = '#EE6A3C'; g.textAlign = 'right'; g.fillText(hudInfo.r, 1018, 34); hudTex.needsUpdate = true; }
+  { const sb = new THREE.Group(), x0 = BOARD_W / 2 + 1.1; sb.add(lineObj(polysToFlat([seg(0, 0, 3, 0), rect(0, -.1, 1.5, .2), seg(0, -.28, 0, .28), seg(1.5, -.28, 1.5, .28), seg(3, -.28, 3, .28), seg(.75, -.2, .75, .2), seg(2.25, -.2, 2.25, .2)], ([x, z]) => [x, .02, z]), mat(CHALK_HEX, .6)));
+    [['0', 0], ['1.5', 1.5], ['3 U', 3]].forEach(([t, x]) => { const m = textMesh(t, .5, { flat: true, op: .6, track: .15 }); m.position.set(x, .02, .78); sb.add(m); }); sb.position.set(x0, 0, .5); boardRoot.add(sb); }
+  const KW = 1.0, KD = .62, KEYN = 18, keycaps = [];
+  for (let i = 0; i < KEYN; i++) {
+    const g = new THREE.Group(), cv = document.createElement('canvas'); cv.width = 128; cv.height = 80; const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(KW, KD), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false, fog: false })); face.rotation.x = -Math.PI / 2; face.position.y = .03;
+    const om = mat(CHALK_HEX, .85, 1), outline = lineObj(polysToFlat([rect(-KW / 2, -KD / 2, KW, KD), rect(-KW / 2 + .06, -KD / 2 + .06, KW - .12, KD - .12)], ([x, z]) => [x, .026, z]), om);
+    const hit = new THREE.Mesh(new THREE.PlaneGeometry(KW, KD), new THREE.MeshBasicMaterial({ visible: false })); hit.rotation.x = -Math.PI / 2; hit.position.y = .03; hit.userData.key = i;
+    g.add(face, outline, hit); g.visible = false; boardRoot.add(g); keycaps.push({ g, cv, tex, om, hit, face, on: false, id: null, press: 0 });
+  }
+  const keyHint = k => { if (!k) return ''; const t = k.split(','), one = t.find(q => q.length === 1); return (one || ({ ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' })[t[0]] || t[0]).toUpperCase(); };
+  function layoutKeys(a) {
+    const acts = a ? a.session.actions.filter(x => x.ui !== false).slice(0, KEYN) : [], per = 6;
+    keycaps.forEach((k, i) => { const ac = acts[i]; k.on = !!ac; k.g.visible = !!ac; if (!ac) return;
+      const r = (i / per) | 0, c = i % per, inRow = Math.min(per, acts.length - r * per); k.g.position.set((c - (inRow - 1) / 2) * (KW + .1), 0, .78 + r * (KD + .12)); k.id = ac.id; k.press = 0;
+      const g = k.cv.getContext('2d'), lab = String(ac.label || ac.id).toUpperCase(); g.clearRect(0, 0, 128, 80); g.fillStyle = '#EAE8E3'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      let px = 30; g.font = `600 ${px}px ${TXT_FONT}`; while (g.measureText(lab).width > 112 && px > 13) { px -= 2; g.font = `600 ${px}px ${TXT_FONT}`; } g.fillText(lab, 64, 30);
+      g.font = `500 17px ${TXT_FONT}`; g.fillStyle = '#8E8D8A'; g.fillText(keyHint(ac.key) ? `[ ${keyHint(ac.key)} ]` : '[ click ]', 64, 62); k.tex.needsUpdate = true; });
+    DETAIL.keys = acts.length;
+  }
   BRD.open = new Spring(0, 130, .56); BRD.slug = null; BRD.want = null; BRD.acc = 0; BRD.dirty = true;
   ART.forEach((a, i) => { a.rise.x = a.rise.t = REDUCED ? 1 : 0; a.rise.v = 0; a.riseAt = REDUCED ? undefined : .35 + i * .075; });
 
@@ -2963,11 +3182,13 @@ function buildWorld() {
   const tags = $('#tags');
   for (const a of ART) { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = `<b>${pad2(a.n)}</b><span> ${esc(a.title)}</span>`; tags.appendChild(d); tagEl[a.slug] = d; }
   const boardTag = document.createElement('div'); boardTag.className = 'tag bd'; tags.appendChild(boardTag);
+  const brgTag = document.createElement('div'); brgTag.className = 'tag brg'; tags.appendChild(brgTag); let brgTxt = '';
 
   /* ---------- picking ---------- */
   const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(), gplane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), gpt = new THREE.Vector3();
   const setPtr = ev => { const r = canvas.getBoundingClientRect(); ptr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera); };
   const boardHit = () => { if (!board.visible || BRD.open.x < .6 || !BRD.slug) return null; const h = ray.intersectObject(board, false)[0]; return h && h.uv ? h : null; };
+  const keyHit = () => { if (!BRD.slug || BRD.open.x < .6 || FOC.diving) return -1; const hs = keycaps.filter(k => k.on).map(k => k.hit), h = ray.intersectObjects(hs, false)[0]; return h ? h.object.userData.key : -1; };
   const lmHit = () => { for (const t of totems) t.hit.scale.setScalar(FOC.map && !FOC.eff ? 2.6 : 1.15); const h = ray.intersectObjects(hits, false)[0]; return h ? h.object.userData.art : null; };
   let drawing = null, down = null;
   const boardPointer = (ph, h) => { const a = artBySlug[BRD.slug]; if (!a || !h) return; const r = pickFor(a, h.uv.x, 1 - h.uv.y, ph); if (r) act(a, r[0], r[1]); };
@@ -2975,12 +3196,13 @@ function buildWorld() {
   canvas.addEventListener('pointermove', ev => {
     setPtr(ev);
     if (drawing) { const h = ray.intersectObject(board, false)[0]; if (h) boardPointer('move', h); return; }
-    const bh = boardHit(), lm = bh ? null : lmHit(); setLm(lm ? lm.slug : null); canvas.style.cursor = bh ? 'cell' : lm ? 'pointer' : 'crosshair';
+    const bh = boardHit(), kh = bh ? -1 : keyHit(), lm = bh || kh >= 0 ? null : lmHit(); setLm(lm ? lm.slug : null); canvas.style.cursor = bh ? 'cell' : kh >= 0 || lm ? 'pointer' : 'crosshair';
   });
   canvas.addEventListener('pointerleave', () => { if (!drawing) setLm(null); });
   canvas.addEventListener('pointerdown', ev => {
     canvas.setPointerCapture(ev.pointerId); canvas.focus({ preventScroll: true }); setPtr(ev); down = { x: ev.clientX, y: ev.clientY, moved: 0 }; FOC.intro = false;
-    const bh = boardHit(); if (bh) { const a = artBySlug[BRD.slug]; if (FOC.pin !== a.slug) pin(a.slug); drawing = a; boardPointer('down', bh); }
+    const bh = boardHit(); if (bh) { const a = artBySlug[BRD.slug]; if (FOC.pin !== a.slug) pin(a.slug); drawing = a; boardPointer('down', bh); return; }
+    const kk = keyHit(); if (kk >= 0) { const a = artBySlug[BRD.slug], kc = keycaps[kk]; if (FOC.pin !== a.slug) pin(a.slug); kc.press = 1; act(a, kc.id); down = null; }
   });
   canvas.addEventListener('pointerup', ev => {
     setPtr(ev); const wasDown = down; down = null;
@@ -2991,14 +3213,15 @@ function buildWorld() {
   });
 
   /* ---------- the loop pieces ---------- */
+  const BRG = { x: 0, y: 0, z: 2, on: false };
   const rate = k => REDUCED ? 1 : 1 - Math.exp(-k * 1);
   const _t = new THREE.Vector3(), _p = new THREE.Vector3();
   function nearest() { let best = null, bd = 1e9; for (const a of ART) { const d = Math.hypot(WAN.p.x - a.pos.x, WAN.p.z - a.pos.z); if (d < bd) { bd = d; best = a; } } return { a: best, d: bd }; }
   function focusRect() { // the framing for the current landmark, widened for narrow canvases
-    const need = 11.8; return Math.max(16.5, need / (2 * TAN * aspect));
+    const need = 12.8; return Math.max(16.5, need / (2 * TAN * aspect));
   }
   function update(dt, t, noRender) {
-    dt = clamp(dt, 0, .1);
+    dt = clamp(dt, 0, .1); uTime.value = t; fpsEma += (1 / Math.max(dt, .004) - fpsEma) * .12;
     /* wanderer: keys > click target > rest */
     let ix = (WAN.keys.has('d') ? 1 : 0) - (WAN.keys.has('a') ? 1 : 0), iz = (WAN.keys.has('s') ? 1 : 0) - (WAN.keys.has('w') ? 1 : 0);
     const SPEED = 9; let dx = 0, dz = 0; WAN.manual = !!(ix || iz);
@@ -3013,6 +3236,7 @@ function buildWorld() {
     wanderer.position.set(WAN.p.x, 0, WAN.p.z); body.scale.set(WAN.faceS, 1, 1);
     const bob = Math.abs(Math.sin(t * 11)) * .09 * Math.min(1, WAN.speed / 4); body.position.y = bob; body.rotation.z = Math.sin(t * 11) * .05 * Math.min(1, WAN.speed / 5);
     WAN.halo.material.opacity = .13 + .05 * Math.sin(t * 3.1) + .04 * Math.sin(t * 7.7);
+    lantern.position.set(.9 * WAN.faceS, 0, 0); ringA.scale.setScalar(1.7 + .22 * Math.sin(t * 2.6)); ringB.scale.setScalar(2.9); ringB.rotation.y = t * .35; pool.material.opacity = .42 + .1 * Math.sin(t * 3.1);
     WAN.trailT += WAN.speed * dt; if (WAN.trailT > 1.15) { WAN.trailT = 0; const i = stepI++ % 40, side = (stepI % 2 ? 1 : -1) * .22; stepAge[i] = 0; _o.position.set(WAN.p.x + side, .02, WAN.p.z + .1); _o.rotation.x = -Math.PI / 2; _o.scale.setScalar(1); _o.updateMatrix(); steps.setMatrixAt(i, _o.matrix); }
     for (let i = 0; i < 40; i++) { if (stepAge[i] >= 6) continue; stepAge[i] += dt; steps.getMatrixAt(i, _o.matrix); _o.matrix.decompose(_o.position, _o.quaternion, _o.scale); _o.scale.setScalar(Math.max(0, 1 - stepAge[i] / 6)); _o.updateMatrix(); steps.setMatrixAt(i, _o.matrix); } steps.instanceMatrix.needsUpdate = true;
 
@@ -3020,21 +3244,34 @@ function buildWorld() {
     const n = nearest(); if (FOC.map) { if (FOC.near) setNear(null); } else if (!FOC.hover) { const cur = FOC.near ? artBySlug[FOC.near] : null; if (cur) { if (Math.hypot(WAN.p.x - cur.pos.x, WAN.p.z - cur.pos.z) > 8.5) setNear(n.d < 5.6 ? n.a.slug : null); } else if (n.d < 5.6) setNear(n.a.slug); }
     if (FOC.pin && WAN.manual) { const pa = artBySlug[FOC.pin]; if (Math.hypot(WAN.p.x - pa.pos.x, WAN.p.z - pa.pos.z) > 11) unpin(); }
 
-    /* landmarks: pop-up intro, accent when current */
+    /* landmarks: pop-up intro, accent when current, and the three sheets move: parallax between layers, the pennant flutters, the mechanism runs on uTime and speeds up with the session's revision counter */
     for (const o of totems) {
       const a = o.art; if (a.riseAt !== undefined && t >= a.riseAt) { a.rise.t = 1; a.riseAt = undefined; }
       a.hl.t = FOC.eff === a.slug ? 1 : FOC.lm === a.slug ? .55 : 0;
       const hl = a.hl.step(dt), up = Math.max(0, a.rise.step(dt));
       o.stand.rotation.x = -(1 - Math.min(up, 1.12)) * Math.PI / 2; o.stand.visible = up > .015;
       o.m.color.copy(chalk).lerp(accent, hl); o.m.opacity = .72 + .28 * hl; o.m.linewidth = (1 + .6 * hl) * DPR; o.rm.color.copy(chalk).lerp(accent, hl); o.rm.opacity = .3 + .5 * hl;
+      o.mb.color.copy(chalk).lerp(accent, hl * .55); o.mb.opacity = .26 + .26 * hl; o.mf.color.copy(chalk).lerp(accent, hl); o.mf.opacity = .86 + .14 * hl; o.mf.linewidth = (1 + .5 * hl) * DPR;
+      o.txt.material.color.copy(chalk).lerp(accent, hl); o.num.material.color.copy(chalk).lerp(accent, hl);
+      if (!o.stand.visible) continue;
+      const px = clamp((CAM.look.x - a.pos.x) * .012, -.3, .3); o.back.position.x = px; o.front.position.x = -px;
+      const rv = a.session.rev | 0; if (rv !== a.lastRev) { a.lastRev = rv; a.kick = 1; } a.kick = Math.max(0, a.kick - dt * 1.3);
+      const boost = 1 + 2.2 * a.kick + .9 * hl, amp = 1 + .6 * a.kick;
+      for (const mc of o.mechs) { mc.ph += dt * mc.s * boost; const sn = Math.sin(mc.ph), sy = mc.sx ? Math.sin(2 * mc.ph) : sn;
+        mc.g.position.set(mc.p[0] + (mc.sx || 0) * sn * amp, mc.p[1] + (mc.sy || 0) * sy * amp, 0); mc.g.rotation.z = mc.spin ? mc.ph : (mc.rot || 0) * sn * amp; mc.g.scale.setScalar(1 + (mc.pu || 0) * sn * amp); }
+      o.flag.scale.x = .9 + .1 * Math.sin(uTime.value * 3.1 + a.i * 1.7); o.flag.rotation.y = .12 * Math.sin(uTime.value * 1.9 + a.i);
     }
+    for (const f of flags) { f.g.scale.x = .8 + .2 * Math.sin(uTime.value * 3.4 + f.k * 2.1); f.g.rotation.y = .18 * Math.sin(uTime.value * 1.7 + f.k); }
+    roseDial.rotation.y = CAM.az * 3 + .05 * Math.sin(t * .25); camMark.rotation.y = CAM.az; roseMat.opacity = .3 + .34 * clamp(1.25 - CAM.el, 0, 1);
 
     /* board: swap = fold the old one flat, hinge the new one up */
     BRD.want = FOC.eff && !FOC.diving ? FOC.eff : null;
-    if (BRD.slug !== BRD.want) { BRD.open.t = 0; if (BRD.open.x < .04) { BRD.slug = BRD.want; BRD.dirty = true; if (BRD.slug) { const a = artBySlug[BRD.slug]; boardRoot.position.set(a.pos.x + BOARD_DX, 0, a.pos.z + .15); boardTag.innerHTML = `▲ ${esc(a.title)} · LIVE SESSION`; } } }
+    if (BRD.slug !== BRD.want) { BRD.open.t = 0; if (BRD.open.x < .04) { BRD.slug = BRD.want; BRD.dirty = true; if (BRD.slug) { const a = artBySlug[BRD.slug]; boardRoot.position.set(a.pos.x + BOARD_DX, 0, a.pos.z + .15); boardTag.innerHTML = `▲ ${esc(a.title)} · LIVE SESSION`; hudAcc = 9; } layoutKeys(BRD.slug ? artBySlug[BRD.slug] : null); } }
     else BRD.open.t = BRD.slug ? 1 : 0;
     const open = BRD.open.step(dt); boardRoot.visible = !!BRD.slug && open > .012; board.visible = boardRoot.visible;
     board.rotation.x = -(1 - clamp(open, 0, 1.18)) * (Math.PI / 2) - .06 * clamp(open, 0, 1); footprint.material.opacity = .22 * clamp(open, 0, 1);
+    for (const k of keycaps) { if (!k.on) continue; k.press = Math.max(0, k.press - dt * 3.2); k.om.color.copy(chalk).lerp(accent, k.press); k.om.opacity = .85; k.g.position.y = -.06 * k.press; k.face.material.opacity = 1; }
+    if (BRD.slug && open > .05) { hudAcc += dt; if (hudAcc > .25) { hudAcc = 0; paintHud(artBySlug[BRD.slug]); } }
     if (BRD.slug && open > .05) { BRD.acc += dt; if (BRD.dirty || BRD.acc > 1 / 24) { BRD.acc = 0; BRD.dirty = false; paintBoard(artBySlug[BRD.slug], t); tex.needsUpdate = true; } }
 
     /* threads */
@@ -3044,13 +3281,21 @@ function buildWorld() {
 
     /* camera goals */
     const foc = FOC.eff && !FOC.diving ? artBySlug[FOC.eff] : (FOC.diving && FOC.pin ? artBySlug[FOC.pin] : null);
-    if (foc) { goal.look.set(foc.pos.x + 3.55, 2.1, foc.pos.z); goal.dist = focusRect(); goal.el = .34; goal.az = -.09; }
+    if (foc) { goal.look.set(foc.pos.x + FOCUS_DX, 2.1, foc.pos.z); goal.dist = focusRect(); goal.el = .34; goal.az = -.09; }
     else if (FOC.map || (FOC.intro && !REDUCED)) { goal.look.set(0, 0, -1); goal.el = 1.12; goal.az = 0; goal.dist = Math.max(50 / (TAN * aspect), 40 * Math.sin(goal.el) / TAN); }
     else { goal.look.set(WAN.p.x + WAN.v.x * .22, 1.0, WAN.p.z + WAN.v.z * .22 - 1.2); goal.dist = Math.max(30, 15 / (TAN * aspect) * .62); goal.el = .78; goal.az = 0; }
     const kc = REDUCED ? 1 : 1 - Math.exp(-dt * (foc ? 3.6 : 2.6));
     CAM.look.lerp(goal.look, kc); CAM.dist += (goal.dist - CAM.dist) * kc; CAM.el += (goal.el - CAM.el) * kc; CAM.az += (goal.az - CAM.az) * kc;
     const ce = Math.cos(CAM.el); camera.position.set(CAM.look.x + CAM.dist * Math.sin(CAM.az) * ce, CAM.look.y + CAM.dist * Math.sin(CAM.el), CAM.look.z + CAM.dist * Math.cos(CAM.az) * ce); camera.lookAt(CAM.look);
     scene.fog.near = CAM.dist * .55; scene.fog.far = CAM.dist * 1.95; camera.updateMatrixWorld();
+
+    /* bearing line: wanderer -> hovered / pinned track */
+    { const tg = FOC.eff && !FOC.diving ? artBySlug[FOC.eff] : null; let show = false;
+      if (tg) { const tx = tg.pos.x, tz = tg.pos.z + 1.0, ex = tx - WAN.p.x, ez = tz - WAN.p.z, L = Math.hypot(ex, ez); if (L > 3.4) { const ux = ex / L, uz = ez / L, len = L - 2.0; show = true;
+          bear.position.set(WAN.p.x + ux * .9, 0, WAN.p.z + uz * .9); bear.rotation.y = -Math.atan2(uz, ux); bear.scale.x = len; bearEnd.position.set(tx, 0, tz);
+          const deg = (Math.atan2(ex, -ez) * 180 / Math.PI + 360) % 360; brgTxt = `BRG ${String(Math.round(deg) % 360).padStart(3, '0')}° · ${L.toFixed(1)} U`; if (brgTag.textContent !== brgTxt) brgTag.textContent = brgTxt;
+          _p.set(WAN.p.x + ex * .5, .1, WAN.p.z + ez * .5).project(camera); BRG.x = _p.x; BRG.y = _p.y; BRG.z = _p.z; } }
+      bear.visible = bearEnd.visible = show; BRG.on = show; }
 
     if (!noRender) renderer.render(scene, camera);
 
@@ -3063,11 +3308,12 @@ function buildWorld() {
       if (_p.z > 1 || Math.abs(_p.x) > 1.05 || Math.abs(_p.y) > 1.05 || op < .03) { el.style.opacity = 0; continue; }
       el.style.opacity = op; el.style.transform = `translate3d(${((_p.x * .5 + .5) * rect.width).toFixed(1)}px,${((-_p.y * .5 + .5) * rect.height).toFixed(1)}px,0) translate(-50%,0)`;
     }
-    if (boardRoot.visible && !FOC.diving) { _p.set(boardRoot.position.x, BOARD_H + .55, boardRoot.position.z).project(camera); boardTag.style.opacity = clamp((open - .6) * 3, 0, 1); const bw = boardTag.offsetWidth / 2 + 4, bx = clamp((_p.x * .5 + .5) * rect.width, bw, rect.width - bw); boardTag.style.transform = `translate3d(${bx.toFixed(1)}px,${((-_p.y * .5 + .5) * rect.height).toFixed(1)}px,0) translate(-50%,-100%)`; } else boardTag.style.opacity = 0;
+    { const ok = BRG.on && BRG.z < 1 && Math.abs(BRG.x) < 1.05 && Math.abs(BRG.y) < 1.05; brgTag.style.opacity = ok ? 1 : 0; if (ok) brgTag.style.transform = `translate3d(${((BRG.x * .5 + .5) * rect.width).toFixed(1)}px,${((-BRG.y * .5 + .5) * rect.height).toFixed(1)}px,0) translate(-50%,-130%)`; }
+    if (boardRoot.visible && !FOC.diving) { _p.set(boardRoot.position.x, BOARD_H + 1.4, boardRoot.position.z).project(camera); boardTag.style.opacity = clamp((open - .6) * 3, 0, 1); const bw = boardTag.offsetWidth / 2 + 4, bx = clamp((_p.x * .5 + .5) * rect.width, bw, rect.width - bw); boardTag.style.transform = `translate3d(${bx.toFixed(1)}px,${((-_p.y * .5 + .5) * rect.height).toFixed(1)}px,0) translate(-50%,-100%)`; } else boardTag.style.opacity = 0;
   }
 
   return {
-    update, renderer, camera, scene, totems, board, WAN, CAM, goal,
+    update, renderer, camera, scene, totems, board, WAN, CAM, goal, DETAIL, keycaps, rose, roseDial, camMark, lantern, ringA, ringB, bear, bearEnd, hud, flags, uTime, roseMat, hudInfo, get fps() { return fpsEma; }, get hudText() { return hudCv; },
     onFocus(slug) { setHot(slug); },
     onThreads() { },
     walkToStand(slug) { const s = STAND(artBySlug[slug]); WAN.target = new THREE.Vector3(s.x, 0, s.z); },
@@ -3077,6 +3323,7 @@ function buildWorld() {
     project(v) { const r = frame.getBoundingClientRect(), p = v.clone().project(camera); return { x: r.left + (p.x * .5 + .5) * r.width, y: r.top + (-p.y * .5 + .5) * r.height, z: p.z }; },
     boardPoint(u, v) { board.updateMatrixWorld(true); return this.project(new THREE.Vector3((u - .5) * BOARD_W, (1 - v) * BOARD_H, 0).applyMatrix4(board.matrixWorld)); },
     landmarkPoint(slug) { const a = artBySlug[slug]; return this.project(new THREE.Vector3(a.pos.x, 2.3, a.pos.z)); },
+    keycapPoint(i) { boardRoot.updateMatrixWorld(true); const k = keycaps[i]; return this.project(new THREE.Vector3(0, .03, 0).applyMatrix4(k.hit.matrixWorld)); },
     groundPoint(x, z) { return this.project(new THREE.Vector3(x, 0, z)); },
   };
 }
@@ -3085,17 +3332,27 @@ const BRD = { open: null, slug: null, want: null, acc: 0, dirty: true };
 /* =====================================================================
    7. THE SIGIL — a 1px monoline mark whose outer ring carries nineteen ticks, one per track
    ===================================================================== */
-const sigil = $('#sigil'), sgRing = $('#sgRing'), sgMid = $('#sgMid'), sgIn = $('#sgIn'), SVGNS = 'http://www.w3.org/2000/svg', sgTicks = [];
+const sigil = $('#sigil'), sgOut = $('#sgOut'), sgRing = $('#sgRing'), sgMid = $('#sgMid'), sgIn = $('#sgIn'), SVGNS = 'http://www.w3.org/2000/svg', sgTicks = [];
 (function buildSigil() {
   const mk = (tag, at, par) => { const e = document.createElementNS(SVGNS, tag); for (const k in at) e.setAttribute(k, at[k]); par.appendChild(e); return e; };
+  const pt = (r, a) => `${(r * Math.cos(a)).toFixed(2)},${(r * Math.sin(a)).toFixed(2)}`, ngon = (n, r, o = -Math.PI / 2) => Array.from({ length: n }, (_, k) => pt(r, o + k * 2 * Math.PI / n)).join(' ');
+  /* outermost ring: a dashed circle and a 60-tooth gauge, every fifth tooth long */
+  mk('circle', { r: 55, 'stroke-dasharray': '1.5 3.2', class: 'faint' }, sgOut); mk('circle', { r: 58.5, class: 'faint' }, sgOut);
+  for (let k = 0; k < 60; k++) { const a = k / 60 * Math.PI * 2, L = k % 5 ? 2 : 4.6; mk('line', { x1: (58.5 * Math.cos(a)).toFixed(2), y1: (58.5 * Math.sin(a)).toFixed(2), x2: ((58.5 - L) * Math.cos(a)).toFixed(2), y2: ((58.5 - L) * Math.sin(a)).toFixed(2), class: 'faint' }, sgOut); }
+  /* track ring: nineteen ticks (the current track's turns accent) over a nineteen-sided polygon */
   for (let i = 0; i < 19; i++) { const a = i / 19 * Math.PI * 2 - Math.PI / 2; sgTicks.push(mk('line', { class: 'tick', x1: (43 * Math.cos(a)).toFixed(2), y1: (43 * Math.sin(a)).toFixed(2), x2: (49 * Math.cos(a)).toFixed(2), y2: (49 * Math.sin(a)).toFixed(2) }, sgRing)); }
-  const tri = (r, o) => [0, 1, 2].map(k => { const a = o + k * 2.0944; return `${(r * Math.cos(a)).toFixed(2)},${(r * Math.sin(a)).toFixed(2)}`; }).join(' ');
-  mk('polygon', { points: tri(34, -Math.PI / 2) }, sgMid); mk('polygon', { points: tri(34, Math.PI / 2) }, sgMid);
-  mk('polygon', { points: Array.from({ length: 16 }, (_, k) => { const a = k * Math.PI / 8 - Math.PI / 2, r = k % 2 ? 6 : 16; return `${(r * Math.cos(a)).toFixed(2)},${(r * Math.sin(a)).toFixed(2)}`; }).join(' ') }, sgIn);
-  mk('circle', { r: 2.4, class: 'dot' }, sgIn);
+  mk('polygon', { points: ngon(19, 39.5), class: 'faint' }, sgRing); mk('circle', { r: 36, class: 'faint', 'stroke-dasharray': '2 2.6' }, sgRing);
+  /* family ring: two triangles in a circle, a {5/2} pentagram for the five families, five node dots */
+  mk('circle', { r: 29.5, class: 'faint', 'stroke-dasharray': '1 3' }, sgMid); mk('circle', { r: 34 }, sgMid); mk('polygon', { points: ngon(3, 34) }, sgMid); mk('polygon', { points: ngon(3, 34, Math.PI / 2) }, sgMid);
+  mk('polygon', { points: [0, 2, 4, 1, 3].map(k => pt(23, -Math.PI / 2 + k * 2 * Math.PI / 5)).join(' '), class: 'faint' }, sgMid);
+  for (let k = 0; k < 5; k++) mk('circle', { cx: (25 * Math.cos(-Math.PI / 2 + k * 2 * Math.PI / 5)).toFixed(2), cy: (25 * Math.sin(-Math.PI / 2 + k * 2 * Math.PI / 5)).toFixed(2), r: 1.7 }, sgMid);
+  /* core: sixteen-point star, eight spokes, a ring and the accent dot */
+  mk('polygon', { points: Array.from({ length: 16 }, (_, k) => pt(k % 2 ? 6 : 16, k * Math.PI / 8 - Math.PI / 2)).join(' ') }, sgIn);
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; mk('line', { x1: (16 * Math.cos(a)).toFixed(2), y1: (16 * Math.sin(a)).toFixed(2), x2: (20.5 * Math.cos(a)).toFixed(2), y2: (20.5 * Math.sin(a)).toFixed(2) }, sgIn); }
+  mk('polygon', { points: ngon(8, 12.5, Math.PI / 8), class: 'faint' }, sgIn); mk('circle', { r: 9.5, class: 'faint' }, sgIn); mk('circle', { r: 2.4, class: 'dot' }, sgIn);
 })();
 function sigilTicks() { sgTicks.forEach((t, i) => t.classList.toggle('on', !!FOC.eff && artBySlug[FOC.eff].i === i)); }
-let sgHover = false, sgA = [0, 0, 0];
+let sgHover = false, sgA = [0, 0, 0, 0];
 sigil.addEventListener('pointerenter', () => sgHover = true); sigil.addEventListener('pointerleave', () => sgHover = false);
 sigil.addEventListener('click', () => toggleThreads());
 sigil.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleThreads(); } });
@@ -3132,7 +3389,7 @@ function loop(now) {
   simAcc = Math.min(simAcc + dt, .25); while (simAcc >= 1 / 60) { simAcc -= 1 / 60; for (const a of ART) a.session.tick?.(); }
   world?.update(dt, t);
   sgA[0] += dt * (sgHover ? 36 : 5) * (REDUCED ? 0 : 1); sgA[1] -= dt * (sgHover ? 60 : 9) * (REDUCED ? 0 : 1); sgA[2] += dt * (sgHover ? 110 : 16) * (REDUCED ? 0 : 1);
-  sgRing.setAttribute('transform', `rotate(${sgA[0].toFixed(2)})`); sgMid.setAttribute('transform', `rotate(${sgA[1].toFixed(2)})`); sgIn.setAttribute('transform', `rotate(${sgA[2].toFixed(2)})`);
+  sgA[3] -= dt * (sgHover ? 24 : 3) * (REDUCED ? 0 : 1); sgOut.setAttribute('transform', `rotate(${sgA[3].toFixed(2)})`); sgRing.setAttribute('transform', `rotate(${sgA[0].toFixed(2)})`); sgMid.setAttribute('transform', `rotate(${sgA[1].toFixed(2)})`); sgIn.setAttribute('transform', `rotate(${sgA[2].toFixed(2)})`);
   hashAcc += dt; if (hashAcc > .25) { hashAcc = 0; const hv = $('#hashVal'); if (hv && FOC.eff) hv.textContent = artBySlug[FOC.eff].session.hash(); if (world) { const w = world.WAN; T.where.innerHTML = FOC.eff ? `TRACK <b>${pad2(artBySlug[FOC.eff].n)}</b> · <b>${esc(artBySlug[FOC.eff].title)}</b>` : FOC.map ? 'THE MAP · <b>19 TRACKS</b>' : `WANDERING · X <b>${w.p.x.toFixed(0)}</b> · Z <b>${w.p.z.toFixed(0)}</b>`; } else T.where.textContent = ''; }
   requestAnimationFrame(loop);
 }
@@ -3140,7 +3397,7 @@ requestAnimationFrame(loop);
 
 /* test and inspection handle: nothing in the page depends on it */
 window.__independents = {
-  REG, EDGES, ART, ADAPTERS, DRAW, PICK, PORT_REPORT, PAINT_REPORT, ROOT_HASH, FOC, BRD, POS, THREE, get world() { return world; },
+  REG, EDGES, ART, ADAPTERS, DRAW, PICK, PORT_REPORT, PAINT_REPORT, ROOT_HASH, FOC, BRD, POS, THREE, FOCUS_DX, get world() { return world; },
   state: () => ({ pin: FOC.pin, hover: FOC.hover, near: FOC.near, eff: FOC.eff, threads: FOC.threads, map: FOC.map, diving: FOC.diving, boardSlug: BRD.slug, boardOpen: BRD.open?.x ?? 0, wan: world ? [world.WAN.p.x, world.WAN.p.z] : null, cam: world ? [world.CAM.look.x, world.CAM.look.z, world.CAM.dist] : null }),
   stepSim(n = 1, dt = 1 / 60, render = true) { for (let i = 0; i < n; i++) { for (const a of ART) a.session.tick?.(); simT += dt; world?.update(dt, simT, !(render && i === n - 1)); } },
   skipIntro() { FOC.intro = false; FOC.map = false; render(false); }, dive, pin, unpin, toggleThreads, toggleMap, setHover, handoffUrl, inkCv,
