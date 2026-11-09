@@ -1,0 +1,7 @@
+flowchart LR
+  input["scroll · drag · swipe · keys · click"] -->|"moves the target"| nav["one travel state: MAP or WALK + track 1..19"]
+  nav -->|"aims the camera and spins the record"| world["full-viewport Three.js record"]
+  nav -->|"swaps the text"| card["liner card + tracklist + rail"]
+  world -->|"pointer position on the plate"| plate["theme preview canvas"]
+  plate -->|"redrawn texture"| world
+  card -->|"OPEN"| app["the project's own page"]

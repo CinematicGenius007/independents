@@ -1,9 +1,0 @@
-flowchart LR
-  row["tracklist row<br/>hover / Tab / click"] -->|"hover, pin"| FOC{{"FOC<br/>pin > hover > near"}}
-  lm["landmark in the world<br/>click"] -->|"pin"| FOC
-  walk["wanderer<br/>within 5.6 units"] -->|"near"| FOC
-  FOC -->|"onFocus(slug)"| cam["camera glides to<br/>x+3.1, el 0.34, dist ~18"]
-  FOC -->|"want = slug"| board["pop-up board hinges up<br/>one stage, re-inked"]
-  FOC -->|"render(true)"| liner["liner notes + hash<br/>+ sigil tick"]
-  board -->|"PICK(u,v) → session.do"| port["deterministic port<br/>60 Hz tick"]
-  FOC -->|"Enter / DIVE IN"| fold["fold flat, then<br/>navigate(url#from=root&v=1&h&s)"]

@@ -1,465 +1,183 @@
-# Root Explorer, minimal sleeve — architecture
+# Root Explorer, minimal sleeve — architecture (Revision 4: the record)
 
-Status: design + interactive mock (`index.html` in this folder, plus `verify.cjs`).
-Nothing here is wired into `apps/*`. This is a second landing-page variation beside
-[`../root-explorer/`](../root-explorer/) (the Fish Night spectral ocean), which is untouched.
-
-**The claim.** The Fish Night page answers "what is the site?" with spectacle. This one answers
-with the quietest object a record collector knows: the back of a vinyl sleeve. Matte charcoal
-cardstock, monospace liner notes, hairline leaders from a title to a running time. Set into that
-card is a small flat chalk world seen in 3D perspective, and the two are one interface: a row of
-the tracklist and a landmark in the world are the same thing seen twice, and acting on either
-moves the other.
-
-Revision 2 (after review): the outer plaster wall, the botanical petals and the floating-card
-shadow are gone. The charcoal card **is** the page, edge to edge, and the extra width and height
-go to a denser 2.5D world and a fuller *Scattered Days* set of liner notes.
-
-Revision 3 (after review): the page is de-crammed and the work is named honestly. The two sides
-are **`LIVE · 09`** (shipped) and **`ROADMAP · 10`** (in the workshop), with an `ALL · 19` view and
-a real segmented switcher. The selected project now opens inside a **docked true-project window**
-(`#trueWindow`) with its own chrome, a 1024 × 768 live painter, its controls and `OPEN PROJECT ↗`,
-in addition to the pop-up board in the world. Three desktop compositions share the same DOM:
-`I · SLEEVE` (default), `II · GATEFOLD`, `III · HORIZON`. A phone layout at `≤ 768px` turns the same
-content into a native instrument: a 38vh stage, 44px touch targets, `MAP / APP / TRACKS` pills and
-one non-overflowing tracklist sheet. §2.1 and §2.2 describe them.
-
-§1, §2 and §7 below describe the current page.
-
-Everything in the Fish Night document that is about the site contract (§1 where it lives and
-what it may not do), the manifest, port and handoff protocol (§3), falsifiable lineage (§4) and
-the ten games (§6) applies here unchanged. This document only describes what is new: the sleeve,
-the world, the focus machine that joins them, the re-inking of the board painters, and the
-checks.
+Status: design + interactive mock (`index.html`, `world.js`, `previews.js`, `content.js` and `verify.cjs` in this folder).
+Nothing here is wired into `apps/*`. It sits beside [`../root-explorer/`](../root-explorer/) (the Fish Night spectral ocean), which is untouched.
 
 Run it: `python3 -m http.server -d . 8080` from the repo root, then open
-`http://localhost:8080/prototypes/root-explorer-minimal/`. It needs the network once, for the
-pinned `three@0.170.0` import map on jsDelivr (same as Fish Night) and for two Google Fonts
-(IBM Plex Mono, Space Mono) with system monospace fallbacks. Nothing else loads.
+`http://localhost:8080/prototypes/root-explorer-minimal/`. It needs the network once, for the pinned `three@0.170.0`
+import map on jsDelivr and two Google Fonts (IBM Plex Mono, Space Mono) that fall back to system monospace.
+Everything else is in this folder. Serve over http; ES modules do not load from `file://`.
 
-![How the tracklist, the world, the board and the liner notes share one focus](diagrams/focus.svg)
+## 0. What changed, and why
 
-*One focus state decides the camera, the board, the liner notes and the sigil. Source: [focus.mmd](diagrams/focus.mmd).*
+Revision 3 put a small Three.js world inside a bordered window, next to a verbose tracklist, with a miniature
+working clone of each game docked underneath. Three things were wrong with that, and they are the whole brief:
 
-## 1. The physical object
-
-There is one object and it fills the viewport: `html`, `body` and `main.sleeve` are all
-`#151516` matte charcoal cardstock, `width: 100%`, `min-height: 100vh`, no outer margin, no
-border, no box-shadow. There is no wall behind it and nothing sticks out from under it.
-
-| Layer | What it is | How it is made |
-| --- | --- | --- |
-| Cardstock | `#151516`, the whole screen | `html, body, .sleeve` background; the page padding is only `clamp(22px, 3.6vw, 64px)` inside the card |
-| Grain | paper fibre, chalk dust and a few smudges across the full screen | `.sleeve::before` stacks a procedural canvas (generated once at load, tiles seamlessly, set as `--grain`) over an SVG turbulence fallback |
-| Vignette | a quiet lit-from-the-top falloff | `.sleeve::after`, `position: fixed` radial gradients, so the card reads as one lit sheet at any scroll position |
-| Type | IBM Plex Mono (Space Mono fallback), `#EAE8E3` and muted `#8E8D8A` | uppercase, `letter-spacing: .04em`; the header is `.78em` tracked, `INDEPENDENTS — SCATTERED WORKS` |
-| Accent | one colour, `#EE6A3C` | the pinned track, the current landmark and board, the wanderer's lantern and its bearing line, the compass rose's north needle and camera marker |
-| Sigil | 1px monoline mark, bottom right | four counter-rotating groups (§2); the 19 ticks on the track ring carry the current track in accent; hover spins it faster, click toggles the threads |
-
-The canvas is transparent and CSS-masked with a soft ellipse, so the world is drawn directly on
-the card's grain: there is no second background to match and no window frame, only four
-registration corners.
-
-## 2. Anatomy
-
-```
- I N D E P E N D E N T S   —   S C A T T E R E D   W O R K S        LAYOUT [ I·SLEEVE ][ II·GATEFOLD ][ III·HORIZON ]
- Nineteen self-contained browser instruments. No server, no account, no database.
- AUTOMATA / GRAMMARS ___ Černý 1964 · Lindenmayer 1968     60 HZ FIXED-POINT SIM ___ …
- COMMIT-REVEAL CRYPTO ___ …    WEBRTC P2P ___ …           CELLULAR / EMERGENT ___ …
-                                                          with special guest ___ 2.5D PERSPECTIVE STAGE
- ┌ world (three.js, 56%) ──────────────┐   [ ● LIVE · 09 ] [ ○ ROADMAP · 10 ] [ ALL · 19 ]
- │ survey grid, contours, territories, │   LIVE                                        09
- │ compass rose, 19 three-layer dioramas│   01 FOGWALK ________________ 05:00 · AUTOMATA
- │ the wanderer + lantern + bearing line │      SYNCHRONIZING WORD _____________ PAR 5
- │ the pop-up stage with callouts, HUD  │   02 BLOOMWRIGHT ____________ 04:12 · L-SYSTEM
- │ and one keycap per action            │      …
- └──────────────────────────────────────┘   ROADMAP                                     10
- ┌ #trueWindow ─────────────────────────┐   10 SPOREFRONT … 19 LEXICON QUARANTINE
- │ true chrome · REV · HASH · controls  │   SIDE A · LIVE NOW / SIDE B · IN THE WORKSHOP
- │ live 1024×768 painter · OPEN PROJECT │   LINER NOTES — SCATTERED DAYS
- └──────────────────────────────────────┘   PRODUCED BY ___ …    TRACK / MECHANISM ___ …
-  hint line                    [▶ DIVE IN]   (label + rule, value below)  …
- ┌ IND-LP-019 ┐                                              ( multi-ring sigil )
-```
-
-The `h1`, the ensemble block, the layout bar, the statement, the two editorial columns and the
-footer are the only direct children of `main.sleeve` in the DOM. `LIVE`/`ROADMAP` are list
-wrappers around `#sideA` / `#sideB`; hiding one is a `max-height: 0` clip, not `display: none`, so
-all nineteen anchors stay in the page and every `.lead` keeps its computed 1px height.
-
-- **Ensemble credits.** The top block, directly under the header: two columns, a bold credit, a
-  short 1px underline leader and a muted value. The five formal mechanisms with their lineages
-  (Automata / Grammars: Černý 1964 and Lindenmayer 1968; Commit-Reveal Crypto: hash commitment,
-  Lamport–Shostak–Pease 1982; WebRTC P2P; 60 Hz Fixed-Point Sim; Cellular / Emergent), then
-  `with special guest ____ 2.5D PERSPECTIVE STAGE`.
-- **Tracklist.** Nineteen real `<a href>` rows, `01`..`19`, behind a three-state segmented
-  taxonomy: `● LIVE · 09`, `○ ROADMAP · 10`, `ALL · 19`. A row is two lines on a
-  four-column grid. Line one: number, bold title, 1px hairline leader, `mm:ss · MECHANISM`. Line
-  two, smaller and muted: a two-word formal sub-caption (`SYNCHRONIZING WORD`, `COFFMAN CYCLES`),
-  a second hairline leader and a par / metric. Fogwalk's par (`PAR 5`) is the computed
-  breadth-first optimum; the other metrics name the unit each port is scored in (`SHA-256`,
-  `3:4 · 12 PICK`, `N ≥ 3F + 1`). Side A is `LIVE` (the nine shipped works), Side B is `ROADMAP`
-  (the ten in the workshop). The time, tag, sub-caption and metric are hand authored in `META`,
-  `SUBCAP` and `METRIC`, not measured. The href is the destination itself, so middle-click, Tab,
-  Enter and no-WebGL all work; the JavaScript only adds the focus behaviour.
-  Pinning a track whose side is hidden by the current filter moves the filter with it, so the
-  active row is never invisible.
-- **Liner notes (the bottom block).** The *Scattered Days* layout, two columns of short-underline
-  credits. Each entry is a label and a 1px leader on the first line and its value on the next, so
-  the back-cover column stays readable at 44% of the page instead of wrapping one word per line.
-  The left column is always the six blocks `PRODUCED BY / ENGINEERED BY / FORMAL CITE /
-  CERTIFIED AT / TRANSPORT / STATE HASH`. With nothing focused they describe the whole record
-  (the label, 19 deterministic ports, the citation count, `✓ 19/19 PORTS · ✓ 19/19 PAINTERS`,
-  the transports, a root hash over all 19 session hashes). With a track focused they are about
-  that game (family and status, its port, seed and 60 Hz or turn-based, its formal cites, its own
-  self-test, its transport and the live `session.hash()`, refreshed four times a second). The
-  right column adds the track, mechanism, port metric, entry path, `SEE ALSO` and one lineage
-  neighbour as the "special guest".
-- **Colophon and sigil.** Bottom left, the `IND-LP-019` label (a boxed catalogue number with
-  the label name, speed and side counts). Bottom right, the sigil: a dashed ring and a 60-tooth
-  gauge (every fifth tooth long), the 19 track ticks over a 19-sided polygon, a circle holding
-  two triangles and a {5/2} pentagram with five family dots, and a 16-point star with eight
-  spokes, an octagon and the accent dot. Four groups counter-rotate at different speeds.
-
-### 2.1 Three desktop compositions
-
-The same elements are re-placed by one grid on `main.sleeve`; `body[data-layout]` selects the
-composition and `#layoutBar` (top right) writes it. The two editorial columns are flex wrappers
-(`.colL`, `.colR`) in the default layout and `display: contents` in the other two, so the world,
-the tracklist, the true window and the liner notes are real grid items in every composition
-without duplicating a node.
-
-| Layout | Grid | What it is |
-| --- | --- | --- |
-| `I · SLEEVE` (default) | `56% / 44%` | Left: the perspective world then the docked `#trueWindow`. Right: the LIVE / ROADMAP tracklist then the two-column liner notes. The quietest reading of the back cover. |
-| `II · GATEFOLD` | `28% / 40% / 32%` | Left: the tracklist and the ensemble credits (stacked label/value at this width). Centre: `#trueWindow` as the showcase, with the liner notes right underneath. Right: the world as a spatial map, with the sigil in the footer. |
-| `III · HORIZON` | `50% / 50%` | A full-width panoramic world with `#trueWindow` anchored at the right of the stage, then the classic back cover: tracklist left, liner notes and the `IND-LP-019` colophon / sigil right. |
-
-The layout bar is hidden below 1100px, where every composition folds to one editorial column.
-The choice is announced with `aria-pressed` and exposed to the harness as
-`__independents.setLayout()` / `get layout`.
-
-### 2.2 The phone
-
-At `≤ 768px` the grid becomes a single sheet. The masthead is the wordmark; a second, compact
-taxonomy row (`● LIVE · 09 / ○ ROADMAP · 10 / ALL · 19`) filters the same list wrappers, and
-`MAP / APP / TRACKS` pills scroll to the world, the true window and the tracklist. The order is
-world → true-project card → tracklist → liner notes → colophon. The stage is `38vh` with a
-`270px` floor, the true card is full width, every touch control is at least `44px`, the project
-chrome drops its telemetry and the track rows drop the sub-caption and metric so the sheet is one
-clean line per track. `overflow-x: hidden` and fixed-width slots keep the page at exactly 390px
-wide in the harness.
-
-## 3. The world
-
-### 3.1 A flat world, a tilted camera
-
-The ground is the plane `y = 0`, 2D in the strict sense: nothing on it has height, and nothing is
-filled. Perspective comes from one `PerspectiveCamera` (FOV 34) orbiting a look-at point. Fog
-(`near = 0.55 × distance`, `far = 1.95 × distance`) fades the far ground into the card.
-
-Every line is a `LineSegments2` (three's fat-line addon) at `1 × devicePixelRatio` device pixels,
-so a "1px monoline" stays 1 CSS pixel on any display; native WebGL lines would be half a pixel on a
-2× screen. About 14 000 line instances in roughly 130 draw calls make the whole scene.
-
-| Layer | Content |
+| Problem | What Revision 4 does instead |
 | --- | --- |
-| Survey grid | 391 `+` fiducial crosshairs on a 6-unit lattice across `y = 0` (every fifth one longer) and `X ±n` / `Z ±n` grid references lettered flat along the south and west margins. |
-| Contours | A marching-squares pass over a smooth height field (long ridges plus a Gaussian hill under every landmark), levels every 0.26, every fourth level brighter. Computed once at load, 0.85-unit grid. The hills are why each landmark stands inside concentric rings. |
-| Elevation index | Down-slope hachure ticks (about 380) along the index contours, and twelve `EL +1.4`-style spot heights lettered flat beside them. |
-| Territories | Five etched labels lying in perspective on the ground in the gaps between landmark rows, each with a boundary rule: *I · AUTOMATA RIDGE*, *II · SEALED BASIN*, *III · CELLULAR FLATS*, *IV · LOCKSTEP TRENCH*, *V · PEER COMMONS*. |
-| Compass rose | A 1px azimuth ring (72 degree ticks, 30° marks), a turning inner dial (16-point star, cardinal and intercardinal spokes, accent north needle), `N E S W`, and an accent marker for the camera. The dial turns with the camera azimuth (×3), the marker follows it, and the whole rose brightens as the camera drops (map → follow → focus). |
-| Groove | A dashed double hairline through the 19 landmarks in track order (a Catmull-Rom curve), like the run-out groove of a record. |
-| Micro-landmarks | Along the groove, on alternating sides and never inside a landmark ring or board footprint: 21 mile-marker posts (a tally plate and a ground `M01`…), cairns of three stacked stones, tripod survey flags that flutter on `uTime`, and about 126 clusters of chalk reed strokes. |
-| Chalk motes | 320 points drifting above the plane. A `ShaderMaterial` moves and twinkles them entirely in the vertex shader from the shared `uTime` uniform. |
-| Landmarks | 19 three-layer paper-cut dioramas (§3.3), each with a dial ring and a numbered plinth etched on the ground. |
-| Wanderer | A tiny filled paper-cut figure (cloak, brimmed hat, staff) that flips left and right, bobs when it walks and leaves fading chalk footprints; one accent lantern. The lantern projects a light ring onto the ground (a soft pool, a pulsing ring and a slowly turning dashed ring with four compass ticks). |
-| Bearing line | While a track is hovered or pinned, a dashed accent rule runs along the ground from the wanderer to that track's plinth, ending in a target mark, lettered `BRG 148° · 52.5 U` (compass bearing from north, and range). |
-| Threads | `Space`: the 28 lineage edges (`EDGES`) as 1px arcs lying on the ground, grown simultaneously from their source ends by raising the instance count. The current landmark's edges draw again in accent. |
-| Board | One pop-up stage reused for every track (§3.4). |
+| The 3D world lived in a mini window. | **The page is the world.** One `<canvas>`, `position: fixed`, exactly `100vw × 100vh`, on the `#151516` cardstock. The HTML is a thin layer of liner notes on top of it. No frame, no window, no page scroll. |
+| The copy was an engineering log (`STATE HASH`, `REV`, `TICK 60 HZ`, `BFS`, `ČERNÝ 1964`). | **Nineteen sentences a first-time visitor understands.** Every track says what it is, what you do, who plays and how long. The formal lineage stays in each project's own README. |
+| Each track was a tiny functional game emulator with debug buttons. | **Theme previews:** nineteen art-directed plates. Each one carries the mood and the one idea of its project, moves on its own, answers the pointer, and does nothing a landing page should not do. Clicking through is how you play. |
 
-All lettering on the ground is canvas text on a transparent plane (`textMesh`). The canvas width
-comes from a fixed per-character advance, not from measuring the font, so the web font arriving
-late only repaints the text and never changes a texture's size.
+The soul is unchanged: *Dandy Brown — Scattered Days*. Matte charcoal grain, crisp monospace, 1px hairline leaders from a
+title to a running time, breathing negative space, one accent (`#EE6A3C`).
 
-### 3.2 Layout and camera
+![How one travel state drives the camera, the card and the plates](diagrams/world.svg)
 
-The 19 landmarks sit on a serpentine over a 5 / 5 / 5 / 4 scatter (`POS`, seeded jitter): 18.5
-units between columns, 17 between rows, so consecutive tracks are neighbours and a landmark's
-board never lands behind another landmark. Wander bounds are ±52 × ±40; landmarks are solid
-(1.25-unit radius).
+*One travel state (MAP or WALK, plus a track number) drives the camera, the card and the plates; the pointer's position on a plate drives its preview. Source: [world.mmd](diagrams/world.mmd).*
 
-The camera has one goal per mode and chases it exponentially (`rate ≈ 2.6–3.6 / s`), so any
-interruption re-aims smoothly:
+## 1. The world: a record you turn
 
-| Mode | Look-at | Distance | Elevation | When |
+The metaphor is the sleeve's own: the thing inside it is a **record**. It lies in perspective on the card, with a spiral
+groove from the rim to the label, and the nineteen projects stand on that groove as plates, like sleeves propped
+along a track.
+
+- **The disc** is one shader (`world.js`, `discMat`): fine radial grooves, two registration rings, a bright rim, and an
+  anisotropic *sheen* in two opposite lobes that follows your cursor like a light you hold. Far areas fade into the
+  card colour, so the record never has an edge you can see past.
+- **The groove** is a hairline spiral. Side A (live) is solid, Side B (roadmap) is dashed, with a small accent
+  run-out gap between them. The label at the centre is a drawn sigil with the catalogue number `IND-LP-019`.
+- **The plates** are 5 × 6.25 world units, standing 1.1 above the groove on a post, with a drop shadow on the
+  disc, a paper-cut back layer behind them, and a ring where they touch the groove. Their face is a `CanvasTexture`
+  (§3). Side B plates have dashed frames.
+- **The tonearm** is a hairline Bézier from a fixed pivot to the groove under the last track you touched.
+- **Chalk dust** is 360 drifting points, parallaxed against the cursor.
+
+Stations are placed by *arc length* along the spiral (`SP`: radius `35 − 3.4 φ`, 8.5 units apart, a 7-unit run-out gap
+between tracks 09 and 10). The record is a `THREE.Group` that rotates about Y; **the camera only moves along the X axis**,
+so turning the record under the needle is mathematically the same as walking the groove, and dragging the record
+in MAP mode is the same code path.
+
+### 1.1 Two modes, one state
+
+| | WALK | MAP |
+| --- | --- | --- |
+| Camera | Low, 3/4 view, facing the current plate head-on; the record rotates so that plate faces you | High (50°), the whole record in view, cover text on the left |
+| Plates | Current one lifts and is full brightness; neighbours dim to 36% so type never fights them | All plates tilt toward you and scale up 1.55×; hover lifts one and names it |
+| Text | The liner card (right column on desktop, bottom sheet on a phone) | The cover: headline, two side buttons |
+| Travel state | `tT` — a float track index with a spring | `spin` — a free angle with inertia |
+
+Where the focus lands on screen is a **layout**, not a magic number: `layout()` picks a screen point for the thing we look at
+(left-third of a desktop with the card on the right; centred above the bottom sheet on a phone), the camera distance is
+solved so the plate is the right pixel height, and `camera.setViewOffset` slides the image there without changing the pose.
+That is why the plate is never under the card (the verify script measures it).
+
+## 2. Interaction, from the first moment
+
+There is no "click to start". The page opens in MAP with the record already alive: it drifts, the sheen follows
+the cursor, plates tilt toward the pointer, and every plate is already animating.
+
+| Input | MAP | WALK |
+| --- | --- | --- |
+| Mouse wheel | one notch down dives to the last track | **one notch = one track**, with a lean toward the next while you scroll; wheel-up at track 01 rises to MAP |
+| Drag / swipe | spins the record (DJ-style, with inertia) | drag either axis to travel; a flick moves exactly one track, never two |
+| Hover | the sleeve lifts and a tooltip names it | the plate leans toward the cursor and its preview reacts |
+| Click / tap | drops the needle on that sleeve | on the current plate: **pokes** the preview (one more thing it can do); on another plate: flies to it |
+| Keys | `→ ↓ PgDn D` dive; `M` toggles | `→ ↓ ← ↑ A D`, `Home`, `End`, `Enter` opens, `Esc` rises to MAP, `I` the tracklist |
+| Buttons | `SIDE A` / `SIDE B` on the cover, `INDEX` | `LIVE / ROADMAP` switch, ‹ › on the card, `TRY NEXT`, the 19-tick rail, `OPEN` |
+
+Pointer events are used for mouse, pen and touch alike. The canvas is `touch-action: none`; the index sheet is the only
+thing that scrolls. Reduced motion stiffens every spring and stops the idle drift and the intro spin.
+
+## 3. Theme previews, not emulators
+
+`previews.js` is nineteen small functions, one per project. Each draws into a 600 × 750 canvas that the world maps
+onto the standing plate. Common frame: grain, a hairline border (solid for LIVE, dashed for ROADMAP), a numbered
+header, and a footer with a one-word mood and a LIVE or IN THE WORKSHOP badge. Inside, **chalk ink plus the project's
+single colour**, and a headline caption in plain English. Every preview:
+
+1. moves on its own, 2. reacts to the pointer, 3. has one `poke` (a click), 4. is deterministic when its random
+source is fixed (the verify script seeds it).
+
+| # | Plate | What you feel in a few seconds | Pointer | Click |
 | --- | --- | --- | --- | --- |
-| Map | world centre | fills 100 × 80 units | 1.12 rad | first 2.9 s (an establishing shot), and `O` |
-| Follow | the wanderer, with a little lead | ≥ 30 | 0.78 rad | default |
-| Focus | `landmark + (3.1, 2.1, 0)` (`FOCUS_DX`), midway between totem and board | ≈ 17–19, widened for narrow canvases | 0.34 rad, azimuth −0.09 | any focused track |
+| 01 | Fogwalk | A glowing fog of "you might be here" dots collapsing to one place in a maze | point where to walk; all selves step together | new maze |
+| 02 | Bloomwright | A rule (`F → …`) repeated into a plant | move sideways to bend the rule | grow another round |
+| 03 | Tonguecracker | Three sentences in a new language; build the fourth | hover a sentence or a word chip | a new language |
+| 04 | Sealed Orders | Three secret moves sealed inside a link | hover an order | change an order (the link changes) |
+| 05 | Hushword | A word grid with clues blacked out | hover a black bar to peek | a new puzzle link |
+| 06 | Scribble Club | Friends drawing a house while guesses roll in | your pencil follows your cursor | restart the round |
+| 07 | Azulejo | A wall of tiles falling into place | hover a ghost tile to lay it | clear the wall |
+| 08 | Long Haul | A hauler slowing under its own pile of stones | point at stones to eat them | dump the pile as a wall |
+| 09 | Sudoku & Tic-Tac-Toe | A grid inside a grid: your square picks their board | the square you point at lights the next board | play there |
+| 10 | Sporefront | A real, living wrap-around board of cells | sprinkle spores | reseed |
+| 11 | Terrarium Hash | A glass case whose recipe is its web address | mist it | change the recipe |
+| 12 | Driftwatch | A river of particles carrying a bathysphere to a beacon | the valve follows your cursor | — |
+| 13 | Loomweight | Two rhythms (3 and 4 beats) weaving cloth | sweep away tangles | — |
+| 14 | Deadlock | Four trains in a ring, each waiting on the next | hover a section | let that train go |
+| 15 | Byzantine Choir | Seven towers, one liar, and a vote that still holds | hover a link to cut it | cut it / pick a new liar |
+| 16 | Garbage Collector | A heap being marked, then swept | point at a node to keep it alive | rebuild the heap |
+| 17 | Cartel of Cartographers | Three realms growing around a river no one may build on | hover shows legal tiles | claim a tile |
+| 18 | Shadow Bidding | A 5 × 5 chess board with two sealed bids | hover a seal to try to tamper | reveal now |
+| 19 | Lexicon Quarantine | A chain of letters being surrounded by stones | hover a free space | place a stone |
 
-### 3.3 The landmarks
+Two of these (Sporefront, Terrarium Hash) run a real Life-like rule because that *is* their mood; the rest are
+choreographed. None of them is the game, and none carries debug controls. The game is one click away on the card.
 
-Each landmark is a **three-layer 2.5D paper-cut diorama**: three sheets of 1px monoline in
-a 3.2 × 4.4 frame at local depths `z = -0.35`, `0` and `+0.35`. They are lines rather than a
-texture, so they stay crisp at any zoom, and because the layers are really separated in depth the
-perspective camera gives true parallax as the wanderer walks; a small extra offset
-(`(camera.x − landmark.x) × 0.012`, opposite on the back and front sheets) exaggerates it.
+## 4. Human-first content
 
-| Sheet | Depth | Content |
-| --- | --- | --- |
-| Back | `z = -0.35` | A family-shaped paper panel (arch for Commit-Reveal, chamfered for P2P, stepped for Automata, notched for Lockstep, gridded for Cellular), a seeded ridge cut-out and a hatched ground band. |
-| Middle | `z = 0` | The original monoline glyph, one per game (the table below). |
-| Front | `z = +0.35` | A flagpole with a **pennant badge** whose cloth is lettered `01`…`19` (it flutters on `uTime`), and the **mechanism**. |
+`content.js` is the whole copy deck. Rules it follows, and that `verify.cjs` enforces:
 
-The mechanism is a moving sub-element, one per game (two for Deadlock and Byzantine Choir),
-advanced from the shared `uTime`:
+- **One hook per track**, one short sentence (18–72 characters): *"Eat the stones. Then dump them behind you."*
+- **One "you do" paragraph**, 60–150 characters, starting with a verb or a plain noun: *"Run a railway of shared track and
+  break the standoff before every train is stuck waiting for another."*
+- **Players** and **sitting** (the running time on the leader) replace every spec line.
+- **No engineering vocabulary** anywhere in the DOM: no state hashes, tick rates, algorithms, citations or transports.
+- **LIVE cards say PLAY, ROADMAP cards say PEEK AT**, so the distinction is in the button too.
+- **TRY NEXT** replaces the old lineage graph with one human suggestion per track.
 
-| Game | Mechanism | Game | Mechanism |
-| --- | --- | --- | --- |
-| Fogwalk | a radar arm sweeping the belief ring | Sporefront | a rotating eight-spoke seed-drum wheel |
-| Bloomwright | a sprig swaying at the crown | Terrarium Hash | mist drops falling into the case |
-| Tonguecracker | speech arcs pulsing | Driftwatch | a bathysphere cage rising and sinking on its tether |
-| Sealed Orders | a pendant seal swinging | Loomweight | a shuttle reciprocating across the warp |
-| Hushword | a cursor bar sliding along the row | Deadlock | two signal-bridge arms moving in anti-phase (interlocked) |
-| Scribble Club | a pencil tracing the squiggle | Byzantine Choir | semaphore arms plus a swinging pendulum |
-| Azulejo | a diamond turning inside the tile | Garbage Collector | a sweep line scanning down the heap |
-| Long Haul | a hauler sliding along the track | Cartel | a compass needle turning in the realm |
-| Sudoku / Ult. TTT | an X turning in the cell | Shadow Bidding | a bid paddle swinging |
-| | | Lexicon Quarantine | a pen sliding along the word chain |
+Information architecture, over a full-screen world: *cover* (what is this, two doors) → *card* (the one track in
+front of you) → *index* (the whole tracklist as liner notes, with the one-line hook under every title). Side A = **LIVE · 09**,
+Side B = **ROADMAP · 10** everywhere: the switch, the rail, the groove, the plate frames, the index headings.
 
-Session state drives them too: when a port's `rev` counter changes (any action, and every tick
-for the 60 Hz ports) the landmark's `kick` goes to 1, which multiplies the mechanism's speed
-(×3.2) and amplitude (×1.6) and decays over about 0.8 s; a hovered or pinned landmark also runs
-faster.
+## 5. The phone (390 × 844)
 
-On the ground each landmark has a dial ring (36 ticks) and an **etched plinth**: a double
-rectangle in front of the base with the track number `01`…`19` lettered flat on it. All of its
-lines (and the two number labels) turn accent when the landmark is current.
+The same world, native instrument rules:
 
-Landmarks pop up from the ground at load, staggered, by hinging the whole three-layer stack from
-flat to upright (a rotation about the base, with a little spring overshoot) and they fold flat
-again on dive.
+- The canvas is still `100vw × 100vh`. The plate is solved to sit in the band **above** a bottom sheet (`layout()` reads the
+  sheet's height), at most 86% of the width, centred.
+- The **bottom sheet** (a fixed flex column on a charcoal gradient) holds the LIVE / ROADMAP switch, the card text, and
+  `‹ OPEN ›`. Every control is 44px or taller. `TRY NEXT` and long copy are trimmed.
+- **Swipe** left or up = next, right or down = back (the dominant axis locks after 8px), one flick = one track.
+  **Tap the plate** to poke it. Tap `MAP` for the whole record; the sheet hides (and becomes un-hittable) and a swipe spins the record.
+- `INDEX` is an 86%-height bottom sheet with 19 rows of 56px+, the only thing that scrolls.
+- The cover moves its two doors and hint to the bottom of the screen where a thumb is.
 
-| 01 Fogwalk | 3×3 maze, belief dots, a ring on the mark, fog waves | 10 Sporefront | torus plate with a Life glider, eight edge drums |
-| --- | --- | --- | --- |
-| 02 Bloomwright | an L-system tree, depth 6, fitted to the frame | 11 Terrarium Hash | Wardian case with a fern |
-| 03 Tonguecracker | speech bubble, text bars, angle brackets | 12 Driftwatch | bathysphere on a cable over streamlines |
-| 04 Sealed Orders | wax seal with ribbon tails | 13 Loomweight | loom frame, warp lines, weights |
-| 05 Hushword | 3×3 tiles, one hatched | 14 Deadlock | four-node wait-for cycle with arrowheads |
-| 06 Scribble Club | pencil over a squiggle | 15 Byzantine Choir | semaphore tower |
-| 07 Azulejo | azulejo tile: diamond, quarter arcs | 16 Garbage Collector | tricolour: open, hatched, solid |
-| 08 Long Haul | the hauler's wedge, stones as ballast | 17 Cartel | hex realm with a compass rose |
-| 09 Sudoku / Ult. TTT | a tic-tac-toe grid with a mark in it | 18 Shadow Bidding | a pawn and its dashed shadow |
-| | | 19 Lexicon Quarantine | letter chain beside a Go stone |
+## 6. Why one approach with two modes
 
-### 3.4 The pop-up board
+The brief invited switchable interpretations. I built two *modes* of a single world (WALK and MAP) rather than two
+page layouts, because contrasting layouts was Revision 3's job and it made the page busier, not clearer. WALK is the
+tour; MAP is the overview. They are the same state, so the switch is a camera move rather than a context switch, and
+both are present from the first frame.
 
-There is one board mesh, 6.6 × 4.95 units (the ports' native 512 × 384), hinged along its
-bottom edge and placed 5.5 units to the right of whichever landmark is current. Opening it
-rotates it from lying flat on the ground to standing (a spring with overshoot); a faint flat
-rectangle marks where it folds. Changing track folds the old board flat, swaps, and hinges the
-new one up, about a quarter of a second each way.
+## 7. Contracts and limits
 
-The board is not drawn by the sleeve's charcoal/chalk code. It is painted by **`true-frames.js`**,
-a standalone renderer that gives every one of the nineteen projects its own real register at
-1024 × 768: palette, typography, header chrome, instrument gauges and a high-detail game surface.
-Side A keeps the live illustrations (Fogwalk's aurora, Bloomwright's broadsheet, Tonguecracker's
-two-accent line art, Sealed Orders' cyan block, Hushword's neon tiles, Azulejo's glazed ceramics,
-Scribble Club's sketchbook, the Sudoku/UTTT drafting grid, Long Haul's quarry comic). Side B keeps
-the roadmap registers (backlit agar, Wardian case, green-bar plotter, washi sample, enamel
-interlocking panel, copperplate semaphore, CRT analyser, stock certificate, Venetian ledger,
-samizdat zine).
+- **Hand-off.** `OPEN` goes to the project's own page: shipped apps at `../../apps/<name>/#from=root&v=1`; roadmap
+  ideas at `../<group>/index.html#<slug>&from=root&v=1`. There are no live game sessions here any more, so no state is
+  carried. Long Haul is not on `main` yet: its button says `ARRIVING SOON` and only shows a message.
+  `window.__independents_nav` can replace the default `location.assign` (the verify script uses it).
+- **No WebGL**: the page falls back to the tracklist as a plain, scrolling list of real links.
+- **Cost**: the focused plate redraws 30×/s, nearby plates 8×/s, the rest every 2 s; in MAP all plates redraw at 6 Hz, three per frame at most.
+- **Test hooks**: `window.__independents` has `state()`, `go()`, `toMap()`, `probe(slug)`, `projectPlate(i)`, `setAuto()`, `stepSim()`.
 
-Nothing is re-inked. The only edit to the engine block is that `pcap` (painter caption text) uses
-IBM Plex Mono at 0.8× the size instead of Barlow Condensed; that is a build-time substitution
-(§6), not a fork of the painters. `true-frames.js` is loaded before the module and exposes
-`window.TRUE_FRAMES = { THEMES, renderTrueFrame, getFrameChrome }`: the same painter feeds the 3D
-stage texture and the high-resolution app-window surface.
+## 8. Certification: `verify.cjs`
 
-Picking is a ray against the board mesh: hit UV → `PICK[adapter](u, v, phase, view)` or the
-port's own `pick(u, v)` → `session.do(id, arg)`, exactly as in Fish Night, including `down` /
-`move` / `up` phases for Scribble Club's drag. The board repaints at 24 Hz while open, and
-immediately after any action.
+`node prototypes/root-explorer-minimal/verify.cjs` (optionally `SHOTS=/dir` for screenshots) in headless Chromium with
+software WebGL. 73 certificates, in nine groups:
 
-### 3.5 The true-project window
+1. The page is the world: one fixed canvas, exactly viewport-sized, no frame, no scroll, `#151516`, a live render loop.
+2. Nineteen tracks: real rows 01–19, nine LIVE then ten ROADMAP, hairline leaders, every `href` resolves, every hook is a short
+   sentence, every card says what you do, no card is wordy, **no engineering vocabulary**, PLAY vs PEEK AT.
+3. Nineteen previews: each draws, **animates on its own, reacts to the pointer** (same random seed, different pixels) and survives a click.
+4. Desktop interaction: hover names a sleeve, dragging spins the record, a click drops the needle, the plate sits beside the card,
+   one wheel notch = one track, arrows, Home/End, drag either axis, the rail, the LIVE/ROADMAP switch, previous/next, TRY NEXT,
+   poking the current plate, wheel-up to MAP, `M`, `Esc`, the cover's doors.
+5. Hand-off URLs, and the pending app only toasts.
+6. The index opens, groups the sides, flies to a row, closes with `Esc`.
+7. Phone: no scroll in either axis, canvas 390 × 844, the switch moves into the sheet, 44px targets, the plate framed above the sheet,
+   swipe left/up/right, tap pokes, ROADMAP / next / MAP / index sheet.
+8. No WebGL (`?nogl` forces it): the page degrades to a plain, scrolling list of 19 real links.
+9. Zero console errors, zero page errors, zero failed requests.
 
-`#trueWindow` is the selected work's own app window, not a picture of it. Its header comes from
-`TRUE_FRAMES.getFrameChrome(track)`: the `LIVE` / `ROADMAP` pill, the project's palette accent,
-its display and mono faces, live `REV` / `HASH` telemetry, up to four action buttons and an
-`OPEN PROJECT ↗` link (or `NOT ON MAIN YET` for Long Haul). Below it a 1024 × 768 canvas is fed by
-`TRUE_FRAMES.renderTrueFrame()` from the same `session.view()` at up to 12 Hz. Six HTML controls
-are generated from the port's own `session.actions`, so `#twControls` and the canvas read the same
-state as the board. Pointer phases over the canvas go through the same
-`PICK[adapter](u, v, phase, view)` map as the 3D board, and the CTA is the track's normal entry
-URL. With nothing focused the window previews track 01; hovering or pinning a row, clicking a
-landmark or walking near one swaps it immediately. The floating `.appchrome` overlay of Revision
-2 is gone: the window is docked in the editorial grid in every layout, so the world stays clear
-and the browser frame is read at a size where its detail actually lands.
-
-**Stage furniture.** The pop-up is a small drafting sheet, not just a picture:
-
-- *Callouts.* Eight graduated ticks along the top edge and six along the left edge, a top
-  dimension line with arrowheads, a right-hand vertical dimension line, and a ground scale bar
-  (`0 · 1.5 · 3 U`) beside the footprint. They hinge with the sheet.
-- *Live HUD.* A strip above the sheet, repainted four times a second: `FPS 60 · 16.7 MS` (an
-  exponential average of the frame time), the sheet's `W 6.60 × H 4.95 U`, and `TICK 60 HZ · REV n`
-  (or `TURN-BASED · REV n` for the turn-based ports, with the port's live revision counter).
-- *Keycaps.* One ground-lying keycap per port action (`session.actions` with `ui !== false`, up
-  to 18, six per row, centred in front of the sheet), labelled with the action and its keyboard
-  alias (`[ W ]`, `[ click ]`). A click on a keycap calls `act(art, id)`, so a mouse-only user can
-  trigger every action a keyboard user can (arm, rotate, step, seal, reveal, tamper, pause, sweep,
-  …) directly on the stage. A pressed keycap flashes accent and dips.
-
-## 4. One focus, two ways in
-
-```
-effective focus = pin  >  hover  >  near
-```
-
-| Source | Set by | Camera | Board | Keys |
-| --- | --- | --- | --- | --- |
-| **near** | the wanderer is within 5.6 units of a landmark (released beyond 8.5; ignored in Map) | frames it | rises (preview) | still walk |
-| **hover** | pointer on a row, or Tab focus on it | frames it | rises (preview) | still walk |
-| **pin** | click a row, click a landmark, click the board, `#a=slug` in the URL | frames it; the wanderer walks to its standing spot (`+0.4, +2.8`) | rises | the game's own keys win |
-
-Releasing everything returns the camera to Follow and folds the board. A pin ends with `Esc`,
-`Esc BACK`, a ground click, or walking more than 11 units away.
-
-Landmark hover only lights the matching row (`.hot`) and does not open the board, so sweeping the
-pointer over the world does not make it flap.
-
-### Input routing
-
-| Input | Effect |
-| --- | --- |
-| `WASD`, arrows | walk. When a track is **pinned**, a key that is one of that port's own actions (e.g. fog's arrows, hush's `G`/`C`/`X`) goes to the game instead |
-| click ground | walk there (and release any pin) |
-| click landmark / row | pin it |
-| click board | pin it and play (drag works) |
-| `Space` | toggle the threads (always; ports that use space are played by mouse) |
-| `O` | toggle the Map (unless a pinned port owns the key) |
-| `Esc` | release the pin, else leave the Map |
-| `Enter`, **PLAY TRACK / DIVE IN** | fold and navigate (§5); `Enter` on a focused row that is not yet pinned pins it first, so a second `Enter` dives |
-
-## 5. The handoff
-
-Dive folds the board and the landmark flat into the card (about 0.8 s), then navigates. The URL
-follows the same contract as the Fish Night page: route first, then the fragment parameters.
-
-| Track | Navigates to |
-| --- | --- |
-| Prototype with a page, e.g. Sporefront | `../life-ecologies/index.html#sporefront&from=root&v=1&h=<hash>` plus `&s=<fragment>` for the ports whose page restores state (`restores: true`: Sporefront, Terrarium) |
-| Shipped app, e.g. Fogwalk | `../../apps/fogwalk/#from=root&v=1&s=<fragment>&h=<hash>` |
-| Long Haul | nothing: it is not on `main` yet. It folds, says so, and unfolds; its row is dimmed |
-
-`<hash>` is `session.hash()` and `<fragment>` is `session.fragment()`, both from the same
-deterministic port the board has been playing, so the receiving page can check it was handed the
-state the visitor saw. `window.__independents_nav(url)` replaces `location.assign` when present
-(that is how the harness captures the URL), and `pageshow` un-folds the page when the visitor
-comes back from the bfcache.
-
-## 6. Where the code comes from
-
-`index.html` is one self-contained file with no build step. Its script is, in order:
-
-1. **Engine, copied verbatim** from `../root-explorer/index.html` lines 174–2591: utilities, the
-   registry (`REG`, `FAM`), lineage (`EDGES`), SHA-256, the 19 deterministic ports, their
-   self-test tapes and the 19 `DRAW` painters and `PICK` functions, and `PORT_REPORT`. It contains
-   no `THREE`, no DOM and no clock. One substitution is applied to the copy: the font in `pcap`.
-   Plus lines 3334–3335, the per-game `HINTS`.
-2. **New code (§4–§8 of the script)**: the sleeve and grain, the true-frame surface and its
-   HTML/CSS window chrome (`true-frames.js`), the focus machine, the three.js world, the sigil,
-   input and the loop.
-
-To re-sync after the engine changes upstream, re-copy those two ranges and re-apply the font
-substitution; `verify.cjs` will say whether any port or painter regressed. A shared module would
-be cleaner and is what the shipped site does (each port is built by its own app); a prototype that
-works from `file://`-adjacent static serving cannot import across folders without a server
-convention, so the copy stays until the ports move out of the page.
-
-## 7. Verification
-
-`node prototypes/root-explorer-minimal/verify.cjs` (set `SHOTS=dir` to also write screenshots).
-It serves the repo root, opens the page in headless Chromium with software WebGL
-(`--use-angle=swiftshader`) and drives it with real keyboard and mouse events. Last run:
-**143 passed, 0 failed**, covering:
-
-- all 19 ports pass their self-test tape (run twice, same hash), 19 distinct hashes, all 19
-  painters draw;
-- **full bleed**: `html`, `body` and `.sleeve` are all `rgb(21, 21, 22)`, the sleeve starts at
-  (0, 0), is as wide as the viewport and at least as tall, has `0` margins and no box-shadow, and
-  the page does not overflow; there are no `.petal` nodes, no petal `<symbol>`s, no `--plaster`
-  variable and no plaster-tooth layer; the procedural grain and a fixed viewport vignette cover
-  the screen;
-- 19 rows numbered `01`..`19`, the exact `FOGWALK … 05:00 · AUTOMATA` and
-  `BLOOMWRIGHT … 04:12 · L-SYSTEM` rows, 9 on Side A and 10 on Side B, 1px leaders, every href
-  resolving to a file or folder in this repo (Long Haul excepted); every row has a two-word
-  sub-caption, a second 1px leader, a par / metric (Fogwalk `PAR 5`) and a mechanism tag;
-- the **ensemble block** sits directly under the header (two columns, six credits, five
-  mechanisms and their lineages, 1px leaders, `with special guest … 2.5D PERSPECTIVE STAGE`); the
-  six **liner-note blocks** are present idle and while a track is pinned; the `IND-LP-019`
-  colophon is bottom left and the four-group sigil (19 ticks, ≥ 14 circles, ≥ 85 lines, ≥ 6
-  polygons) is bottom right;
-- the **dense world**: ≥ 300 fiducials, elevation ticks, spot heights and margin labels, exactly
-  the five territory labels, the compass rose, ≥ 8 posts, ≥ 8 cairns, ≥ 4 flags, ≥ 100 reed
-  clusters and ≥ 200 motes; all 19 landmarks have layers at z `-0.35, 0, 0.35`, a mechanism, a
-  numbered plinth and a pennant `01`..`19`; **every mechanism moves** over 37 frames; an action
-  on a port kicks its landmark's mechanism and it settles; the lantern rings are accent and
-  scaled; the compass dial, camera marker and ring opacity change when the camera moves to a
-  focused track; hovering a distant row draws a bearing line whose `BRG` and range match a
-  direct computation, and it disappears with the focus;
-- `D`, `ArrowDown`, `A`, `ArrowUp` each walk the wanderer the right way and it stops when the keys
-  release; clicking the ground walks it to the clicked point;
-- for **each of the 19 tracks**: a row click pins it, the camera lands within 0.9 units of the
-  framing point at distance < 22, the board is open, the liner notes show an 8-hex state hash, the
-  true-project frame has lit colour pixels, a real mouse click found by scanning the board moves the
-  live session's hash, the stage shows exactly one keycap per UI action, **a real mouse click on
-  every keycap fires its action** (the port's `do` is spied, so no-op actions count), and the HUD
-  reads `FPS n · x MS` and `TICK 60 HZ` / `TURN-BASED · REV n`;
-- row hover previews and releases; a hovered landmark lights its row; clicking a landmark in the
-  Map pins it and the wanderer arrives at its standing spot; standing near a landmark focuses it
-  without pinning and walking away releases it;
-- `Space` shows and hides all 28 edges, `Esc` releases, `Enter` and the DIVE IN button navigate to
-  the Sporefront and Fogwalk URLs above, Long Haul does not navigate, the sigil toggles the
-  threads, and the page does not overflow at 390 px;
-- **the taxonomy and the compositions**: the three pills read `LIVE · 09 / ROADMAP · 10 / ALL ·
-  19`; LIVE and ROADMAP clip only their wrapper while all nineteen 1px leaders keep their computed
-  height; pinning a ROADMAP work from a LIVE filter moves the filter to ROADMAP. Clicking each of
-  the three layout buttons produces `document.body.dataset.layout` and the expected column
-  geometry (left/right in `sleeve`, left < centre < right in `gatefold`, a > 80% full-width
-  panorama in `horizon`), with no horizontal overflow in any of them;
-- **the true window**: `#trueWindow` has the real `.tf-chrome`, a lit 1024 × 768 canvas in more
-  than three colour buckets, the Fogwalk route on its CTA and its live rule summary; every one of
-  its controls is wired (the port's `do` is spied) and clicking a track swaps the whole window;
-- **the phone at 390 × 844**: the wordmark, the compact filter and `MAP / APP / TRACKS` pills are
-  visible while the desktop layout bar is not; the stage is 38vh (321px), the true card is full
-  width with ≥ 44px CTA and control rows, all 19 rows stay in the DOM with 1px leaders, nothing
-  scrolls sideways, the compact pill filters the sheet and the view pills move to their section;
-- zero `console.error`, zero page errors, no failed local requests.
-
-Software WebGL runs this page at only a few frames per second on a busy machine, so the harness
-steps the simulation itself (`__independents.stepSim`) rather than waiting on wall-clock frames;
-the real keyboard and mouse events are still delivered by the browser.
-
-## 8. Known limits
-
-- The Map and Follow views show the whole world only at small scale; the names are hidden in the
-  Map until a landmark is hovered, to keep it legible. The ground lettering (territories, spot
-  heights, posts) is deliberately faint: it is texture first and information second.
-- The mechanisms are decorative readouts of *activity*, not of game state: they speed up when the
-  port's revision counter changes, but they do not draw the game (the board does that).
-- Ports with more than 18 UI actions would show only the first 18 keycaps; today the largest has
-  11 (Terrarium Hash).
-- The wanderer cannot yet walk "into" a board; it stands in front of the landmark. The board is
-  a surface to read and click, not a place.
-- `Space` is reserved for the threads, so the few ports that use it as an action are played with
-  the mouse.
-- Times and one-word mechanisms are authored. The citation counts and hashes are computed.
-- Long Haul (`status: incoming`) is a real port with no app on `main`: it plays on the board and
-  cannot be entered.
-- Under `prefers-reduced-motion` the intro, sigil spin and spring overshoot are off
-  and the camera cuts instead of gliding.
-- Without WebGL the world is replaced by a note and the tracklist, liner notes and DIVE IN button
-  keep working: the page is a list of links first.
+Limits worth knowing: the headless run uses a CPU renderer, so the verify script pauses the real-time loop and advances the
+simulation explicitly; on a real GPU the loop runs at display rate. The tonearm and plate lean are art, not physics.
