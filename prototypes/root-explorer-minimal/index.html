@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#151516">
 <link rel="icon" href="data:,">
 <title>Independents — nineteen small games, one record</title>
-<meta name="description" content="Independents is a record you can turn. Nineteen small browser games sit on it as standing plates: nine you can play today (Side A), ten still in the workshop (Side B). Scroll, drag or swipe to travel; point at a plate to play with it.">
+<meta name="description" content="Independents is a spiral that never stops climbing. Nineteen small browser games hang along it as plates: nine you can play today (Side A), ten still in the workshop (Side B). Watch it rise, scroll or drag to speed it up, and point at a plate to play with it.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
@@ -35,8 +35,9 @@ body.hot #world { cursor: pointer; }
 /* a soft shade behind the liner card so type never fights a neighbouring plate */
 .shade { position: fixed; z-index: 5; top: 0; bottom: 0; right: 0; width: min(62vw, 760px); pointer-events: none; background: linear-gradient(to left, rgba(21,21,22,.97) 0%, rgba(21,21,22,.94) 52%, rgba(21,21,22,0) 100%); opacity: 0; transition: opacity .6s; }
 body[data-mode="walk"] .shade { opacity: 1; }
+.veil { display: none; }
 .grain { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: .55; background-image: var(--grain); background-size: 240px 240px; }
-.vig { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(120% 90% at 50% 38%, transparent 55%, rgba(0,0,0,.35) 100%); }
+.vig { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: linear-gradient(to bottom, rgba(21,21,22,.9) 0, rgba(21,21,22,.55) 56px, rgba(21,21,22,0) 118px), linear-gradient(to top, rgba(21,21,22,.88) 0, rgba(21,21,22,.5) 54px, rgba(21,21,22,0) 112px), radial-gradient(120% 90% at 50% 38%, transparent 55%, rgba(0,0,0,.35) 100%); }
 #ui { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
 #ui > * { pointer-events: none; }
 #ui button, #ui a, #ui .hit { pointer-events: auto; }
@@ -163,6 +164,8 @@ body.nogl #closeIdx { display: none; }
   :root { --pad: 18px; }
   #top { padding: calc(10px + env(safe-area-inset-top, 0px)) var(--pad) 0; }
   .shade { display: none; }
+  .veil { display: block; position: fixed; inset: 0; z-index: 6; pointer-events: none; transition: opacity .5s; background: linear-gradient(to bottom, rgba(21,21,22,.94) 0, rgba(21,21,22,.86) 150px, rgba(21,21,22,0) 300px), linear-gradient(to top, rgba(21,21,22,.95) 0, rgba(21,21,22,.88) 130px, rgba(21,21,22,0) 270px); }
+  body:not([data-mode="map"]) .veil { opacity: 0; }
   .mark b { letter-spacing: .4em; font-size: 11px; } .mark span { display: none; }
   .tools { gap: 6px; } .tb { padding: 10px 10px; } .tb kbd { display: none; }
   #sides { display: none; }
@@ -200,9 +203,10 @@ body.nogl #closeIdx { display: none; }
 </style>
 </head>
 <body data-mode="map">
-<canvas id="world" role="img" aria-label="A vinyl record seen in perspective with nineteen standing plates, one for each project. Drag to turn it, scroll to travel, click a plate to open it." tabindex="0"></canvas>
+<canvas id="world" role="img" aria-label="A spiral of nineteen plates, one for each project, winding upward through the screen on its own. Drag or scroll to scrub it, point at a plate to slow it, click a plate to step in front of it." tabindex="0"></canvas>
 <div class="vig"></div>
 <div class="shade"></div>
+<div class="veil"></div>
 <div class="grain"></div>
 
 <div id="ui">
@@ -213,7 +217,7 @@ body.nogl #closeIdx { display: none; }
         <button type="button" data-side="A" aria-pressed="false">LIVE <em>09</em></button>
         <button type="button" data-side="B" aria-pressed="false">ROADMAP <em>10</em></button>
       </div>
-      <button type="button" class="tb" id="mapBtn" aria-label="See the whole record">MAP <kbd>M</kbd></button>
+      <button type="button" class="tb" id="mapBtn" aria-label="See the whole spiral">MAP <kbd>M</kbd></button>
       <button type="button" class="tb" id="indexBtn" aria-label="Open the list of all nineteen" aria-expanded="false">INDEX <kbd>I</kbd></button>
     </div>
   </header>
@@ -226,7 +230,7 @@ body.nogl #closeIdx { display: none; }
       <button type="button" class="sidebtn" data-go="0"><b>SIDE A</b><i class="lead"></i><span>09 · PLAY NOW →</span></button>
       <button type="button" class="sidebtn" data-go="9"><b>SIDE B</b><i class="lead"></i><span>10 · THE WORKSHOP →</span></button>
     </div>
-    <p class="hint"><i></i><span id="coverHint">Turn the record, then pick a plate. Or just scroll.</span></p>
+    <p class="hint"><i></i><span id="coverHint">Watch it climb, then pick a plate. Or just scroll.</span></p>
   </section>
 
   <div id="dock">
@@ -234,7 +238,7 @@ body.nogl #closeIdx { display: none; }
   </div>
 
   <div id="foot">
-    <div id="hintline">SCROLL · DRAG · ← →<br>CLICK THE PLATE TO PLAY WITH IT</div>
+    <div id="hintline">SCROLL · DRAG UP / DOWN · ← →<br>CLICK A PLATE TO PLAY WITH IT</div>
     <nav id="rail" aria-label="Tracks"></nav>
     <div id="catalog">IND-LP-019<br>SIDE A · LIVE · 09 &nbsp; SIDE B · ROADMAP · 10</div>
   </div>

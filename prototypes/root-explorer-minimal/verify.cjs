@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* =====================================================================
-   Headless-Chromium certification for prototypes/root-explorer-minimal  (Revision 4: the whole page is the world)
+   Headless-Chromium certification for prototypes/root-explorer-minimal  (Revision 5: the whole page is a rising 3D spiral)
 
    Serves the repo root on a throwaway port, opens the page with software WebGL and proves, with real
    keyboard, mouse-wheel, mouse and touch events (touch goes through the DevTools protocol):
@@ -12,17 +12,19 @@
       vocabulary anywhere in the DOM, every hook is a short sentence, every card explains what you do;
    3. the nineteen theme previews: every plate draws, animates on its own, reacts to the pointer, and
       survives a click (run twice with the same random seed, so "reacts" is a real difference);
-   4. desktop interaction from the first moment: cover state with a living map; a mouse-wheel notch,
-      the arrow keys, a mouse drag and the rail all travel; Home / End / M; wheel-up at track 1 returns
-      to the map; dragging the map spins the record; hovering a sleeve names it; clicking a sleeve
-      drops the needle; clicking the current plate pokes it; the liner card, the LIVE / ROADMAP switch,
-      previous / next and TRY NEXT agree with the camera; the plate is framed beside the card, never under it;
+   4. desktop interaction from the first moment: cover state with a living map; the flat record disc is gone and a
+      hairline thread (solid LIVE, dashed ROADMAP) winds along a 3D helix; with no input the spiral rises from below the
+      bottom edge to above the top edge and wraps seamlessly (a full lap, no plate pops); front plates are bigger and
+      brighter than back plates; hovering a plate slows the flow and names it; the wheel and a drag scrub it; clicking a
+      plate glides into walk mode on that track; a mouse-wheel notch, the arrow keys, a mouse drag and the rail all travel;
+      Home / End / M; wheel-up at track 1 returns to the map; clicking the current plate pokes it; the liner card, the
+      LIVE / ROADMAP switch, previous / next and TRY NEXT agree with the camera; the plate is framed beside the card, never under it;
    5. OPEN hands off to the project (shipped apps at ../../apps/NAME/, ideas at ../GROUP/index.html#slug,
       both with from=root), the one pending app only toasts;
    6. the index (tracklist) opens, scrolls, and a row flies to its plate;
    7. the 390 x 844 phone: no sideways or vertical page scroll, a bottom sheet with the LIVE / ROADMAP
       switch, the plate framed above it, 44px touch targets, swipe travels, a tap pokes, the index is a
-      sheet; the same 19 tracks are reachable;
+      sheet; in the map a swipe lifts the rising spiral and it fills the screen; the same 19 tracks are reachable;
    8. zero console errors, zero page errors, zero failed requests.
 
    Run:   node prototypes/root-explorer-minimal/verify.cjs
@@ -107,19 +109,49 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   const cov = await I(() => { const g = id => getComputedStyle(document.querySelector(id)); return { cover: g("#cover").opacity, card: g("#card").visibility, h1: document.querySelector("#cover h1").textContent, ctaA: !!document.querySelector('#cover [data-go="0"]'), ctaB: !!document.querySelector('#cover [data-go="9"]') }; });
   ok(cov.cover === "1" && cov.card === "hidden" && /Nineteen small games/.test(cov.h1) && cov.ctaA && cov.ctaB, "first moment: a clear headline, the two side buttons, the record already alive behind it", cov);
   await shot("01-cover-map");
-  /* the map answers a hover with the sleeve's name */
-  await I(() => __independents.state()); await page.mouse.move(900, 600); await step(30);
-  let hovFound = -1, hovPt = null; for (const i of [12, 13, 14, 11, 10, 9, 15, 16, 8, 7]) { const p = await I(i2 => __independents.projectPlate(i2), i); await page.mouse.move(p.x, p.y); await step(8); const s = await st(); if (s.hov === i) { hovFound = i; hovPt = p; break; } }
-  const tipOn = await I(() => document.querySelector("#tip").classList.contains("on") && document.querySelector("#tip").textContent);
-  ok(hovFound >= 0 && !!tipOn, "hovering a sleeve in the map lifts it and names it", { hovFound, tipOn }); await shot("02-map-hover");
-  /* dragging the map spins the record */
-  const sp0 = (await st()).spin; await page.mouse.move(700, 700); await page.mouse.down(); for (let k = 1; k <= 8; k++) { await page.mouse.move(700 + k * 35, 700); await sleep(16); } await page.mouse.up(); await step(20); const sp1 = (await st()).spin; await step(300);
-  ok(Math.abs(sp1 - sp0) > .8, "dragging the record spins it like a DJ (and it keeps its inertia)", [sp0, sp1]);
-  /* click a sleeve: the needle drops there */
-  let pick = -1, pp = null; for (const i of [12, 13, 14, 11, 10, 9, 15, 16, 8, 7, 6, 5]) { const p = await I(i2 => __independents.projectPlate(i2), i); await page.mouse.move(p.x, p.y); await step(8); if ((await st()).hov === i) { pick = i; pp = p; break; } }
-  ok(pick >= 0, "after the spin settles, some sleeve is still under the cursor to pick", pick); if (pick < 0) { pick = 12; pp = await I(() => __independents.projectPlate(12)); }
-  await page.mouse.move(pp.x, pp.y); await step(10); const hv = (await st()).hov; await page.mouse.click(pp.x, pp.y); await step(240, true); const sw = await st();
-  ok(sw.mode === "walk" && sw.cur === hv && hv >= 0, "clicking a sleeve in the map drops the needle on it (walk mode, matching track)", { hv, sw: { mode: sw.mode, cur: sw.cur } });
+  /* ---- the spiral: no disc, a thread, a rising helix ---- */
+  const sc = await I(() => __independents.scene()), s1 = await st();
+  ok(sc.flatDiscs === 0 && sc.recMeshes === 0 && sc.threadLines === 3, "the flat record disc is gone: no circular mesh in the scene, only the thread (solid, dashed, gap ticks) and the plates", sc);
+  ok(s1.thread.a > 30 && s1.thread.b > 15, "a hairline thread is drawn along the helix: a solid run for LIVE and a dashed run for ROADMAP", s1.thread);
+  const info = async () => I(() => Array.from({ length: 19 }, (_, i) => __independents.projectPlate(i)));
+  const vis = a => a.map((p, i) => ({ ...p, i })).filter(p => p.env > .85 && p.x > -50 && p.x < 1500 && p.y > 40 && p.y < 880);
+  /* it flows upward by itself */
+  const i0 = await info(), f0 = (await st()).flow; await step(90); const i1 = await info(), f1 = (await st()).flow;
+  const movers = vis(i0).filter(p => i1[p.i].env > .85 && Math.abs(i1[p.i].s - p.s) < 3);
+  ok(f1 - f0 > .45 && movers.length >= 6 && movers.filter(p => i1[p.i].y < p.y - 1).length >= movers.length * .75, "with no input at all the spiral rises on its own: at least three in four of the plates on screen climb (the far side of the helix swings toward you)", { f0, f1, n: movers.length, stuck: movers.filter(p => !(i1[p.i].y < p.y - 1)).map(p => [p.i, Math.round(p.y), Math.round(i1[p.i].y), +p.front.toFixed(2)]) });
+  const spread = vis(i1); ok(spread.length >= 8 && Math.min(...spread.map(p => p.y)) < 280 && Math.max(...spread.map(p => p.y)) > 620, "the spiral fills the screen from bottom to top (8+ plates, from the top third to the bottom third)", { n: spread.length, ys: spread.map(p => Math.round(p.y)) });
+  /* seamless loop: over a full revolution every plate leaves through the top and re-enters from the bottom, unseen */
+  const lap = await I(() => { const out = { wraps: 0, pops: 0, belowMax: -1e9, aboveMin: 1e9, rising: 0 }; let prev = Array.from({ length: 19 }, (_, i) => __independents.projectPlate(i)); const loop = __independents.state().loop;
+    for (let f = 0; f < 3200; f++) { __independents.stepSim(1, 1 / 60, false); const cur = Array.from({ length: 19 }, (_, i) => __independents.projectPlate(i));
+      cur.forEach((p, i) => { const q = prev[i]; if (p.s < q.s - loop / 2) { out.wraps++; if (q.env > .06 || p.env > .06) out.pops++; } else if (p.s > q.s) out.rising++; out.belowMax = Math.max(out.belowMax, p.y); out.aboveMin = Math.min(out.aboveMin, p.y); }); prev = cur; } return out; });
+  ok(lap.wraps >= 19 && lap.pops === 0 && lap.rising > 40000, "a full lap is seamless: plates leave the top and re-enter from the bottom with no visible pop", lap);
+  ok(lap.belowMax > 900 && lap.aboveMin < 60, "plates enter from below the bottom edge and rise out through the top edge", lap);
+  /* volume: the front of the helix is large and bright, the back recedes */
+  const vv = vis(await info()).concat((await info()).map((p, i) => ({ ...p, i })).filter(p => p.env > .85 && p.front < -.3));
+  const fr = vv.filter(p => p.front > .6), bk = vv.filter(p => p.front < -.3); const wF = Math.max(...fr.map(p => p.w)), wB = Math.min(...bk.map(p => p.w));
+  const lit = await I(() => [...Array(19).keys()].map(i => __independents.projectPlate(i).lit));
+  ok(fr.length > 0 && bk.length > 0 && wF > wB * 1.3, "plates on the front arc are drawn larger than plates winding round the back (real 3D depth)", { wF, wB });
+  ok(Math.max(...fr.map(p => lit[p.i])) > Math.max(...bk.map(p => lit[p.i])) * 1.5, "front plates are brighter than back plates", { f: fr.map(p => +lit[p.i].toFixed(2)), b: bk.map(p => +lit[p.i].toFixed(2)) });
+  await step(60); await shot("01b-spiral");
+  /* hovering a plate slows the flow and lifts it */
+  await page.mouse.move(300, 780); await step(60); const base = await st();
+  const cand = vis(await info()).filter(p => p.front > .5 && p.x > 640 && p.x < 1300).sort((a, b) => b.front - a.front)[0] || vis(await info()).sort((a, b) => b.front - a.front)[0];
+  await page.mouse.move(cand.x, cand.y); await step(8); const hs0 = await st(); const tipOn = await I(() => document.querySelector("#tip").classList.contains("on") && document.querySelector("#tip").textContent); await step(30); const hs = await st();
+  ok(hs0.hov === cand.i && !!tipOn && hs.autoV < .2 && base.autoV > .38, "hovering a plate slows the spiral right down and names the plate", { hov: hs.hov, autoV: [base.autoV, hs.autoV], tipOn }); await shot("02-map-hover");
+  await page.mouse.move(300, 780); await step(120); ok((await st()).autoV > .4, "moving off the plate lets the flow pick up again", (await st()).autoV);
+  /* the wheel and a drag scrub it */
+  const w0 = (await st()).flow; await step(60); const w1 = (await st()).flow; const wBase = w1 - w0;
+  await page.mouse.wheel(0, 120); await page.mouse.wheel(0, 120); await page.mouse.wheel(0, 120); await sleep(40); const w2 = (await st()).flow; await step(60); const w3 = (await st()).flow;
+  ok((await st()).mode === "map" && (w3 - w2) > wBase * 2, "scrolling the wheel in the map speeds the rising spiral up (and stays in the map)", { wBase, wheel: w3 - w2 });
+  await step(240); const pps = s1.helix.dy * s1.helix.ppu; const d0 = (await st()).flowT;
+  await page.mouse.move(300, 780); await page.mouse.down(); for (let k = 1; k <= 8; k++) { await page.mouse.move(300, 780 - k * 30); await sleep(16); } await page.mouse.up(); const d1 = (await st()).flowT;
+  ok(d1 - d0 > 240 / pps * .8 - .3, "dragging up on the spiral lifts it with your hand (about a station per station-height of finger travel)", { d0, d1, pps });
+  await step(300); const d2 = (await st()).flowT; await page.mouse.move(300, 560); await page.mouse.down(); for (let k = 1; k <= 8; k++) { await page.mouse.move(300, 560 + k * 30); await sleep(16); } await page.mouse.up(); await step(2); const d3 = (await st()).flowT;
+  ok(d3 - d2 < -240 / pps * .8 + 1, "dragging down scrubs it back the other way", { d2, d3 }); await step(300);
+  /* click a plate: the camera glides in front of it */
+  const pk = vis(await info()).filter(p => p.front > .5 && p.x > 640 && p.x < 1300).sort((a, b) => b.front - a.front)[0] || vis(await info())[0];
+  await page.mouse.move(pk.x, pk.y); await step(10); const hv = (await st()).hov; await page.mouse.click(pk.x, pk.y); await step(240, true); const sw = await st();
+  ok(sw.mode === "walk" && sw.cur === hv && hv >= 0, "clicking a plate on the spiral glides the camera in front of it (walk mode, matching track)", { hv, sw: { mode: sw.mode, cur: sw.cur } });
   await css(); await shot("03-walk");
   const card = await I(() => { const r = document.querySelector("#card").getBoundingClientRect(), v = getComputedStyle(document.querySelector("#card")); return { l: r.left, r: r.right, vis: v.visibility, op: v.opacity, cover: getComputedStyle(document.querySelector("#cover")).visibility }; });
   const pl = await I(i2 => __independents.projectPlate(i2), sw.cur);
@@ -199,7 +231,9 @@ const BANNED = /\b(state hash|tick|60 ?hz|bfs|černý|cerny|lamport|lindenmayer|
   await m.tap("#card .nav[data-step='1']"); await mstep(80); ok((await mst()).cur === 10, "the sheet's next button works with a thumb");
   await m.tap("#mapBtn"); await mstep(220, true); await mcss(); ms = await mst(); ok(ms.mode === "map", "MAP rises back over the record", ms.mode);
   const dockHidden = await mI(() => getComputedStyle(document.querySelector("#dock")).opacity); ok(dockHidden === "0", "the sheet gets out of the way in the map", dockHidden); await mshot("09-phone-map");
-  await swipe(120, 520, 320, 520); const spn = (await mst()).spin; await mstep(5); ok(Math.abs(spn - ms.spin) > .5, "a swipe on the map spins the record", [ms.spin, spn]);
+  const mf0 = (await mst()).flowT; await swipe(200, 640, 200, 360); const mf1 = (await mst()).flowT; ok(mf1 - mf0 > 2.5, "a swipe up on the map lifts the spiral with your finger", [mf0, mf1]);
+  const mfa = (await mst()).flow; await mstep(120); const mfb = (await mst()).flow; ok(mfb - mfa > .5, "the spiral keeps rising by itself on the phone too", [mfa, mfb]);
+  const mvis = await mI(() => Array.from({ length: 19 }, (_, i) => __independents.projectPlate(i)).filter(p => p.env > .6 && p.x > -60 && p.x < 450 && p.y > 20 && p.y < 824)); ok(mvis.length >= 6 && Math.min(...mvis.map(p => p.y)) < 300 && Math.max(...mvis.map(p => p.y)) > 540, "phone map: the spiral fills the 390 x 844 screen from bottom to top", mvis.map(p => Math.round(p.y)));
   await m.tap("#indexBtn"); await mcss(); const sheet = await mI(() => { const r = document.querySelector("#index").getBoundingClientRect(); const rows = [...document.querySelectorAll("#index a.trk")].map(a => a.getBoundingClientRect().height); return { top: r.top, bottom: r.bottom, w: r.width, minRow: Math.min(...rows), n: rows.length, scrolls: document.querySelector("#index").scrollHeight > document.querySelector("#index").clientHeight, sw: document.documentElement.scrollWidth }; }); await mshot("10-phone-index");
   ok(sheet.top > 80 && sheet.bottom <= 844 && sheet.w === 390 && sheet.minRow >= 44 && sheet.n === 19 && sheet.scrolls && sheet.sw <= 390, "the index is a bottom sheet: 19 rows, 44px+ each, scrollable, no overflow", sheet);
   await mI(() => document.querySelector('a.trk[data-slug="byzantine"]').scrollIntoView()); await m.tap('a.trk[data-slug="byzantine"]'); await mstep(260, true); ms = await mst(); ok(ms.cur === 14 && ms.mode === "walk" && !ms.indexOpen, "tapping a row flies to its plate and closes the sheet", ms);
