@@ -2,19 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Night Shift: Harbourside General</title>
 <style>
 /*{{CSS}}*/
 </style>
 </head>
 <body>
-<canvas id="world" aria-hidden="true"></canvas>
+<div id="world" aria-hidden="true">
+  <div id="scene">
+    <div class="photo back"></div>
+    <div class="photo front"></div>
+    <canvas id="mid"></canvas>
+  </div>
+  <canvas id="near"></canvas>
+  <div id="grade"></div>
+  <div id="grain"></div>
+</div>
 <div id="vignette"></div>
 <div id="stand"></div>
 <div id="monitor"><div id="screen"></div></div>
 <div id="desk"></div>
 <div id="intro"></div>
+<div id="guide-layer"></div>
+<div id="tut-layer"></div>
+<div id="handbook" role="dialog" aria-label="Handbook"></div>
+<script>
+const HANDBOOK = /*{{DOCS}}*/;
+</script>
 <script>
 /*{{ENGINE}}*/
 </script>
