@@ -1,0 +1,1766 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Shift: Harbourside General</title>
+<style>
+:root {
+  --blue: #1f4e8c; --blue-d: #173b6b; --tool: #e9f0f8; --tab: #f6f8fb; --line: #d3dae3; --line-d: #c5d0de;
+  --ink: #1a1a1a; --mute: #55647a; --red: #c8102e; --amber: #b37400; --amber-f: #e8a200; --green: #2e8540; --sky: #2f6fbf; --grey: #8e9bae;
+  --sel: #cfe3fa; --exp: #fff6d6; --bad: #fde8ea;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1319; font-family: Tahoma, 'Segoe UI', Verdana, sans-serif; color: var(--ink); }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+/* the room */
+#world { position: fixed; inset: -24px; width: calc(100% + 48px); height: calc(100% + 48px); filter: blur(7px) saturate(1.1); }
+#vignette { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 42%, rgba(8, 14, 22, 0) 45%, rgba(8, 14, 22, .55) 100%); pointer-events: none; }
+#vignette.code { animation: codewash 1s infinite; }
+@keyframes codewash { 50% { background-color: rgba(200, 16, 46, .16); } }
+
+#monitor { position: fixed; left: 50%; top: 2.2vh; transform: translateX(-50%); width: min(1680px, 86vw); height: 81vh; background: #14171b; border-radius: 14px; padding: 12px 12px 22px; box-shadow: 0 30px 80px rgba(0, 0, 0, .6), 0 0 0 1px #2a2f36; }
+#monitor::after { content: 'PULSE'; position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font-size: 9px; letter-spacing: .4em; color: #59616c; }
+#stand { position: fixed; left: 50%; top: calc(83.2vh + 2.2vh - 2px); transform: translateX(-50%); width: 170px; height: 5vh; background: linear-gradient(#1b1f24, #0f1215); }
+#screen { width: 100%; height: 100%; background: #fff; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; line-height: 1.35; }
+
+/* the desk */
+#desk { position: fixed; left: 0; right: 0; bottom: 0; height: 12.5vh; background: linear-gradient(#232a33, #171c23); border-top: 1px solid #3a424d; display: flex; align-items: center; gap: 18px; padding: 0 26px; color: #c9d2de; font-size: 12px; }
+.prop { background: #0f1318; border: 1px solid #333b46; border-radius: 10px; padding: 8px 12px; height: 9.6vh; min-height: 62px; display: flex; flex-direction: column; justify-content: center; gap: 4px; position: relative; }
+.prop h4 { margin: 0; font-size: 10px; letter-spacing: .14em; color: #7f8b9a; font-weight: 700; }
+.prop .lcd { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #ffb454; font-size: 12px; white-space: nowrap; }
+.prop .lcd.green { color: #8ee08e; }
+.led { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #3a424d; margin-right: 6px; vertical-align: -1px; }
+.led.on { background: #ff4d4d; box-shadow: 0 0 8px #ff4d4d; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+#radio { width: 270px; } #pager { flex: 1; min-width: 200px; } #phone { width: 190px; cursor: pointer; } #timer { width: 250px; }
+#phone:hover { border-color: #6b7b90; }
+.speed { display: flex; gap: 4px; }
+.speed button { background: #1b222b; border: 1px solid #3a424d; color: #c9d2de; border-radius: 5px; padding: 3px 9px; font-size: 12px; }
+.speed button.on { background: #ffb454; color: #111; border-color: #ffb454; font-weight: 700; }
+.bigclock { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 22px; color: #e9eef5; letter-spacing: .04em; }
+#phonemenu { position: fixed; right: 26px; bottom: 13.5vh; width: 360px; background: #fff; color: var(--ink); border: 1px solid var(--line-d); box-shadow: 0 16px 50px rgba(0, 0, 0, .5); font-size: 13px; z-index: 30; }
+#phonemenu h3 { margin: 0; padding: 8px 12px; background: var(--blue); color: #fff; font-size: 13px; }
+#phonemenu .row { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+#phonemenu small { color: var(--mute); display: block; }
+
+/* PULSE ED */
+.title { height: 30px; flex: none; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 13px; }
+.title b { font-size: 14px; }
+.tools { flex: none; background: var(--tool); border-bottom: 1px solid var(--line-d); display: flex; align-items: center; gap: 4px; padding: 4px 10px; position: relative; }
+.tools button, .btn { background: #fff; border: 1px solid #aeb9c7; padding: 4px 10px; border-radius: 2px; white-space: nowrap; }
+.tools button:hover, .btn:hover { background: #eef4fb; border-color: var(--blue); }
+.tools .sep { width: 1px; height: 18px; background: var(--line-d); margin: 0 6px; }
+.tools .right { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.bell { font-weight: 700; } .bell.hot { background: var(--red); color: #fff; border-color: var(--red); animation: blink 1s infinite; }
+button.on { background: var(--blue); color: #fff; border-color: var(--blue-d); }
+.banner { flex: none; display: flex; align-items: center; gap: 12px; padding: 6px 12px; color: #fff; background: var(--red); font-weight: 700; }
+.banner.warn { background: #b86e00; } .banner.crit { animation: pulsebg 1s infinite; }
+@keyframes pulsebg { 50% { background: #8a0b20; } }
+.banner span { font-weight: 400; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.banner button { background: rgba(255, 255, 255, .15); border: 1px solid rgba(255, 255, 255, .6); color: #fff; padding: 2px 10px; }
+.tabs { flex: none; display: flex; align-items: flex-end; gap: 2px; padding: 5px 10px 0; background: var(--tab); border-bottom: 1px solid var(--line-d); overflow: hidden; }
+.tabs button { background: none; border: 1px solid transparent; border-bottom: none; padding: 5px 11px; white-space: nowrap; }
+.tabs button.on { background: #fff; color: var(--blue); font-weight: 700; border-color: var(--line-d); border-top: 2px solid var(--blue); margin-bottom: -1px; }
+.tabs .gap { flex: 1; }
+.cap { flex: none; display: flex; gap: 22px; padding: 6px 12px; border-bottom: 1px solid var(--line); color: var(--mute); white-space: nowrap; overflow: hidden; }
+.cap b { color: var(--ink); } .cap .goal { margin-left: auto; color: var(--ink); }
+.r { color: var(--red) !important; font-weight: 700; } .a { color: var(--amber) !important; font-weight: 700; } .g { color: var(--green) !important; font-weight: 700; } .m { color: var(--mute); }
+
+.main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.board { flex: 0 1 auto; max-height: 40%; min-height: 0; overflow: auto; }
+table { border-collapse: collapse; width: 100%; }
+.board th { position: sticky; top: 0; background: var(--tool); color: var(--blue); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line-d); border-right: 1px solid var(--line); white-space: nowrap; z-index: 2; }
+.board td { padding: 0 8px; height: 31px; border-right: 1px solid var(--line); border-bottom: 1px solid #edf0f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 330px; }
+.board tr { cursor: pointer; } .board tbody tr:hover td { background: #f1f6fc; }
+.board tr.exp td { background: var(--exp); font-style: italic; color: #44546a; }
+.board tr.sel td { background: var(--sel); border-top: 1px solid var(--blue); border-bottom: 1px solid var(--blue); }
+.board tr.bad td { background: var(--bad); } .board tr.code td { background: #f9c6cd; animation: rowcode 1s infinite; }
+@keyframes rowcode { 50% { background: #fde8ea; } }
+td.st { padding: 0; width: 7px; min-width: 7px; border-right: none; }
+.acu { font-weight: 700; text-align: center; } .e1 { color: var(--red); } .e2 { color: #d9660b; } .e3 { color: #9a7400; } .e4 { color: var(--green); } .e5 { color: var(--sky); }
+.c { text-align: center; }
+.split { flex: none; height: 16px; background: var(--tool); border-top: 1px solid var(--line-d); border-bottom: 1px solid var(--line-d); text-align: center; font-size: 10px; color: var(--mute); line-height: 15px; }
+.report { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+.report .tabs { padding-top: 4px; }
+.phead { flex: none; padding: 8px 12px 2px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.phead b { font-size: 16px; } .sq { width: 11px; height: 11px; display: inline-block; margin-right: 6px; }
+.rbody { flex: 1; min-height: 0; overflow: auto; padding: 6px 12px 12px; display: flex; gap: 18px; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; } .col.narrow { flex: 0 0 27%; } .col.wide { flex: 0 0 38%; }
+.pill { align-self: flex-start; padding: 2px 11px; border-radius: 10px; font-weight: 700; font-size: 12px; margin-top: 3px; }
+.pill.cc { background: #fbd9e3; color: #8a1538; } .pill.vs { background: #d7eef2; color: #0b5563; } .pill.path { background: #dde7f7; color: var(--blue); }
+.pill.bpa { background: #ffd966; color: #5c4400; } .pill.act { background: #dff1e1; color: #1e5e2c; } .pill.note { background: #e7e3f6; color: #47358a; }
+.bpa-box { background: #fff3bf; border: 1px solid #e8c547; padding: 7px 9px; } .bpa-box.red { background: #fde8ea; border-color: #e58a98; } .bpa-box p { margin: 0 0 4px; } .bpa-box p:last-child { margin: 0; }
+.vt { display: grid; grid-template-columns: auto auto auto auto; gap: 2px 12px; } .vt span:nth-child(odd) { color: var(--mute); }
+.steps { display: flex; flex-direction: column; gap: 2px; }
+.step { display: grid; grid-template-columns: 18px 1fr auto; gap: 6px; padding: 3px 0; }
+.step.cur { font-weight: 700; } .step .needs { grid-column: 2 / 4; font-weight: 400; display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0 4px; }
+.need { border: 1px solid var(--line-d); border-radius: 3px; padding: 1px 7px; font-size: 12px; background: #fff; } .need.ok { border-color: #9ccaa5; background: #f1faf2; color: #1e5e2c; } .need.no { border-color: #e58a98; background: #fde8ea; color: #8a0b20; }
+.acts { display: flex; flex-direction: column; gap: 5px; }
+.acts .btn { text-align: left; padding: 6px 10px; display: flex; justify-content: space-between; gap: 10px; white-space: normal; }
+.acts .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue-d); font-weight: 700; } .acts .btn.primary:hover { background: var(--blue-d); }
+.acts .btn small { opacity: .75; font-weight: 400; white-space: nowrap; }
+.choices { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0 4px 10px; } .choices .btn { padding: 3px 9px; } .choices .btn small { color: var(--mute); margin-left: 5px; }
+.tl { display: flex; flex-direction: column; gap: 8px; } .tl div { border-left: 3px solid var(--line-d); padding: 1px 0 1px 10px; } .tl small { color: var(--mute); display: block; } .tl .Result { border-color: #2f6fbf; } .tl .Procedure { border-color: #7a4fc2; } .tl .Charge { border-color: var(--amber-f); } .tl .Triage { border-color: #c2507a; }
+.kv { display: grid; grid-template-columns: 92px 1fr; gap: 3px 10px; } .kv span:nth-child(odd) { color: var(--mute); }
+.labs td, .labs th { padding: 4px 8px; border-bottom: 1px solid #edf0f4; text-align: left; } .labs th { color: var(--blue); background: var(--tab); }
+.rep { border: 1px solid var(--line); padding: 7px 9px; } .rep b { display: block; color: var(--blue); }
+.toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); background: #26303b; color: #fff; padding: 7px 16px; border-radius: 4px; font-size: 13px; z-index: 20; box-shadow: 0 6px 20px rgba(0, 0, 0, .3); }
+.toast.fail { background: #8a0b20; }
+#screen { position: relative; }
+.menu { position: absolute; top: 100%; left: 10px; z-index: 15; background: #fff; border: 1px solid var(--line-d); box-shadow: 0 10px 30px rgba(0, 0, 0, .25); min-width: 380px; }
+.menu .row { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 7px 10px; border-bottom: 1px solid var(--line); } .menu small { color: var(--mute); display: block; }
+
+/* full views */
+.view { flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin: 4px 0 14px; }
+.unit { border: 1px solid var(--line-d); border-left: 5px solid var(--green); padding: 5px 8px; min-height: 46px; cursor: default; } .unit b { display: block; } .unit small { color: var(--mute); }
+.unit.busy { border-left-color: var(--amber-f); cursor: pointer; } .unit.bg { border-left-color: var(--grey); background: #f5f7fa; } .unit.res { border-left-color: var(--sky); } .unit.stuck { border-left-color: var(--red); }
+h3.sec { margin: 4px 0; font-size: 13px; color: var(--blue); }
+.alist .al { display: flex; gap: 10px; align-items: baseline; padding: 6px 8px; border-bottom: 1px solid var(--line); cursor: pointer; } .al.ack { opacity: .5; } .al .lv { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--sky); } .al.crit .lv { background: var(--red); } .al.warn .lv { background: var(--amber-f); } .al time { color: var(--mute); width: 44px; flex: none; } .al em { font-style: normal; font-size: 11px; color: #47358a; background: #e7e3f6; border-radius: 3px; padding: 0 5px; margin-left: 6px; }
+
+/* bedside monitor: black, as the real ones are */
+.mon { background: #000; color: #fff; border-radius: 4px; padding: 8px 10px; display: grid; grid-template-columns: 1fr 150px; gap: 2px 10px; font-family: 'SF Mono', Menlo, Consolas, monospace; }
+.mon canvas { width: 100%; height: 48px; display: block; } .mon .num { display: flex; flex-direction: column; justify-content: center; line-height: 1; } .mon .num small { font-size: 10px; opacity: .8; } .mon .num b { font-size: 26px; }
+.mon .hr { color: #4dff5e; } .mon .sp { color: #45d7ff; } .mon .rs { color: #ffe14d; } .mon .bp { color: #ff5c5c; } .mon .bp b { font-size: 22px; }
+.mon .alarm { grid-column: 1 / 3; font-size: 12px; padding: 2px 6px; background: #1c1c1c; color: #9aa; } .mon .alarm.hi { background: #c8102e; color: #fff; animation: blink 1s infinite; } .mon .alarm.med { background: #e8a200; color: #000; }
+.central { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; }
+.tile { background: #000; color: #fff; border: 2px solid #222; border-radius: 4px; padding: 6px 8px; font-family: 'SF Mono', Menlo, Consolas, monospace; cursor: pointer; } .tile.hi { border-color: #ff3b4e; animation: blink 1s infinite; } .tile.med { border-color: #e8a200; }
+.tile header { display: flex; justify-content: space-between; font-size: 11px; color: #c9d2de; font-family: Tahoma, sans-serif; } .tile canvas { width: 100%; height: 40px; display: block; } .tile .nums { display: flex; justify-content: space-between; font-size: 17px; font-weight: 700; }
+
+#intro { position: fixed; inset: 0; background: rgba(8, 12, 18, .72); display: flex; align-items: center; justify-content: center; z-index: 50; }
+#intro .card { width: min(640px, 92vw); background: #fff; border-top: 5px solid var(--blue); padding: 22px 26px; font-size: 14px; line-height: 1.5; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+#intro h1 { margin: 0 0 4px; font-size: 22px; } #intro ol { padding-left: 20px; margin: 10px 0 16px; } #intro .btn { background: var(--blue); color: #fff; border-color: var(--blue-d); padding: 8px 18px; font-weight: 700; font-size: 14px; }
+.review .big { font-size: 26px; font-weight: 700; } .review table td { padding: 5px 8px; border-bottom: 1px solid #edf0f4; vertical-align: top; }
+
+</style>
+</head>
+<body>
+<canvas id="world" aria-hidden="true"></canvas>
+<div id="vignette"></div>
+<div id="stand"></div>
+<div id="monitor"><div id="screen"></div></div>
+<div id="desk"></div>
+<div id="intro"></div>
+<script>
+const Engine = (() => {
+/* ---- rng ---- */
+/* Seeded randomness. The generator state lives in the game state (state.rng), so a
+ * shift replays exactly from its seed and the list of player actions. */
+function seedFrom(str) {
+  let h = 2166136261 >>> 0;
+  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return h || 1;
+}
+
+/** Next float in [0,1). Mutates state.rng (mulberry32). */
+function rnd(state) {
+  let a = (state.rng = (state.rng + 0x6d2b79f5) >>> 0);
+  a = Math.imul(a ^ (a >>> 15), a | 1);
+  a ^= a + Math.imul(a ^ (a >>> 7), a | 61);
+  return ((a ^ (a >>> 14)) >>> 0) / 4294967296;
+}
+const rint = (state, lo, hi) => lo + Math.floor(rnd(state) * (hi - lo + 1));
+const pick = (state, arr) => arr[Math.floor(rnd(state) * arr.length)];
+
+/** Stateless jitter in [-1,1] from two integers. Used for vital-sign noise, so
+ * reading vitals never advances the game's generator. */
+function jitter(a, b) {
+  let h = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263)) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 2147483648 - 1;
+}
+
+/* ---- news2 ---- */
+/* NEWS2: National Early Warning Score 2 (Royal College of Physicians, 2017).
+ * Seven bedside observations, each scored 0-3. Uses SpO2 scale 1.
+ * Aggregate 0-4 low, 5-6 medium (urgent review), 7+ high (emergency response).
+ * Any single parameter scoring 3 also warrants urgent review. */
+const band = (v, table) => { for (const [limit, score] of table) if (v <= limit) return score; return table[table.length - 1][1]; };
+
+function news2(v) {
+  const parts = {
+    rr: band(v.rr, [[8, 3], [11, 1], [20, 0], [24, 2], [Infinity, 3]]),
+    spo2: band(v.spo2, [[91, 3], [93, 2], [95, 1], [Infinity, 0]]),
+    o2: v.o2 ? 2 : 0,
+    sbp: band(v.sbp, [[90, 3], [100, 2], [110, 1], [219, 0], [Infinity, 3]]),
+    hr: band(v.hr, [[40, 3], [50, 1], [90, 0], [110, 1], [130, 2], [Infinity, 3]]),
+    avpu: v.gcs < 15 ? 3 : 0,
+    temp: band(v.temp, [[35.0, 3], [36.0, 1], [38.0, 0], [39.0, 1], [Infinity, 2]]),
+  };
+  const score = Object.values(parts).reduce((a, b) => a + b, 0);
+  const red = Object.values(parts).some((s) => s === 3);
+  const risk = score >= 7 ? 'high' : score >= 5 ? 'medium' : red ? 'low-medium' : 'low';
+  return { score, parts, risk, red };
+}
+
+/* ---- hospital ---- */
+/* Harbourside General: everything the charge nurse can allocate.
+ * A "unit" is one indivisible thing: one bed, one scanner, one person.
+ * A patient's care step needs a set of units all at once. */
+
+/** kind -> how it behaves and how it is shown. */
+const KINDS = {
+  // where a patient physically is inside the ED
+  resus: { label: 'Resus / trauma bay', group: 'ED beds', place: true, ed: true, monitored: true },
+  acute: { label: 'Acute bed', group: 'ED beds', place: true, ed: true, monitored: true },
+  fast: { label: 'Fast track chair', group: 'ED beds', place: true, ed: true },
+  bh: { label: 'Behavioural health room', group: 'ED beds', place: true, ed: true },
+  hall: { label: 'Hallway stretcher', group: 'ED beds', place: true, ed: true },
+  // where a patient goes when leaving the ED (they keep it until the next place is free)
+  cath: { label: 'Cath lab', group: 'House', place: true, monitored: true },
+  or: { label: 'Operating room', group: 'House', place: true, monitored: true },
+  icu: { label: 'ICU bed', group: 'House', place: true, inpatient: true },
+  ward: { label: 'Ward bed', group: 'House', place: true, inpatient: true },
+  psych: { label: 'Psychiatric bed', group: 'House', place: true, inpatient: true },
+  // visited for one step, then given back
+  ct: { label: 'CT scanner', group: 'Imaging' },
+  xr: { label: 'X-ray', group: 'Imaging' },
+  us: { label: 'Ultrasound', group: 'Imaging' },
+  // people
+  md: { label: 'ED physician', group: 'Staff', staff: true },
+  pa: { label: 'Physician assistant', group: 'Staff', staff: true },
+  rn: { label: 'ED nurse', group: 'Staff', staff: true },
+  rt: { label: 'Respiratory therapist', group: 'Staff', staff: true },
+  porter: { label: 'Porter', group: 'Staff', staff: true },
+  surg: { label: 'Trauma surgeon', group: 'Specialists', staff: true },
+  anes: { label: 'Anesthesiologist', group: 'Specialists', staff: true },
+  cards: { label: 'Interventional cardiology', group: 'Specialists', staff: true },
+  neuro: { label: 'Neurology', group: 'Specialists', staff: true },
+  ob: { label: 'Obstetrics / gynecology', group: 'Specialists', staff: true },
+  gi: { label: 'Gastroenterology', group: 'Specialists', staff: true },
+  psy: { label: 'Psychiatry', group: 'Specialists', staff: true },
+};
+
+const U = (id, kind, name, x = {}) => ({ id, kind, name, holder: null, reservedFor: null, ...x });
+const many = (n, f) => Array.from({ length: n }, (_, i) => f(i + 1));
+
+/** On-call teams the charge nurse can call in: who, and minutes until they are in house. */
+const ON_CALL = {
+  cards: { label: 'Cath team (interventional cardiology)', eta: 25, unit: () => U('cards1', 'cards', 'Dr. Amara Nwosu', { role: 'Interventional cardiologist, on call' }) },
+  ob: { label: 'Obstetrics / gynecology', eta: 20, unit: () => U('ob1', 'ob', 'Dr. Leila Haddad', { role: 'OB-GYN, on call' }) },
+  gi: { label: 'Gastroenterology (endoscopy)', eta: 30, unit: () => U('gi1', 'gi', 'Dr. Tomasz Zielinski', { role: 'Gastroenterologist, on call' }) },
+  psy: { label: 'Psychiatry', eta: 40, unit: () => U('psy1', 'psy', 'Dr. Ruth Abebe', { role: 'Psychiatrist, on call' }) },
+  rn: { label: 'Extra ED nurse (float pool)', eta: 30, unit: () => U('rn7', 'rn', 'Devi Raman RN', { role: 'Float pool nurse' }) },
+  anes: { label: 'Second anesthesiologist', eta: 25, unit: () => U('anes2', 'anes', 'Dr. Mei-Ling Zhou', { role: 'Anesthesiologist, backup call' }) },
+  surg: { label: 'Second trauma surgeon', eta: 30, unit: () => U('surg2', 'surg', 'Dr. Kofi Mensah', { role: 'Trauma surgeon, backup call' }) },
+};
+
+/** Fresh list of units for the start of a shift. holder 'bg' = an inpatient who was already
+ * there before the shift (background occupancy). */
+function buildUnits() {
+  const units = [
+    U('R1', 'resus', 'Resus 1'), U('R2', 'resus', 'Resus 2'), U('T1', 'resus', 'Trauma 1'), U('T2', 'resus', 'Trauma 2'),
+    ...many(8, (i) => U(`A${i}`, 'acute', `Acute ${i}`)),
+    ...many(3, (i) => U(`FT${i}`, 'fast', `Fast track ${i}`)),
+    U('BH1', 'bh', 'BH room 1'), U('BH2', 'bh', 'BH room 2'),
+    ...many(4, (i) => U(`H${i}`, 'hall', `Hallway ${i}`)),
+    U('CT1', 'ct', 'CT 1'),
+    U('XR1', 'xr', 'Portable X-ray'), U('US1', 'us', 'Ultrasound'),
+    U('CATH', 'cath', 'Cath lab'),
+    U('OR1', 'or', 'OR 1'), U('OR2', 'or', 'OR 2'),
+    ...many(12, (i) => U(`ICU${i}`, 'icu', `ICU ${i}`, { holder: i > 10 ? null : 'bg' })),
+    ...many(16, (i) => U(`W${i}`, 'ward', `Ward 5-${i}`, { holder: i > 11 ? null : 'bg' })),
+    U('PSY1', 'psych', 'Psych unit bed', { holder: 'bg' }),
+    U('md1', 'md', 'Dr. Mateo Reyes', { role: 'Attending physician' }),
+    U('md2', 'md', 'Dr. Priya Singh', { role: 'Attending physician' }),
+    U('md3', 'md', 'Dr. Daniel Cho', { role: 'Senior resident (PGY-3)' }),
+    U('pa1', 'pa', 'Whitney Park PA-C', { role: 'Physician assistant, fast track' }),
+    U('rn1', 'rn', 'Sunita Patel RN', { role: 'Resus nurse' }),
+    U('rn2', 'rn', 'Min-jun Kim RN', { role: 'Resus nurse' }),
+    U('rn3', 'rn', 'Carmen Diaz RN', { role: 'Acute nurse' }),
+    U('rn4', 'rn', 'Emeka Okafor RN', { role: 'Acute nurse' }),
+    U('rn5', 'rn', 'Hannah Lee RN', { role: 'Fast track nurse' }),
+    U('rn6', 'rn', 'Tariq Aziz RN', { role: 'Triage / float nurse' }),
+    U('rt1', 'rt', 'Joanne Bell RRT', { role: 'Respiratory therapist' }),
+    U('po1', 'porter', 'Luis (porter)', { role: 'Patient transport' }),
+    U('po2', 'porter', 'Agnes (porter)', { role: 'Patient transport' }),
+    U('surg1', 'surg', 'Dr. Elena Markovic', { role: 'Trauma surgeon, in house' }),
+    U('anes1', 'anes', 'Dr. Samuel Otieno', { role: 'Anesthesiologist, in house' }),
+    U('neuro1', 'neuro', 'Dr. Ingrid Solberg', { role: 'Stroke neurologist (telestroke)' }),
+  ];
+  return Object.fromEntries(units.map((u) => [u.id, u]));
+}
+
+const START_STOCK = { prbc: 10 };          // units of O-negative / crossmatched red cells in the ED fridge
+const SHIFT_START = 19 * 60;               // 19:00
+const SHIFT_MINUTES = 12 * 60;             // 19:00 to 07:00
+
+/** Minutes since shift start -> "HH:MM" wall clock. */
+function clock(t) {
+  const m = (((SHIFT_START + t) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+const hm = (min) => `${Math.floor(Math.max(0, min) / 60)}:${String(Math.floor(Math.max(0, min) % 60)).padStart(2, '0')}`;
+
+/* ---- casebook ---- */
+/* The case book: what walks, rolls or is carried through the doors.
+ *
+ * Every case is a template the patient generator fills in. Fields:
+ *   esi      Emergency Severity Index 1 (dying) to 5 (minor)
+ *   bed      ED bed kinds that are safe for this patient, best first
+ *   via      'ems' (ambulance, pre-alerted) or 'walk' (through triage to the waiting room)
+ *   vit      vital signs when well (s) and at the point of collapse (c); the patient's
+ *            "sev" (0 = well, 1 = cardiac arrest) slides between the two
+ *   sev0     severity on arrival;  rate  severity gained per minute while untreated
+ *   cap      severity ceiling for cases that harm without killing quickly
+ *   labs     [name, value, unit, reference range, flag, minutes to result]; flag HH/LL is critical
+ *   steps    the care pathway. Each step needs ALL of its `needs` at the same moment.
+ *            needs use unit kinds from hospital.mjs; 'pa|md' means either will do.
+ *            place: the step moves the patient there (cath lab, OR). end: 'home' | 'admit'.
+ *            sev / rate: what the treatment does.  blood: red cell units used.
+ *   clocks   real time targets, measured from arrival to the start (or end) of a step
+ *
+ * Clinical content is written to be plausible and consistent with common emergency
+ * medicine teaching. It is game content, not clinical guidance. */
+
+const V = (hr, sbp, dbp, rr, spo2, temp, gcs = 15) => ({ hr, sbp, dbp, rr, spo2, temp, gcs });
+
+const CASES = {
+  stemi: {
+    title: 'Anterior STEMI', cc: 'Chest pain, STEMI alert', esi: 1, bed: ['resus', 'acute'], via: 'ems', prealert: 'Code STEMI',
+    age: [48, 74], sex: 'M', rhythm: 'stemi', sev0: 0.3, rate: 0.006,
+    triage: 'Crushing central chest pain for 40 min radiating to the left arm, sweating, nausea. EMS 12-lead transmitted: ST elevation V1-V4. Aspirin 324 mg given by EMS.',
+    hpi: 'Pain started at rest while watching television. Never had it before. Smoker, 30 pack-years.',
+    pmh: ['Hypertension', 'Hyperlipidemia', 'Type 2 diabetes'], meds: ['Metformin 1 g BID', 'Ramipril 5 mg daily', 'Atorvastatin 40 mg nightly'], allergies: 'NKDA',
+    exam: 'Pale, diaphoretic. Heart sounds normal, no murmur. Chest clear. No peripheral edema.',
+    ecg: 'Sinus rhythm. ST elevation 3-4 mm in V1-V4 with reciprocal ST depression in II, III, aVF. Acute anterior STEMI.',
+    vit: { s: V(78, 128, 78, 16, 98, 36.8), c: V(128, 74, 46, 28, 86, 36.2, 9) },
+    labs: [['Troponin T (hs)', '62', 'ng/L', '< 14', 'H', 40], ['Potassium', '4.1', 'mmol/L', '3.5 - 5.0', '', 35], ['Creatinine', '1.0', 'mg/dL', '0.7 - 1.3', '', 35], ['Hemoglobin', '14.6', 'g/dL', '13.5 - 17.5', '', 30], ['Glucose', '212', 'mg/dL', '70 - 140', 'H', 5]],
+    steps: [
+      { key: 'ecg', label: '12-lead ECG and physician assessment', needs: ['md', 'rn'], dur: 6, rate: 0.004, note: 'ECG confirms anterior STEMI. Heparin 60 U/kg IV bolus, ticagrelor 180 mg PO. Cath lab activated. Defibrillator pads on.' },
+      { key: 'pci', label: 'Primary PCI in the cath lab', needs: ['cath', 'cards', 'rn'], place: 'cath', dur: 50, sev: -0.3, rate: 0, note: 'Transferred to cath lab on monitor.', result: ['Coronary angiography', '100% thrombotic occlusion of the proximal LAD. Drug-eluting stent placed, TIMI 3 flow restored. Mild disease elsewhere. LVEF 40%.'] },
+      { key: 'admit', label: 'Coronary care (ICU) bed', needs: ['icu'], place: 'icu', end: 'admit' },
+    ],
+    clocks: [{ key: 'ecg', label: 'Door to ECG', step: 'ecg', limit: 10 }, { key: 'd2b', label: 'Door to balloon', step: 'pci', limit: 90, lead: 15 }],
+    arrestP: 0.55, good: 'Artery opened in time. Home on day 3 with preserved heart function.', harm: 'Artery opened late. Large infarct, heart failure with LVEF 25%.',
+    tip: 'The cath team is on call at night. Call them in the moment EMS pre-alerts, not when the patient arrives.',
+  },
+  stroke: {
+    title: 'Acute ischemic stroke (left MCA)', cc: 'R weakness, aphasia, stroke alert', esi: 2, bed: ['resus', 'acute'], via: 'ems', prealert: 'Code Stroke',
+    age: [62, 86], sex: 'F', rhythm: 'af', sev0: 0.35, rate: 0.002, cap: 0.75,
+    triage: 'Sudden right arm and face weakness with inability to speak. Last known well 45 min before arrival. EMS stroke scale positive. Glucose 112 mg/dL.',
+    hpi: 'Husband saw her drop a cup and stop making sense at dinner. No headache, no seizure, no trauma.',
+    pmh: ['Atrial fibrillation (not anticoagulated)', 'Hypertension'], meds: ['Amlodipine 5 mg daily', 'Metoprolol 25 mg BID'], allergies: 'Penicillin (rash)',
+    exam: 'NIHSS 14: global aphasia, right facial droop, right arm 4/5 drift to bed, left gaze preference.',
+    ecg: 'Atrial fibrillation, ventricular rate 88. No acute ST changes.',
+    vit: { s: V(84, 168, 94, 16, 97, 36.7, 13), c: V(102, 204, 112, 22, 93, 37.2, 9) },
+    labs: [['Glucose (POC)', '112', 'mg/dL', '70 - 140', '', 2], ['INR', '1.0', '', '0.8 - 1.2', '', 30], ['Platelets', '238', 'x10^9/L', '150 - 400', '', 30], ['Creatinine', '0.9', 'mg/dL', '0.6 - 1.1', '', 35]],
+    steps: [
+      { key: 'assess', label: 'Stroke assessment (NIHSS, glucose, IV access)', needs: ['md', 'rn'], dur: 5, note: 'NIHSS 14. Glucose normal. No anticoagulants. 18G IV placed. Telestroke neurologist paged.' },
+      { key: 'ct', label: 'CT head and CT angiogram', needs: ['ct', 'porter'], dur: 14, result: ['CT head / CTA', 'No hemorrhage. Hyperdense left MCA sign. ASPECTS 8. CTA: occlusion of the left M1 segment.'] },
+      { key: 'lysis', label: 'IV thrombolysis', needs: ['neuro', 'rn'], dur: 8, sev: -0.2, rate: 0, note: 'No contraindications. BP 168/94 (below 185/110). Tenecteplase 0.25 mg/kg IV bolus given. Neuro checks every 15 min. Thrombectomy team accepting.' },
+      { key: 'admit', label: 'Neuro ICU bed', needs: ['icu'], place: 'icu', end: 'admit' },
+    ],
+    clocks: [{ key: 'd2ct', label: 'Door to CT', step: 'ct', limit: 25 }, { key: 'd2n', label: 'Door to needle', step: 'lysis', limit: 60 }],
+    arrestP: 0.2, good: 'Clot treated inside the window. Speech returning by morning, NIHSS 4.', harm: 'Treated outside the target. Dense right hemiplegia and aphasia, discharged to rehabilitation.',
+    tip: 'Brain is lost every minute. A low-acuity scan ahead of her in the CT queue is the wrong queue: expedite her.',
+  },
+  trauma: {
+    title: 'Blunt polytrauma, hemorrhagic shock', cc: 'Fall from height, hypotensive', esi: 1, bed: ['resus'], via: 'ems', prealert: 'Trauma Level 1',
+    age: [22, 55], sex: 'M', rhythm: 'sinus', sev0: 0.48, rate: 0.009,
+    triage: 'Fell about 6 m from scaffolding. GCS 14, left chest and abdominal pain. EMS: BP 90/60, HR 124, two large-bore IVs, pelvic binder applied.',
+    hpi: 'Construction worker. Landed on his left side. Brief loss of consciousness reported by co-workers.',
+    pmh: ['None'], meds: ['None'], allergies: 'NKDA',
+    exam: 'Decreased breath sounds left chest with crepitus. Abdomen distended and tender in the left upper quadrant. Pelvis stable in binder. eFAST: free fluid in the splenorenal space, left hemothorax.',
+    vit: { s: V(88, 122, 76, 16, 98, 36.6), c: V(146, 62, 38, 34, 84, 35.0, 6) },
+    labs: [['Hemoglobin', '8.9', 'g/dL', '13.5 - 17.5', 'L', 20], ['Lactate', '4.8', 'mmol/L', '0.5 - 2.0', 'HH', 6], ['pH (venous)', '7.24', '', '7.32 - 7.42', 'L', 6], ['Base deficit', '8', 'mmol/L', '< 2', 'H', 6], ['INR', '1.4', '', '0.8 - 1.2', 'H', 30], ['Fibrinogen', '148', 'mg/dL', '200 - 400', 'L', 35]],
+    steps: [
+      { key: 'primary', label: 'Primary survey, chest tube, massive transfusion', needs: ['md', 'surg', 'rn', 'rt'], dur: 15, blood: 4, sev: -0.1, rate: 0.004, note: 'Left 28 Fr chest tube: 600 mL blood. Massive transfusion protocol activated, 1:1:1 ratio. Tranexamic acid 1 g IV. Unstable with positive eFAST: for the operating room, no CT.' },
+      { key: 'or', label: 'Damage-control laparotomy', needs: ['or', 'surg', 'anes', 'rn'], place: 'or', dur: 75, blood: 4, sev: -0.5, rate: 0, note: 'To OR with MTP running.', result: ['Operative note', 'Grade IV splenic laceration with 1.8 L hemoperitoneum. Splenectomy. No bowel injury. Abdomen closed. Estimated blood loss 2.4 L.'] },
+      { key: 'admit', label: 'Surgical ICU bed', needs: ['icu'], place: 'icu', end: 'admit' },
+    ],
+    clocks: [{ key: 'bay2or', label: 'Arrival to OR', step: 'or', limit: 60 }],
+    arrestP: 0.25, good: 'Bleeding controlled within the hour. Extubated next day.', harm: 'Prolonged shock before surgery. Multi-organ failure, three weeks in ICU.',
+    tip: 'He needs the OR, a surgeon, an anesthesiologist and a nurse at the same moment. One missing piece and he waits holding the trauma bay.',
+  },
+  sepsis: {
+    title: 'Septic shock, community-acquired pneumonia', cc: 'Fever, confusion, short of breath', esi: 2, bed: ['resus', 'acute'], via: 'ems',
+    age: [58, 84], sex: 'any', rhythm: 'sinus', sev0: 0.5, rate: 0.007,
+    triage: 'Three days of productive cough and fever. Confused since this morning. T 39.2, HR 118, BP 88/50, SpO2 89% on room air.',
+    hpi: 'Lives alone, found by daughter. Poor oral intake for two days. Green sputum.',
+    pmh: ['COPD', 'Chronic kidney disease stage 3'], meds: ['Tiotropium inhaler', 'Lisinopril 10 mg daily'], allergies: 'NKDA',
+    exam: 'Drowsy, oriented to person only. Coarse crackles and bronchial breathing at the right base. Warm peripheries, capillary refill 4 s.',
+    vit: { s: V(86, 118, 70, 18, 96, 37.2), c: V(142, 64, 36, 36, 80, 39.8, 8) },
+    labs: [['Lactate', '4.6', 'mmol/L', '0.5 - 2.0', 'HH', 6], ['WBC', '19.8', 'x10^9/L', '4.0 - 11.0', 'H', 30], ['Creatinine', '1.9', 'mg/dL', '0.7 - 1.3', 'H', 35], ['Procalcitonin', '12.4', 'ng/mL', '< 0.1', 'H', 50], ['Platelets', '132', 'x10^9/L', '150 - 400', 'L', 30]],
+    steps: [
+      { key: 'bundle', label: 'Sepsis hour-1 bundle', needs: ['md', 'rn'], dur: 15, sev: -0.12, rate: 0.002, note: 'Blood cultures x2 before antibiotics. Ceftriaxone 2 g IV and azithromycin 500 mg IV. Lactated Ringer\'s 30 mL/kg started. Oxygen 6 L/min.' },
+      { key: 'cxr', label: 'Portable chest X-ray', needs: ['xr'], dur: 8, result: ['Chest X-ray', 'Dense right lower lobe consolidation with air bronchograms. No effusion, no pneumothorax.'] },
+      { key: 'pressor', label: 'Reassessment, central line, norepinephrine', needs: ['md', 'rn'], dur: 18, sev: -0.12, rate: 0.001, note: 'MAP 58 after 2.4 L of fluid. Right IJ central line under ultrasound. Norepinephrine started, titrate to MAP 65. Repeat lactate 3.1.' },
+      { key: 'admit', label: 'Medical ICU bed', needs: ['icu'], place: 'icu', end: 'admit' },
+    ],
+    clocks: [{ key: 'abx', label: 'Antibiotics within 1 hour', step: 'bundle', on: 'end', limit: 60 }],
+    arrestP: 0.2, good: 'Antibiotics inside the hour. Off pressors in 36 hours.', harm: 'Antibiotics delayed. Acute kidney injury needing dialysis.',
+  },
+  overdose: {
+    title: 'Opioid overdose (fentanyl)', cc: 'Unresponsive, slow breathing', esi: 1, bed: ['resus', 'acute'], via: 'ems', prealert: 'Overdose, bagging',
+    age: [19, 44], sex: 'any', rhythm: 'sinus', sev0: 0.6, rate: 0.014,
+    triage: 'Found down in a bathroom by a friend. Bystander naloxone 4 mg intranasal with partial response. RR 6, SpO2 82% on bag-valve-mask, pinpoint pupils.',
+    hpi: 'Known opioid use disorder. Friend reports he used a pressed pill bought tonight.',
+    pmh: ['Opioid use disorder', 'Hepatitis C'], meds: ['None prescribed'], allergies: 'NKDA',
+    exam: 'GCS 7 (E1 V2 M4). Pupils 1 mm. Shallow respirations. Track marks on both forearms. No signs of trauma.',
+    vit: { s: V(84, 122, 76, 16, 98, 36.6), c: V(46, 78, 44, 3, 62, 35.6, 3) },
+    labs: [['Glucose (POC)', '96', 'mg/dL', '70 - 140', '', 2], ['pH (venous)', '7.21', '', '7.32 - 7.42', 'L', 6], ['pCO2 (venous)', '68', 'mmHg', '41 - 51', 'HH', 6], ['Acetaminophen', '< 10', 'mcg/mL', '< 10', '', 45]],
+    steps: [
+      { key: 'airway', label: 'Airway support and IV naloxone', needs: ['md', 'rn', 'rt'], dur: 8, sev: -0.5, rate: 0.002, note: 'Bag-valve-mask with oral airway. Naloxone 0.4 mg IV, repeated to 1.2 mg total. RR 14, GCS 14. Intubation avoided.' },
+      { key: 'obs', label: 'Observation for re-sedation', needs: [], dur: 75, sev: -0.1, rate: 0, note: 'Continuous pulse oximetry and capnography. No further naloxone needed.' },
+      { key: 'dc', label: 'Discharge with take-home naloxone', needs: ['rn'], dur: 6, end: 'home', note: 'Take-home naloxone kit and teaching. Buprenorphine started, addiction medicine follow-up in 48 h.' },
+    ],
+    clocks: [], arrestP: 0.6, good: 'Breathing restored without intubation. Left with naloxone and a clinic appointment.', harm: 'Prolonged hypoxia. Aspiration pneumonia and ICU stay.',
+  },
+  anaphylaxis: {
+    title: 'Anaphylaxis (peanut)', cc: 'Throat tightness, hives', esi: 2, bed: ['resus', 'acute'], via: 'walk',
+    age: [16, 38], sex: 'any', rhythm: 'sinus', sev0: 0.45, rate: 0.016,
+    triage: 'Ate a dessert 20 min ago. Lip and tongue swelling, hoarse voice, widespread hives, wheeze. Her own auto-injector had expired.',
+    hpi: 'Known peanut allergy. Previous reaction needed epinephrine at age 12.',
+    pmh: ['Peanut allergy', 'Asthma'], meds: ['Salbutamol inhaler as needed'], allergies: 'Peanuts (anaphylaxis)',
+    exam: 'Audible stridor, tongue swollen. Diffuse urticaria. Bilateral expiratory wheeze. Anxious, speaking in short phrases.',
+    vit: { s: V(88, 118, 74, 16, 99, 36.8), c: V(152, 58, 30, 38, 76, 36.4, 8) },
+    labs: [['Tryptase', '38', 'mcg/L', '< 11.4', 'H', 55]],
+    steps: [
+      { key: 'epi', label: 'IM epinephrine and airway watch', needs: ['pa|md', 'rn'], dur: 6, sev: -0.4, rate: 0, note: 'Epinephrine 0.5 mg IM (1 mg/mL) into the lateral thigh, repeated once at 5 min. High-flow oxygen, 1 L crystalloid, salbutamol nebulizer. Then cetirizine and methylprednisolone. Stridor resolved.' },
+      { key: 'obs', label: 'Observation for biphasic reaction', needs: [], dur: 90, sev: -0.05, note: 'Monitored. No recurrence of symptoms.' },
+      { key: 'dc', label: 'Discharge with auto-injector', needs: ['rn'], dur: 6, end: 'home', note: 'Two epinephrine auto-injectors prescribed with training. Allergy referral. Return at once if symptoms recur.' },
+    ],
+    clocks: [{ key: 'epi', label: 'Epinephrine within 15 min', step: 'epi', limit: 15 }],
+    arrestP: 0.5, good: 'Epinephrine in minutes. Home the same night.', harm: 'Epinephrine delayed. Intubated for airway swelling, two days in ICU.',
+    tip: 'She walked in, so she starts in the waiting room. Sickest first, not first come first served.',
+  },
+  dka: {
+    title: 'Diabetic ketoacidosis, new type 1 diabetes', cc: 'Vomiting, deep fast breathing', esi: 2, bed: ['acute', 'resus'], via: 'walk',
+    age: [16, 32], sex: 'any', rhythm: 'sinus', sev0: 0.4, rate: 0.004,
+    triage: 'Two weeks of thirst, passing urine all night and weight loss. Vomiting since yesterday. Fruity breath. Glucose reads HI on the meter.',
+    hpi: 'No known diabetes. Lost 6 kg in a month. Abdominal pain and blurred vision today.',
+    pmh: ['None'], meds: ['None'], allergies: 'NKDA',
+    exam: 'Dry mucous membranes, sunken eyes. Kussmaul breathing. Abdomen soft, mild diffuse tenderness. Drowsy but oriented.',
+    vit: { s: V(86, 118, 74, 16, 99, 36.8), c: V(144, 76, 42, 38, 95, 36.0, 9) },
+    labs: [['Glucose', '558', 'mg/dL', '70 - 140', 'HH', 5], ['pH (venous)', '7.12', '', '7.32 - 7.42', 'LL', 6], ['Bicarbonate', '8', 'mmol/L', '22 - 28', 'LL', 6], ['Potassium', '5.6', 'mmol/L', '3.5 - 5.0', 'H', 6], ['Anion gap', '26', 'mmol/L', '8 - 12', 'H', 30], ['Beta-hydroxybutyrate', '6.2', 'mmol/L', '< 0.6', 'H', 30]],
+    steps: [
+      { key: 'dka', label: 'Fluids, potassium check, insulin infusion', needs: ['md', 'rn'], dur: 18, sev: -0.15, rate: 0.001, note: '0.9% saline 1 L over the first hour. Potassium 5.6: insulin safe to start. Regular insulin 0.1 U/kg/h IV. Potassium added to fluids once below 5.3. Hourly glucose, 2-hourly gas.' },
+      { key: 'admit', label: 'Step-down ward bed (insulin infusion)', needs: ['ward'], place: 'ward', end: 'admit' },
+    ],
+    clocks: [], arrestP: 0.4, good: 'Gap closed overnight. Diabetes teaching started.', harm: 'Treatment delayed. Cerebral edema, prolonged admission.',
+  },
+  gibleed: {
+    title: 'Variceal upper GI bleed', cc: 'Vomiting blood', esi: 2, bed: ['resus', 'acute'], via: 'ems',
+    age: [41, 66], sex: 'M', rhythm: 'sinus', sev0: 0.45, rate: 0.009,
+    triage: 'Three episodes of bright red hematemesis tonight, about 500 mL each. Dizzy on standing. HR 116, BP 92/58.',
+    hpi: 'Black stools for two days. Heavy alcohol use for 20 years. No previous endoscopy.',
+    pmh: ['Alcohol-related cirrhosis', 'Ascites'], meds: ['Furosemide 40 mg daily', 'Spironolactone 100 mg daily'], allergies: 'NKDA',
+    exam: 'Jaundiced, spider naevi, palmar erythema. Distended abdomen with shifting dullness. Melena on rectal exam. Oriented, no asterixis.',
+    vit: { s: V(84, 116, 72, 16, 98, 36.7), c: V(148, 60, 34, 32, 86, 35.8, 7) },
+    labs: [['Hemoglobin', '7.1', 'g/dL', '13.5 - 17.5', 'L', 20], ['Platelets', '68', 'x10^9/L', '150 - 400', 'L', 30], ['INR', '1.8', '', '0.8 - 1.2', 'H', 30], ['Urea (BUN)', '48', 'mg/dL', '7 - 20', 'H', 35], ['Lactate', '3.4', 'mmol/L', '0.5 - 2.0', 'H', 6]],
+    steps: [
+      { key: 'resus', label: 'Resuscitation and transfusion', needs: ['md', 'rn'], dur: 14, blood: 2, sev: -0.08, rate: 0.004, note: 'Two 16G IVs. 2 units red cells, target hemoglobin 7-8 g/dL. Pantoprazole 80 mg IV, octreotide 50 mcg bolus then 50 mcg/h, ceftriaxone 1 g IV. GI on call requested.' },
+      { key: 'egd', label: 'Emergency endoscopy at the bedside', needs: ['gi', 'anes', 'rn'], dur: 35, sev: -0.35, rate: 0, note: 'Intubated for airway protection.', result: ['Upper endoscopy', 'Three columns of grade III esophageal varices with active spurting. Six bands placed, hemostasis achieved. No gastric varices.'] },
+      { key: 'admit', label: 'Medical ICU bed', needs: ['icu'], place: 'icu', end: 'admit' },
+    ],
+    clocks: [], arrestP: 0.25, good: 'Bleeding banded within hours. Transfused four units in total.', harm: 'Ongoing bleeding before endoscopy. Aspiration and hepatic encephalopathy.',
+    tip: 'Endoscopy needs the gastroenterologist, who is at home. Call in early.',
+  },
+  ectopic: {
+    title: 'Ruptured ectopic pregnancy', cc: 'Abdominal pain, vomiting', esi: 3, bed: ['acute', 'resus'], via: 'walk',
+    age: [22, 36], sex: 'F', rhythm: 'sinus', sev0: 0.28, rate: 0.007,
+    triage: 'Lower abdominal pain since this afternoon, vomited twice. Thinks it is food poisoning. HR 104, BP 106/68. Triaged ESI 3.',
+    hpi: 'Pain now sharp in the left lower abdomen with shoulder-tip pain when lying flat. Last period 7 weeks ago. Light spotting today. Felt faint in the waiting room.',
+    pmh: ['Previous chlamydia infection'], meds: ['None'], allergies: 'NKDA',
+    exam: 'Pale. Left iliac fossa tenderness with guarding and rebound. Cervical motion tenderness.',
+    vit: { s: V(82, 116, 72, 16, 99, 36.8), c: V(148, 58, 32, 34, 90, 35.6, 8) },
+    labs: [['Urine hCG', 'POSITIVE', '', 'negative', 'H', 4], ['Beta-hCG (serum)', '4,180', 'IU/L', '< 5', 'H', 40], ['Hemoglobin', '9.4', 'g/dL', '12.0 - 15.5', 'L', 20], ['Blood group', 'A RhD negative', '', '', '', 30]],
+    steps: [
+      { key: 'eval', label: 'Assessment, pregnancy test, bedside ultrasound', needs: ['md', 'rn', 'us'], dur: 12, rate: 0.004, note: 'Urine hCG positive. Two large-bore IVs, crossmatch 4 units. Obstetrics on call requested.', result: ['Bedside ultrasound', 'Free fluid in the pelvis and in Morison\'s pouch. Empty uterus. Complex left adnexal mass. Findings consistent with ruptured ectopic pregnancy.'] },
+      { key: 'or', label: 'Laparoscopic salpingectomy', needs: ['or', 'ob', 'anes', 'rn'], place: 'or', dur: 55, blood: 2, sev: -0.5, rate: 0, note: 'To OR.', result: ['Operative note', 'Ruptured left tubal ectopic with 1.1 L hemoperitoneum. Left salpingectomy. Anti-D immunoglobulin given (RhD negative).'] },
+      { key: 'admit', label: 'Gynecology ward bed', needs: ['ward'], place: 'ward', end: 'admit' },
+    ],
+    clocks: [], arrestP: 0.3, good: 'Recognized and in theatre before collapse. Home in two days.', harm: 'Collapsed before surgery. Massive transfusion and ICU.',
+    tip: 'Triage scored her ESI 3 on first look. Watch the waiting room: a rising NEWS score there is a patient in the wrong queue.',
+  },
+  hip: {
+    title: 'Displaced femoral neck fracture', cc: 'Fall, right hip pain', esi: 3, bed: ['acute', 'hall'], via: 'ems',
+    age: [74, 93], sex: 'F', rhythm: 'sinus', sev0: 0.1, rate: 0.0006, cap: 0.35,
+    triage: 'Tripped on a rug at home. Unable to bear weight. Right leg shortened and externally rotated. No head strike.',
+    hpi: 'Mechanical fall, no dizziness or chest pain beforehand. On the floor for about an hour.',
+    pmh: ['Osteoporosis', 'Hypertension', 'Mild dementia'], meds: ['Alendronate weekly', 'Amlodipine 5 mg daily'], allergies: 'Codeine (nausea)',
+    exam: 'Right leg shortened and externally rotated. Pain on any hip movement. Distal pulses and sensation intact.',
+    vit: { s: V(80, 138, 78, 16, 97, 36.6), c: V(112, 98, 58, 24, 91, 35.4, 13) },
+    labs: [['Hemoglobin', '11.8', 'g/dL', '12.0 - 15.5', 'L', 30], ['Creatinine', '0.9', 'mg/dL', '0.6 - 1.1', '', 35], ['CK', '310', 'U/L', '30 - 170', 'H', 40]],
+    steps: [
+      { key: 'eval', label: 'Assessment and analgesia', needs: ['pa|md', 'rn'], dur: 10, note: 'Fentanyl 25 mcg IV titrated. Neurovascularly intact. Skin intact over pressure areas.' },
+      { key: 'xr', label: 'X-ray pelvis and right hip', needs: ['xr'], dur: 10, result: ['X-ray pelvis and R hip', 'Displaced intracapsular fracture of the right femoral neck (Garden IV). No pelvic fracture.'] },
+      { key: 'block', label: 'Fascia iliaca nerve block, orthopedic referral', needs: ['pa|md'], dur: 12, note: 'Ultrasound-guided fascia iliaca block, 30 mL 0.25% bupivacaine. Pain 8/10 to 2/10. Orthopedics accept: surgery tomorrow.' },
+      { key: 'admit', label: 'Orthopedic ward bed', needs: ['ward'], place: 'ward', end: 'admit' },
+    ],
+    clocks: [], arrestP: 0.2, good: 'Pain controlled, on the ward before midnight, hemiarthroplasty next day.', harm: 'Long wait on a stretcher. Pressure injury and delirium.',
+  },
+  colic: {
+    title: 'Renal colic (ureteric stone)', cc: 'Left flank pain', esi: 3, bed: ['acute', 'fast', 'hall'], via: 'walk', patience: 260,
+    age: [28, 62], sex: 'M', rhythm: 'sinus', sev0: 0.08, rate: 0.0003, cap: 0.25,
+    triage: 'Sudden severe left flank pain radiating to the groin, cannot sit still. Vomited once. Urine dipstick: blood 3+.',
+    hpi: 'Similar episode four years ago that passed on its own. No fever, no urinary burning.',
+    pmh: ['Kidney stone (2022)'], meds: ['None'], allergies: 'NKDA',
+    exam: 'Writhing. Left costovertebral angle tenderness. Abdomen soft, no peritonism. Afebrile.',
+    vit: { s: V(78, 128, 80, 16, 99, 36.8), c: V(118, 152, 94, 24, 97, 37.0) },
+    labs: [['Creatinine', '1.1', 'mg/dL', '0.7 - 1.3', '', 35], ['WBC', '9.8', 'x10^9/L', '4.0 - 11.0', '', 30], ['Urinalysis', 'Blood 3+, nitrite neg', '', '', '', 15]],
+    steps: [
+      { key: 'eval', label: 'Assessment and analgesia', needs: ['pa|md', 'rn'], dur: 8, note: 'Ketorolac 15 mg IV and ondansetron 4 mg IV. Pain 9/10 to 3/10.' },
+      { key: 'ct', label: 'CT kidneys, ureters, bladder (no contrast)', needs: ['ct', 'porter'], dur: 12, result: ['CT KUB', '5 mm calculus at the left vesicoureteric junction with mild hydronephrosis. No other acute finding.'] },
+      { key: 'dc', label: 'Discharge', needs: ['rn'], dur: 6, end: 'home', note: 'Tamsulosin 0.4 mg daily, naproxen, strain urine. Urology clinic in 2 weeks. Return for fever or uncontrolled pain.' },
+    ],
+    clocks: [], good: 'Pain controlled, stone expected to pass.', harm: 'Left before being seen.',
+  },
+  psych: {
+    title: 'Suicidal ideation, involuntary hold', cc: 'Agitation, suicidal ideation', esi: 2, bed: ['bh', 'acute'], via: 'ems',
+    age: [19, 58], sex: 'any', rhythm: 'sinus', sev0: 0.04, rate: 0, cap: 0.1,
+    triage: 'Brought by police after a call from family. States a plan to overdose. Agitated but cooperative. No ingestion reported.',
+    hpi: 'Lost job last month, not sleeping, stopped own medication three weeks ago.',
+    pmh: ['Major depressive disorder'], meds: ['Sertraline 100 mg daily (stopped)'], allergies: 'NKDA',
+    exam: 'Tearful, poor eye contact. No injuries. Alert and oriented. No signs of intoxication.',
+    vit: { s: V(92, 132, 84, 18, 99, 36.9), c: V(120, 150, 96, 22, 98, 37.1) },
+    labs: [['Ethanol', '< 10', 'mg/dL', '< 10', '', 40], ['Acetaminophen', '< 10', 'mcg/mL', '< 10', '', 40], ['Salicylate', '< 5', 'mg/dL', '< 5', '', 40], ['TSH', '2.1', 'mIU/L', '0.4 - 4.0', '', 55]],
+    steps: [
+      { key: 'clear', label: 'Medical clearance, safety search, 1:1 sitter', needs: ['md', 'rn'], dur: 12, note: 'Belongings secured, room made ligature-safe. Medically stable for psychiatric assessment. Continuous observation.' },
+      { key: 'psy', label: 'Psychiatric assessment', needs: ['psy'], dur: 30, note: 'Severe depressive episode with active suicidal ideation and plan. Lacks capacity to refuse admission tonight. Involuntary hold completed. Needs an inpatient psychiatric bed.' },
+      { key: 'admit', label: 'Inpatient psychiatric bed', needs: ['psych'], place: 'psych', end: 'admit' },
+    ],
+    clocks: [], good: 'Assessed and admitted to the psychiatric unit.', harm: 'Boarded all night in the ED without a bed.',
+    tip: 'The psychiatric unit is full until morning. This patient will board: plan the room around that.',
+  },
+  chf: {
+    title: 'Acute pulmonary edema (heart failure)', cc: 'Severe shortness of breath', esi: 2, bed: ['acute', 'resus'], via: 'ems',
+    age: [58, 86], sex: 'any', rhythm: 'af', sev0: 0.45, rate: 0.006,
+    triage: 'Woke up gasping, cannot lie flat. Pink frothy sputum. SpO2 86% on room air, EMS started CPAP.',
+    hpi: 'Ran out of furosemide five days ago. Ankles more swollen all week. Sleeps on four pillows.',
+    pmh: ['Heart failure (LVEF 30%)', 'Atrial fibrillation', 'Previous MI'], meds: ['Furosemide 40 mg daily', 'Bisoprolol 5 mg daily', 'Apixaban 5 mg BID'], allergies: 'NKDA',
+    exam: 'Sitting bolt upright. Crackles to the mid zones bilaterally. JVP 9 cm. Pitting edema to the knees.',
+    ecg: 'Atrial fibrillation, rate 118. Old anterior Q waves. No new ST elevation.',
+    vit: { s: V(88, 132, 80, 18, 96, 36.7), c: V(148, 210, 118, 40, 76, 36.4, 9) },
+    labs: [['BNP', '1,850', 'pg/mL', '< 100', 'H', 40], ['Troponin T (hs)', '28', 'ng/L', '< 14', 'H', 40], ['Creatinine', '1.5', 'mg/dL', '0.7 - 1.3', 'H', 35], ['Potassium', '4.4', 'mmol/L', '3.5 - 5.0', '', 35]],
+    steps: [
+      { key: 'niv', label: 'BiPAP, IV furosemide, nitroglycerin', needs: ['md', 'rn', 'rt'], dur: 15, sev: -0.25, rate: 0.001, note: 'BiPAP 12/6 cmH2O, FiO2 0.6. Furosemide 80 mg IV. Nitroglycerin infusion titrated to BP. Urine output 600 mL in the first hour.' },
+      { key: 'cxr', label: 'Portable chest X-ray', needs: ['xr'], dur: 8, result: ['Chest X-ray', 'Cardiomegaly. Bilateral perihilar interstitial edema with Kerley B lines and small pleural effusions.'] },
+      { key: 'admit', label: 'Telemetry ward bed', needs: ['ward'], place: 'ward', end: 'admit' },
+    ],
+    clocks: [], arrestP: 0.3, good: 'Off BiPAP in three hours, diuresing well.', harm: 'Tired out before support arrived. Intubated and ventilated.',
+  },
+  appendicitis: {
+    title: 'Acute appendicitis', cc: 'Right lower abdominal pain', esi: 3, bed: ['acute', 'hall'], via: 'walk', patience: 320,
+    age: [14, 38], sex: 'any', rhythm: 'sinus', sev0: 0.12, rate: 0.0012, cap: 0.55,
+    triage: 'Pain began around the navel yesterday and moved to the right lower abdomen. Nausea, no appetite. T 37.9.',
+    hpi: 'Worse with walking and coughing. No diarrhea, no urinary symptoms.',
+    pmh: ['None'], meds: ['None'], allergies: 'NKDA',
+    exam: 'Tender at McBurney\'s point with guarding. Rovsing sign positive. Bowel sounds reduced.',
+    vit: { s: V(82, 122, 76, 16, 99, 37.2), c: V(128, 92, 54, 26, 95, 39.2, 14) },
+    labs: [['WBC', '15.2', 'x10^9/L', '4.0 - 11.0', 'H', 30], ['CRP', '86', 'mg/L', '< 5', 'H', 40], ['Urine hCG', 'negative', '', 'negative', '', 4]],
+    steps: [
+      { key: 'eval', label: 'Assessment and analgesia', needs: ['pa|md', 'rn'], dur: 10, note: 'Morphine 4 mg IV, ondansetron 4 mg IV. Nil by mouth. IV fluids.' },
+      { key: 'ct', label: 'CT abdomen and pelvis with contrast', needs: ['ct', 'porter'], dur: 14, result: ['CT abdomen / pelvis', 'Dilated 11 mm appendix with wall enhancement and periappendiceal fat stranding. No perforation or abscess.'] },
+      { key: 'consult', label: 'Surgical consult, pre-operative antibiotics', needs: ['surg'], dur: 8, note: 'Surgery agrees: laparoscopic appendectomy tonight. Cefazolin 2 g and metronidazole 500 mg IV.' },
+      { key: 'or', label: 'Laparoscopic appendectomy', needs: ['or', 'surg', 'anes'], place: 'or', dur: 40, sev: -0.1, rate: 0, note: 'To OR.', result: ['Operative note', 'Inflamed, non-perforated appendix removed laparoscopically. No complications.'] },
+      { key: 'admit', label: 'Surgical ward bed', needs: ['ward'], place: 'ward', end: 'admit' },
+    ],
+    clocks: [], arrestP: 0.3, good: 'Appendix out before it perforated.', harm: 'Perforated while waiting. Abscess and a week of IV antibiotics.',
+  },
+  forearm: {
+    title: 'Distal radius buckle fracture (child)', cc: 'Wrist injury, fell off scooter', esi: 4, bed: ['fast', 'hall'], via: 'walk', patience: 200,
+    age: [5, 11], sex: 'any', rhythm: 'sinus', sev0: 0.03, rate: 0, cap: 0.05,
+    triage: 'Fell onto an outstretched hand. Swollen, tender left wrist. Moving fingers, good colour. Weight 28 kg.',
+    hpi: 'No head injury. Up to date with immunizations. Parent present.',
+    pmh: ['None'], meds: ['None'], allergies: 'NKDA',
+    exam: 'Tender over the distal radius, mild swelling, no deformity. Radial pulse and sensation normal.',
+    vit: { s: V(96, 104, 64, 20, 99, 36.9), c: V(124, 110, 70, 26, 99, 37.0) },
+    labs: [],
+    steps: [
+      { key: 'eval', label: 'Assessment and analgesia', needs: ['pa|md', 'rn'], dur: 6, note: 'Ibuprofen 10 mg/kg PO. Arm in a sling.' },
+      { key: 'xr', label: 'X-ray left wrist', needs: ['xr'], dur: 8, result: ['X-ray L wrist', 'Buckle (torus) fracture of the distal radial metaphysis. Growth plate not involved.'] },
+      { key: 'dc', label: 'Splint and discharge', needs: ['rn'], dur: 8, end: 'home', note: 'Removable wrist splint for 3 weeks. No follow-up X-ray needed. Advice sheet given to parent.' },
+    ],
+    clocks: [], good: 'Splinted and home within two hours.', harm: 'Left before being seen.',
+  },
+  laceration: {
+    title: 'Hand laceration', cc: 'Cut hand, kitchen knife', esi: 4, bed: ['fast', 'hall'], via: 'walk', patience: 170,
+    age: [18, 60], sex: 'any', rhythm: 'sinus', sev0: 0.02, rate: 0, cap: 0.05,
+    triage: '4 cm cut across the left palm while cooking. Bleeding controlled with pressure. Tetanus over 10 years ago.',
+    hpi: 'Clean knife. Right-handed. No numbness of the fingers.',
+    pmh: ['None'], meds: ['None'], allergies: 'NKDA',
+    exam: '4 cm laceration through the dermis of the thenar eminence. Full finger flexion and extension against resistance. Sensation normal distally.',
+    vit: { s: V(78, 124, 78, 14, 99, 36.7), c: V(104, 130, 82, 18, 99, 36.8) },
+    labs: [],
+    steps: [
+      { key: 'repair', label: 'Wound exploration and suture', needs: ['pa|md', 'rn'], dur: 18, note: '1% lidocaine local infiltration. Irrigated with 500 mL saline, no tendon injury, no foreign body. Five 4-0 nylon sutures. Tdap booster given.' },
+      { key: 'dc', label: 'Discharge', needs: ['rn'], dur: 4, end: 'home', note: 'Keep dry 48 h. Suture removal in 10 days. Wound infection advice.' },
+    ],
+    clocks: [], good: 'Sutured, tetanus updated.', harm: 'Left before being seen.',
+  },
+  ankle: {
+    title: 'Ankle sprain', cc: 'Twisted ankle', esi: 5, bed: ['fast', 'hall'], via: 'walk', patience: 130,
+    age: [16, 50], sex: 'any', rhythm: 'sinus', sev0: 0.02, rate: 0, cap: 0.05,
+    triage: 'Inversion injury playing five-a-side. Walked in with a limp. Swelling over the outer ankle.',
+    hpi: 'Able to take four steps. No previous injury.',
+    pmh: ['None'], meds: ['None'], allergies: 'NKDA',
+    exam: 'Bone tenderness at the tip of the lateral malleolus. Ottawa ankle rules positive. Neurovascularly intact.',
+    vit: { s: V(74, 122, 76, 14, 99, 36.7), c: V(96, 126, 80, 16, 99, 36.8) },
+    labs: [],
+    steps: [
+      { key: 'eval', label: 'Assessment (Ottawa ankle rules)', needs: ['pa|md'], dur: 6, note: 'Tender lateral malleolus: X-ray indicated. Ibuprofen 400 mg PO.' },
+      { key: 'xr', label: 'X-ray right ankle', needs: ['xr'], dur: 8, result: ['X-ray R ankle', 'No fracture. Soft tissue swelling over the lateral malleolus. Mortise intact.'] },
+      { key: 'dc', label: 'Discharge', needs: ['rn'], dur: 5, end: 'home', note: 'Elastic support, ice, elevation. Weight bear as tolerated. Physiotherapy exercises sheet.' },
+    ],
+    clocks: [], good: 'No fracture, strapped and home.', harm: 'Left before being seen.',
+  },
+  rebleed: {
+    title: 'Post-operative hemorrhage (ICU inpatient)', cc: 'ICU patient: drain output rising, hypotensive', esi: 1, bed: ['icu'], via: 'house',
+    age: [48, 72], sex: 'any', rhythm: 'sinus', sev0: 0.45, rate: 0.007,
+    triage: 'ICU calling: day 0 after bowel resection. 700 mL of blood from the abdominal drain in one hour. Needs to go back to theatre.',
+    hpi: 'Right hemicolectomy for cancer this afternoon. Stable until 30 min ago.',
+    pmh: ['Colon cancer', 'Coronary stent on aspirin'], meds: ['Aspirin 81 mg daily'], allergies: 'NKDA',
+    exam: 'Abdomen tense and distended. Drain bag filling with fresh blood. Cool peripheries.',
+    vit: { s: V(86, 120, 72, 16, 98, 36.7), c: V(144, 62, 36, 32, 86, 35.4, 7) },
+    labs: [['Hemoglobin', '7.4', 'g/dL', '13.5 - 17.5', 'L', 15], ['Lactate', '3.9', 'mmol/L', '0.5 - 2.0', 'H', 6]],
+    steps: [
+      { key: 'reop', label: 'Return to theatre: re-exploration', needs: ['or', 'surg', 'anes'], place: 'or', dur: 50, blood: 2, sev: -0.4, rate: 0, note: 'Back to OR.', result: ['Operative note', 'Bleeding mesenteric vessel ligated. 1.2 L clot evacuated. Anastomosis intact.'] },
+      { key: 'admit', label: 'Back to an ICU bed', needs: ['icu'], place: 'icu', end: 'admit' },
+    ],
+    clocks: [], arrestP: 0.3, good: 'Bleeding vessel tied off. Back in ICU, stable.', harm: 'Delay to theatre. Prolonged shock and re-intubation.',
+    tip: 'He holds an ICU bed and needs an OR. If the patient in the OR is waiting for an ICU bed, each holds what the other needs: a bed huddle swaps them in one move.',
+  },
+};
+
+/** How often each case shows up as an unscripted arrival. */
+const CASE_WEIGHTS = { colic: 6, laceration: 8, ankle: 8, forearm: 5, appendicitis: 4, hip: 5, chf: 4, dka: 3, sepsis: 4, psych: 2, gibleed: 2, overdose: 3, anaphylaxis: 2, ectopic: 1, stroke: 2, stemi: 2, trauma: 1 };
+
+const NAMES = {
+  M: ['Daniel', 'Luis', 'Tyrell', 'Bao', 'Samir', 'Chidi', 'Marek', 'Owen', 'Kenji', 'Rafael', 'Arjun', 'Liam', 'Yusuf', 'Andre', 'Piotr', 'Haruto', 'Mateus', 'Callum'],
+  F: ['Margaret', 'Anna', 'Greta', 'Ines', 'Aisha', 'Mei', 'Rosa', 'Fatima', 'Siobhan', 'Nadia', 'Olivia', 'Thandiwe', 'Hana', 'Elif', 'Camille', 'Ngozi', 'Sofia', 'Ruth'],
+  L: ['Okonkwo', 'Hale', 'Vasquez', 'Petrov', 'Brooks', 'Lindqvist', 'Nguyen', 'Farouk', 'Morales', 'Abara', 'Kowalski', 'Tanaka', 'Mbeki', 'Castillo', 'Rahman', 'Fraser', 'Yilmaz', 'Santos', 'Dubois', 'Achebe', 'Ivanova', 'Park', 'Hughes', 'Ortega', 'Bianchi', 'Sato', 'Mwangi', 'Lund'],
+};
+
+/* ---- patient ---- */
+/* One patient: identity, chart, and a simple physiology model.
+ * "sev" runs from 0 (well) to 1 (cardiac arrest). Vital signs are read off it by
+ * sliding between the case's well and collapse values, so a number on the monitor
+ * always means the same thing as the number driving the simulation. */
+
+
+
+function makePatient(state, caseKey, at) {
+  const c = CASES[caseKey];
+  const sex = c.sex === 'any' ? (rnd(state) < 0.5 ? 'M' : 'F') : c.sex;
+  const id = state.nextPid++;
+  const p = {
+    id, case: caseKey, sex,
+    name: `${pick(state, NAMES.L)}, ${pick(state, NAMES[sex])}`,
+    age: rint(state, c.age[0], c.age[1]),
+    mrn: String(10400000 + rint(state, 1000, 899999)),
+    esi: c.esi, cc: c.cc, via: c.via,
+    arriveAt: at, placedAt: null, seenAt: null, leftAt: null,
+    status: 'waiting',            // expected | waiting | active | admitted | home | died | lwbs
+    loc: null, using: [], preplaced: false,
+    stepIdx: 0, stepState: 'need', stepLeft: 0, reqAt: at,
+    prio: false, hold: false,
+    sev: c.sev0, rate: c.rate, peak: c.sev0,
+    arrest: null, arrested: false,
+    clocks: {}, labs: [], results: [], notes: [], outcome: null, newsBand: 0,
+  };
+  for (const k of c.clocks || []) p.clocks[k.key] = { label: k.label, limit: k.limit, at: null, met: null };
+  p.notes.push({ t: at, kind: 'Triage', author: 'Tariq Aziz RN', text: c.triage });
+  return p;
+}
+
+const lerp = (a, b, k) => a + (b - a) * k;
+
+/** Vital signs at minute t. Pure: the same patient and minute always give the same reading. */
+function vitalsOf(p, t) {
+  if (p.arrest) return { hr: 0, sbp: 0, dbp: 0, rr: 0, spo2: 0, temp: 36.0, gcs: 3, o2: true, arrest: true };
+  const c = CASES[p.case], k = Math.max(0, Math.min(1, p.sev));
+  const j = (i, amp) => jitter(p.id * 31 + i, Math.floor(t / 3)) * amp;
+  const o2 = (p.placedAt !== null || p.via === 'ems') && c.vit.c.spo2 < 92 && k > 0.3;
+  const spo2 = Math.round(Math.min(100, lerp(c.vit.s.spo2, c.vit.c.spo2, k) + (o2 ? 3 : 0) + j(5, 0.8)));
+  return {
+    hr: Math.round(lerp(c.vit.s.hr, c.vit.c.hr, k) + j(1, 3)),
+    sbp: Math.round(lerp(c.vit.s.sbp, c.vit.c.sbp, k) + j(2, 4)),
+    dbp: Math.round(lerp(c.vit.s.dbp, c.vit.c.dbp, k) + j(3, 3)),
+    rr: Math.max(2, Math.round(lerp(c.vit.s.rr, c.vit.c.rr, k) + j(4, 1))),
+    spo2,
+    temp: Math.round((lerp(c.vit.s.temp, c.vit.c.temp, k) + j(6, 0.1)) * 10) / 10,
+    gcs: Math.round(lerp(c.vit.s.gcs, c.vit.c.gcs, k)),
+    o2, arrest: false,
+  };
+}
+
+const newsOf = (p, t) => news2(vitalsOf(p, t));
+const caseOf = (p) => CASES[p.case];
+const stepOf = (p) => CASES[p.case].steps[p.stepIdx] || null;
+const isBoarding = (p) => { const s = stepOf(p); return !!s && s.end === 'admit' && p.stepState === 'need'; };
+const inDepartment = (p) => p.status === 'waiting' || p.status === 'active';
+
+/* ---- scenario ---- */
+/* The night: who arrives when. Scripted set pieces carry the lessons; seeded random
+ * arrivals around them keep the department busy and make each seed a different shift.
+ * Times are minutes after 19:00. Negative times are the day shift's leftovers. */
+
+
+/** [minute, case]. Ambulance cases are announced `pre` minutes before they arrive. */
+const SET_PIECES = [
+  [14, 'stemi'],            // 19:14  cath team is at home: call in on the pre-alert
+  [52, 'colic'], [58, 'stroke'],   // a kidney stone reaches the CT queue just before the stroke
+  [95, 'anaphylaxis'],      // walks in, sits in the waiting room
+  [128, 'trauma'], [150, 'sepsis'],
+  [185, 'ectopic'],         // under-triaged, deteriorates in the waiting room
+  [215, 'gibleed'], [262, 'overdose'], [300, 'chf'], [330, 'psych'],
+  [352, 'appendicitis'],
+  [395, 'rebleed'],         // 01:35  ICU patient needs the OR while the OR patient needs an ICU bed
+  [402, 'trauma'],
+  [455, 'stemi'], [470, 'dka'],
+  // 03:00 bus crash: a surge
+  [480, 'trauma'], [483, 'hip'], [485, 'laceration'], [487, 'forearm'], [489, 'trauma'], [492, 'ankle'], [495, 'laceration'],
+  [560, 'stroke'], [600, 'sepsis'], [640, 'chf'], [675, 'overdose'],
+];
+
+/** Unscripted arrivals per hour, 19:00 to 07:00. Evenings are the busiest. */
+const PER_HOUR = [8, 8, 7, 7, 6, 5, 4, 4, 3, 4, 5, 6];
+const WARMUP = ['hip', 'appendicitis', 'chf', 'colic', 'hip', 'laceration', 'dka', 'colic', 'forearm', 'appendicitis', 'ankle', 'laceration', 'colic', 'ankle'];
+
+function weighted(state, allow) {
+  const keys = Object.keys(CASE_WEIGHTS).filter(allow);
+  let roll = rnd(state) * keys.reduce((a, k) => a + CASE_WEIGHTS[k], 0);
+  for (const k of keys) { roll -= CASE_WEIGHTS[k]; if (roll <= 0) return k; }
+  return keys[0];
+}
+
+function buildSchedule(state) {
+  const out = [];
+  WARMUP.forEach((k, i) => out.push({ at: -70 + i * 5 + rint(state, 0, 3), case: k }));
+  for (const [at, k] of SET_PIECES) out.push({ at, case: k });
+  PER_HOUR.forEach((n, h) => {
+    for (let i = 0; i < n; i += 1) {
+      // first hour stays gentle: minor cases only, so the opening teaches placing and queues
+      const k = weighted(state, (c) => (h === 0 ? CASES[c].esi >= 3 : true));
+      out.push({ at: h * 60 + rint(state, 0, 59), case: k });
+    }
+  });
+  for (const e of out) {
+    const c = CASES[e.case];
+    e.pre = c.via === 'ems' ? (c.prealert ? rint(state, 7, 10) : rint(state, 3, 5)) : 0;
+  }
+  return out.sort((a, b) => a.at - a.pre - (b.at - b.pre));
+}
+
+/** Inpatient beds that free up on their own overnight (very few do). [minute, kind] */
+const BED_RELEASES = [[70, 'ward'], [130, 'icu'], [160, 'ward'], [250, 'icu'], [300, 'ward'], [340, 'ward'], [420, 'icu'], [500, 'ward'], [540, 'icu'], [570, 'psych'], [610, 'ward'], [660, 'icu']];
+
+/* ---- sim ---- */
+/* The simulation. One tick is one minute of the night.
+ *
+ * The rule that makes a hospital jam is the same rule that makes software deadlock:
+ *   a care step starts only when EVERYTHING it needs is free at the same moment,
+ *   and a patient keeps the place they are in until the next place is theirs.
+ * The charge nurse never treats anyone. They decide who gets which bed, who goes
+ * first, what is held back, who is called in, and when to swap. */
+
+
+
+
+
+const CODE_MINUTES = 8;
+
+function newShift(seed = 'HARBOURSIDE') {
+  const state = {
+    seed, rng: seedFrom(seed), t: -96, nextPid: 1, nextAlert: 1, over: false,
+    units: buildUnits(), patients: {}, schedule: [], timers: [], alerts: [], log: [],
+    stock: { ...START_STOCK }, phone: { stepdown: 7, discharge: 8, blood: false },
+    called: {}, divertUntil: -1, divertReadyAt: 0, diverted: 0, gridlocks: [],
+  };
+  state.schedule = buildSchedule(state);
+  for (const [at, kind] of BED_RELEASES) state.timers.push({ at, type: 'bedFree', kind });
+  while (state.t < 0) { autopilot(state); tick(state); }   // the day shift hands over a working department
+  state.alerts = [];
+  return state;
+}
+
+const patientsOf = (state) => Object.values(state.patients);
+const unitsOfKinds = (state, kinds) => Object.values(state.units).filter((u) => kinds.includes(u.kind));
+const say = (state, pid, text, type = 'event') => state.log.push({ t: state.t, pid, type, text });
+const note = (state, p, kind, author, text) => p.notes.push({ t: state.t, kind, author, text });
+
+function alert(state, level, key, pid, title, text) {
+  if (state.alerts.some((a) => a.key === key)) return;
+  state.alerts.unshift({ id: state.nextAlert++, t: state.t, level, key, pid, title, text, ack: false });
+  if (state.alerts.length > 80) state.alerts.length = 80;
+}
+
+/* ---------- resources ---------- */
+
+function release(state, uid, pid) {
+  const u = state.units[uid];
+  if (u && u.holder === pid) u.holder = null;
+}
+
+/** ED bed kinds this patient may be placed in. Boarders may also go to the hallway. */
+function allowedKinds(p) {
+  const base = [...caseOf(p).bed];
+  if (base.includes('acute') && !base.includes('resus')) base.push('resus');
+  if (isBoarding(p) && !base.includes('hall')) base.push('hall');
+  return base;
+}
+
+/** Try to take everything a step needs. Returns the units, or null and takes nothing. */
+function tryAcquire(state, p, step) {
+  if (!p.resume && step.blood && state.stock.prbc < step.blood) return null;
+  const got = [];
+  let skipPlace = p.preplaced && step.place;
+  for (const need of step.needs) {
+    const kinds = need.split('|');
+    if (skipPlace && kinds.includes(step.place)) { skipPlace = false; continue; }
+    const free = unitsOfKinds(state, kinds).filter((u) => !u.holder && !got.includes(u) && (!u.reservedFor || u.reservedFor === p.id));
+    const u = free.find((x) => x.reservedFor === p.id) || free[0];
+    if (!u) return null;
+    got.push(u);
+  }
+  return got;
+}
+
+/** Why can this patient not move on? One entry per missing thing, with who holds it. */
+function blockers(state, p) {
+  if (p.status === 'expected') return [];
+  if (p.status === 'waiting') return [{ need: 'bed', kinds: [], label: `No bed yet. Suitable: ${caseOf(p).bed.map((k) => KINDS[k].label.toLowerCase()).join(' or ')}`, holders: [], absent: false }];
+  const step = stepOf(p);
+  if (!step || p.stepState !== 'need') return [];
+  const out = [], taken = [];
+  let skipPlace = p.preplaced && step.place;
+  for (const need of step.needs) {
+    const kinds = need.split('|');
+    if (skipPlace && kinds.includes(step.place)) { skipPlace = false; continue; }
+    const all = unitsOfKinds(state, kinds);
+    const u = all.find((x) => !x.holder && !taken.includes(x) && (!x.reservedFor || x.reservedFor === p.id));
+    if (u) { taken.push(u); continue; }
+    out.push({
+      need, kinds, label: kinds.map((k) => KINDS[k].label).join(' or '), absent: all.length === 0,
+      holders: all.map((x) => ({ unit: x.id, name: x.name, pid: x.holder === 'bg' ? null : x.holder, bg: x.holder === 'bg', reservedFor: x.holder ? null : x.reservedFor })),
+    });
+  }
+  if (!p.resume && step.blood && state.stock.prbc < step.blood) out.push({ need: 'blood', kinds: [], label: `Red cells: needs ${step.blood} units, ${state.stock.prbc} in the fridge`, holders: [], absent: true });
+  return out;
+}
+
+/* ---------- care steps ---------- */
+
+function startStep(state, p, step, got) {
+  const t = state.t, c = caseOf(p);
+  for (const u of got) { u.holder = p.id; if (u.reservedFor === p.id) u.reservedFor = null; }
+  const placeU = step.place ? got.find((u) => u.kind === step.place) : null;
+  if (placeU) { release(state, p.loc, p.id); p.loc = placeU.id; }
+  if (step.place) p.preplaced = false;
+  p.using = got.filter((u) => u !== placeU).map((u) => u.id);
+  for (const q of patientsOf(state)) {   // somebody who asked earlier for the same thing was passed over
+    if (q !== p && q.status === 'active' && q.stepState === 'need' && !q.hold && q.reqAt < p.reqAt) {
+      const qs = stepOf(q);
+      if (qs && qs.needs.some((n) => got.some((u) => n.split('|').includes(u.kind)))) q.passed = (q.passed || 0) + 1;
+    }
+  }
+  if (!p.resume) {
+    const hall = state.units[p.loc] && state.units[p.loc].kind === 'hall';
+    p.stepLeft = Math.round((step.dur || 0) * (hall ? 1.3 : 1));
+    if (step.blood) state.stock.prbc -= step.blood;
+    if (step.rate !== undefined) p.rate = step.rate;
+    const doc = got.find((u) => ['md', 'pa', 'surg', 'cards', 'neuro', 'ob', 'gi', 'psy'].includes(u.kind));
+    p.author = doc ? doc.name : (got.find((u) => u.kind === 'rn') || { name: 'ED nursing' }).name;
+    if (p.seenAt === null && doc) p.seenAt = t;
+    markClock(state, p, step, 'start');
+    say(state, p.id, `${step.label} started`);
+  }
+  p.resume = false; p.passed = 0; p.stepState = 'run';
+  if (p.stepLeft <= 0) finishStep(state, p);
+}
+
+function markClock(state, p, step, when) {
+  for (const k of caseOf(p).clocks || []) {
+    if (k.step !== step.key || (k.on || 'start') !== when || p.clocks[k.key].at !== null) continue;
+    const took = state.t + (k.lead || 0) - p.arriveAt;
+    p.clocks[k.key].at = took; p.clocks[k.key].met = took <= k.limit;
+    if (!p.clocks[k.key].met) alert(state, 'warn', `clockmiss:${p.id}:${k.key}`, p.id, `${k.label} missed`, `${p.name}: ${took} min against a ${k.limit} min target.`);
+  }
+}
+
+function finishStep(state, p) {
+  const step = stepOf(p);
+  for (const uid of p.using) release(state, uid, p.id);
+  p.using = [];
+  if (step.sev) p.sev = Math.max(0, p.sev + step.sev);
+  if (step.note) note(state, p, step.place ? 'Procedure' : 'Provider', p.author, step.note);
+  if (step.result) { p.results.push({ t: state.t, name: step.result[0], text: step.result[1] }); note(state, p, 'Result', step.result[0], step.result[1]); }
+  markClock(state, p, step, 'end');
+  if (step.end === 'admit') {
+    state.units[p.loc].holder = 'bg';
+    leave(state, p, 'admitted', `Admitted to ${state.units[p.loc].name}`);
+  } else if (step.end === 'home') {
+    release(state, p.loc, p.id);
+    leave(state, p, 'home', 'Discharged home');
+  } else { p.stepIdx += 1; p.stepState = 'need'; p.reqAt = state.t; }
+}
+
+function leave(state, p, status, text) {
+  const c = caseOf(p);
+  for (const u of Object.values(state.units)) if (u.reservedFor === p.id) u.reservedFor = null;
+  for (const x of state.alerts) if (x.pid === p.id && !/^(death|lwbs|clockmiss)/.test(x.key)) x.ack = true;   // nothing left to act on
+  p.dest = p.loc ? state.units[p.loc].name : null;
+  p.status = status; p.leftAt = state.t; p.loc = null; p.using = [];
+  if (status === 'died') p.outcome = { grade: 'died', text };
+  else if (status === 'lwbs') p.outcome = { grade: 'harm', text: 'Left without being seen after a long wait.' };
+  else {
+    const missed = Object.values(p.clocks).some((k) => k.met === false);
+    const bad = p.arrested || missed || p.peak >= 0.92;
+    p.outcome = { grade: bad ? 'harm' : 'good', text: bad ? c.harm : c.good };
+  }
+  say(state, p.id, text, status);
+}
+
+function interrupt(state, q, why) {
+  for (const uid of q.using) release(state, uid, q.id);
+  q.using = []; q.stepState = 'need'; q.resume = true; q.stepLeft += 2;
+  note(state, q, 'Nursing', 'ED nursing', `Care interrupted: ${why}. Step will resume when the team is back.`);
+}
+
+/* ---------- cardiac arrest ---------- */
+
+function startArrest(state, p) {
+  const step = stepOf(p);
+  const stuck = blockers(state, p).map((b) => b.label).join('; ');
+  p.why = p.status === 'waiting' ? 'Arrested without ever getting a bed.' : stuck ? `Arrested while waiting for: ${stuck}.` : 'Arrested during treatment.';
+  p.arrest = { at: state.t, teamAt: null, team: [] };
+  p.arrested = true;
+  if (p.stepState === 'run' && step && step.place) p.arrest.teamAt = state.t;      // already surrounded by a team
+  else if (p.stepState === 'run') interrupt(state, p, 'cardiac arrest');
+  alert(state, 'crit', `code:${p.id}:${state.t}`, p.id, 'CODE BLUE', `${p.name}, ${p.loc ? state.units[p.loc].name : 'waiting room'}. Cardiac arrest.`);
+  note(state, p, 'Nursing', 'ED nursing', 'Unresponsive, no pulse. CPR started. Code Blue called.');
+  say(state, p.id, 'Cardiac arrest', 'code');
+}
+
+function codeTeam(state, p) {
+  const team = [];
+  for (const kind of ['md', 'rn']) {
+    let u = unitsOfKinds(state, [kind]).find((x) => !x.holder);
+    if (!u) {   // pull a team member off the least urgent patient
+      const victims = patientsOf(state).filter((q) => q.status === 'active' && q.stepState === 'run' && !q.arrest && !stepOf(q).place && q.using.some((id) => state.units[id].kind === kind));
+      victims.sort((a, b) => b.esi - a.esi);
+      if (victims[0]) { interrupt(state, victims[0], `team pulled to the Code Blue for ${p.name}`); u = unitsOfKinds(state, [kind]).find((x) => !x.holder); }
+    }
+    if (!u) { for (const x of team) x.holder = null; return null; }
+    u.holder = p.id; team.push(u);
+  }
+  return team.map((u) => u.id);
+}
+
+function codeTick(state, p) {
+  const a = p.arrest, c = caseOf(p);
+  if (a.teamAt === null) {
+    const team = codeTeam(state, p);
+    if (team) { a.teamAt = state.t; a.team = team; }
+    else if (state.t - a.at >= 10) die(state, p, `Cardiac arrest. Nobody was free to run the code. ${p.why}`);
+    return;
+  }
+  if (state.t - a.teamAt < CODE_MINUTES) return;
+  for (const uid of a.team) release(state, uid, p.id);
+  const chance = (c.arrestP ?? 0.3) * Math.max(0, 1 - 0.15 * (a.teamAt - a.at));
+  if (rnd(state) < chance) {
+    p.arrest = null; p.sev = 0.8; p.rate *= 0.6;
+    note(state, p, 'Provider', 'Code team', 'Return of spontaneous circulation after 3 cycles of CPR and epinephrine 1 mg x2. Post-arrest care started.');
+    alert(state, 'info', `rosc:${p.id}:${state.t}`, p.id, 'ROSC', `${p.name}: pulse back. Still critical.`);
+    say(state, p.id, 'Return of spontaneous circulation', 'event');
+  } else die(state, p, `Died after cardiac arrest. ${p.why}`);
+}
+
+function die(state, p, text) {
+  for (const uid of [...p.using, ...(p.arrest ? p.arrest.team : [])]) release(state, uid, p.id);
+  release(state, p.loc, p.id);
+  p.arrest = null;
+  note(state, p, 'Provider', 'Code team', 'Resuscitation stopped. Time of death recorded. Family informed.');
+  alert(state, 'crit', `death:${p.id}`, p.id, 'Patient died', `${p.name}. ${text}`);
+  leave(state, p, 'died', text);
+}
+
+/* ---------- the minute ---------- */
+
+function arrivals(state) {
+  const t = state.t;
+  while (state.schedule.length && state.schedule[0].at - state.schedule[0].pre <= t) {
+    const e = state.schedule.shift(), c = CASES[e.case];
+    if (c.via === 'ems' && t < state.divertUntil) { state.diverted += 1; say(state, null, `Ambulance diverted to another hospital (${c.cc})`, 'divert'); continue; }
+    const p = makePatient(state, e.case, e.at);
+    state.patients[p.id] = p;
+    if (c.via === 'house') {
+      const u = unitsOfKinds(state, ['icu']).find((x) => x.holder === 'bg');
+      if (!u) { delete state.patients[p.id]; continue; }
+      u.holder = p.id; p.loc = u.id; p.status = 'active'; p.placedAt = t; p.arriveAt = t; p.reqAt = t; p.name += ' (ICU)';
+      p.labs = c.labs.map((l) => ({ l, at: t + l[5] }));
+      alert(state, 'crit', `house:${p.id}`, p.id, 'ICU: return to theatre', `${p.name} in ${u.name} is bleeding and needs an operating room.`);
+    } else if (e.pre > 0) {
+      p.status = 'expected';
+      alert(state, c.prealert ? 'crit' : 'info', `pre:${p.id}`, p.id, c.prealert ? `${c.prealert} inbound` : 'Ambulance inbound', `ETA ${e.at - t} min. ${p.age} ${p.sex}, ${c.cc.toLowerCase()}.`);
+    } else say(state, p.id, 'Walked in, triaged', 'arrive');
+  }
+  for (const p of patientsOf(state)) {
+    if (p.status === 'expected' && t >= p.arriveAt) { p.status = 'waiting'; p.reqAt = t; say(state, p.id, 'Ambulance arrived', 'arrive'); for (const x of state.alerts) if (x.key === `pre:${p.id}`) x.ack = true; alert(state, p.esi <= 2 ? 'warn' : 'info', `door:${p.id}`, p.id, 'Ambulance at the door', `${p.name}, ESI ${p.esi}. Needs a bed.`); }
+  }
+}
+
+function runTimers(state) {
+  const due = state.timers.filter((x) => x.at <= state.t);
+  state.timers = state.timers.filter((x) => x.at > state.t);
+  for (const x of due) {
+    if (x.type === 'bedFree') {
+      const u = unitsOfKinds(state, [x.kind]).find((y) => y.holder === 'bg');
+      if (u) { u.holder = null; alert(state, 'info', `free:${u.id}:${state.t}`, null, `${u.name} is free`, x.why || 'An inpatient was discharged.'); }
+    } else if (x.type === 'arrive') {
+      const u = ON_CALL[x.kind].unit();
+      state.units[u.id] = u; state.called[x.kind].here = true;
+      alert(state, 'info', `here:${x.kind}`, null, `${u.name} is in house`, ON_CALL[x.kind].label);
+    } else if (x.type === 'blood') { state.stock.prbc += 6; state.phone.blood = false; alert(state, 'info', `blood:${state.t}`, null, 'Blood delivered', '6 units of red cells from the blood bank.'); }
+  }
+}
+
+function physiology(state, p) {
+  if (p.arrest) return codeTick(state, p);
+  const c = caseOf(p);
+  const hall = p.loc && state.units[p.loc].kind === 'hall';
+  p.sev = Math.max(0, Math.min(c.cap ?? 1.05, p.sev + p.rate * (hall ? 1.2 : 1)));
+  p.peak = Math.max(p.peak, p.sev);
+  if (p.sev >= 1) startArrest(state, p);
+}
+
+function postLabs(state, p) {
+  for (const x of p.labs) {
+    if (x.done || x.at > state.t) continue;
+    x.done = true;
+    const [name, val, unit, , flag] = x.l;
+    if (flag === 'HH' || flag === 'LL') alert(state, 'warn', `lab:${p.id}:${name}`, p.id, 'Critical result', `${p.name}: ${name} ${val} ${unit}`.trim());
+  }
+}
+
+function watch(state) {
+  const t = state.t;
+  for (const p of patientsOf(state)) {
+    if (!inDepartment(p)) continue;
+    const c = caseOf(p);
+    if (p.status === 'waiting' && c.patience && t - p.arriveAt > c.patience) { leave(state, p, 'lwbs', 'Left without being seen'); alert(state, 'warn', `lwbs:${p.id}`, p.id, 'Left without being seen', `${p.name} walked out after ${Math.round((t - p.arriveAt) / 60)} h in the waiting room.`); continue; }
+    if (p.arrest) continue;
+    const n = newsOf(p, t).score, band = n >= 7 ? 2 : n >= 5 ? 1 : 0;
+    if (band > p.newsBand && (t - p.arriveAt > 3)) {
+      const where = p.status === 'waiting' ? 'Waiting room' : state.units[p.loc].name;
+      if (band === 2) alert(state, 'crit', `news7:${p.id}`, p.id, `Deteriorating: NEWS ${n}`, `${p.name}, ${where}. Emergency review needed.`);
+      else if (p.status === 'waiting') alert(state, 'warn', `news5:${p.id}`, p.id, `Waiting room recheck: NEWS ${n}`, `${p.name} is getting worse while waiting.`);
+    }
+    p.newsBand = Math.max(p.newsBand, band);
+    if (p.status === 'waiting' && p.esi <= 2 && t - Math.max(p.arriveAt, 0) >= 8) alert(state, 'warn', `nobed:${p.id}`, p.id, `ESI ${p.esi} without a bed`, `${p.name} has waited ${t - p.arriveAt} min.`);
+    for (const k of c.clocks || []) {
+      const ck = p.clocks[k.key];
+      if (ck.at === null && t - p.arriveAt >= Math.round(k.limit * 0.7)) alert(state, 'warn', `clock:${p.id}:${k.key}`, p.id, `${k.label} at risk`, `${p.name}: ${t - p.arriveAt} of ${k.limit} min used.`);
+    }
+    if (p.status === 'active' && p.stepState === 'need' && !p.hold && (p.passed || 0) >= 3 && t - p.reqAt >= 40) alert(state, 'warn', `forgot:${p.id}:${p.stepIdx}`, p.id, 'Passed over', `${p.name} has waited ${t - p.reqAt} min while ${p.passed} others went ahead.`);
+  }
+  if (state.stock.prbc <= 2 && !state.phone.blood) alert(state, 'warn', `lowblood:${Math.floor(t / 30)}`, null, 'Blood fridge low', `${state.stock.prbc} units of red cells left. Phone the blood bank.`);
+  state.gridlocks = findGridlocks(state);
+  for (const cyc of state.gridlocks) {
+    const names = cyc.map((id) => state.patients[id].name.split(',')[0]);
+    alert(state, 'crit', `grid:${[...cyc].sort().join('-')}`, cyc[0], 'Gridlock', `${names.join(' and ')} each hold what the other needs. Nothing will move until you swap them.`);
+  }
+}
+
+function tick(state) {
+  if (state.over) return state;
+  state.t += 1;
+  runTimers(state);
+  arrivals(state);
+  for (const p of patientsOf(state)) if (inDepartment(p)) { physiology(state, p); if (inDepartment(p)) postLabs(state, p); }
+  for (const p of patientsOf(state)) {
+    if (p.status === 'active' && p.stepState === 'run' && !p.arrest) { p.stepLeft -= 1; if (p.stepLeft <= 0) finishStep(state, p); }
+  }
+  acquirePass(state);
+  watch(state);
+  if (state.t >= SHIFT_MINUTES) { state.over = true; say(state, null, 'Handover at 07:00', 'end'); }
+  return state;
+}
+
+function acquirePass(state) {
+  const queue = patientsOf(state).filter((p) => p.status === 'active' && p.stepState === 'need' && !p.hold && !p.arrest);
+  queue.sort((a, b) => (b.prio - a.prio) || (a.reqAt - b.reqAt) || (a.id - b.id));
+  for (const p of queue) {
+    const step = stepOf(p);
+    const got = step && tryAcquire(state, p, step);
+    if (got) startStep(state, p, step, got);
+  }
+}
+
+/* ---------- gridlock (the engineer's word: deadlock) ---------- */
+
+/** Cycles of patients who each sit in the place the next one needs. [[pid, pid, ...]] */
+function findGridlocks(state) {
+  const waiting = patientsOf(state).filter((p) => p.status === 'active' && p.stepState === 'need' && !p.hold && !p.arrest);
+  const edges = new Map();
+  for (const p of waiting) {
+    const step = stepOf(p);
+    if (!step || !step.place || p.preplaced) continue;
+    const b = blockers(state, p).find((x) => x.kinds.includes(step.place));
+    if (!b || b.holders.some((h) => !h.pid && !h.bg)) continue;    // a free (reserved) unit: not stuck on people
+    const targets = b.holders.filter((h) => h.pid && waiting.some((q) => q.id === h.pid && q.loc === h.unit)).map((h) => h.pid);
+    const moving = b.holders.some((h) => h.pid && !targets.includes(h.pid));   // someone there is mid-treatment and will leave
+    if (!moving && targets.length) edges.set(p.id, targets);
+  }
+  const cycles = [], seen = new Set();
+  for (const start of edges.keys()) {
+    const path = [start];
+    const walk = (id) => {
+      for (const nx of edges.get(id) || []) {
+        if (nx === start) { const key = [...path].sort().join('-'); if (!seen.has(key)) { seen.add(key); cycles.push([...path]); } return true; }
+        if (!path.includes(nx) && path.length < 5) { path.push(nx); if (walk(nx)) return true; path.pop(); }
+      }
+      return false;
+    };
+    walk(start);
+  }
+  return cycles;
+}
+
+/* ---------- what the charge nurse can do ---------- */
+
+const fail = (msg) => ({ ok: false, msg });
+const done = (msg) => ({ ok: true, msg });
+
+function act(state, a) {
+  const p = a.pid ? state.patients[a.pid] : null, t = state.t;
+  switch (a.type) {
+    case 'place': case 'move': {
+      const u = state.units[a.unit];
+      if (!p || !u || u.holder) return fail('That bed is not free.');
+      if (u.reservedFor && u.reservedFor !== p.id) return fail(`${u.name} is reserved for ${state.patients[u.reservedFor].name}.`);
+      if (!allowedKinds(p).includes(u.kind)) return fail(`${u.name} is not suitable for this patient.`);
+      if (a.type === 'place') {
+        if (p.status !== 'waiting') return fail('Patient is not waiting for a bed.');
+        p.status = 'active'; p.placedAt = t; p.reqAt = t;
+        for (const x of state.alerts) if (x.key === `door:${p.id}` || x.key === `nobed:${p.id}` || x.key === `news5:${p.id}`) x.ack = true;
+        p.labs = caseOf(p).labs.map((l) => ({ l, at: t + l[5] }));
+      } else {
+        if (p.status !== 'active' || !p.loc || !KINDS[state.units[p.loc].kind].ed) return fail('Patient cannot be moved now.');
+        if (p.stepState === 'run' && stepOf(p).needs.length) return fail('In the middle of a procedure. Wait until it ends.');
+        release(state, p.loc, p.id);
+      }
+      u.holder = p.id; u.reservedFor = null; p.loc = u.id;
+      note(state, p, 'Charge', 'J. Alvarez RN', `${a.type === 'place' ? 'Roomed in' : 'Moved to'} ${u.name}.`);
+      say(state, p.id, `${a.type === 'place' ? 'Placed in' : 'Moved to'} ${u.name}`, 'charge');
+      acquirePass(state);
+      return done(`${p.name} is in ${u.name}.`);
+    }
+    case 'expedite': if (!p) return fail('No patient.'); p.prio = !p.prio; if (p.prio) say(state, p.id, 'Expedited: first in every queue', 'charge'); acquirePass(state); return done(p.prio ? `${p.name} goes first.` : 'Back to normal order.');
+    case 'hold': if (!p) return fail('No patient.'); p.hold = !p.hold; if (p.hold) say(state, p.id, 'Held: will not claim the next step', 'charge'); acquirePass(state); return done(p.hold ? `${p.name} is on hold.` : 'Hold released.');
+    case 'reserve': {
+      const u = a.unit ? state.units[a.unit] : unitsOfKinds(state, [a.kind]).filter((x) => !x.reservedFor && x.holder !== 'bg').sort((x, y) => !!x.holder - !!y.holder)[0];
+      if (!p || !u) return fail('Nothing to reserve.');
+      if (u.reservedFor && u.reservedFor !== p.id) return fail(`${u.name} is already reserved.`);
+      u.reservedFor = p.id; say(state, p.id, `${u.name} reserved`, 'charge');
+      return done(`${u.name} is reserved for ${p.name}${u.holder ? ' as soon as it is free' : ''}.`);
+    }
+    case 'unreserve': { const u = state.units[a.unit]; if (u) u.reservedFor = null; acquirePass(state); return done('Reservation released.'); }
+    case 'callIn': {
+      const oc = ON_CALL[a.kind];
+      if (!oc || state.called[a.kind]) return fail('Already called.');
+      state.called[a.kind] = { at: t, eta: t + oc.eta, here: false };
+      state.timers.push({ at: t + oc.eta, type: 'arrive', kind: a.kind });
+      say(state, null, `Called in: ${oc.label}. In house at ${clock(t + oc.eta)}`, 'charge');
+      return done(`${oc.label} called. Here in ${oc.eta} min.`);
+    }
+    case 'phone': {
+      if (a.what === 'stepdown') {
+        if (state.phone.stepdown <= 0) return fail('ICU has nobody else fit to step down tonight.');
+        const w = unitsOfKinds(state, ['ward']).find((u) => !u.holder && !u.reservedFor);
+        if (!w) return fail('ICU can step a patient down, but there is no free ward bed to send them to.');
+        w.holder = 'bg'; state.phone.stepdown -= 1;
+        state.timers.push({ at: t + 20, type: 'bedFree', kind: 'icu', why: 'ICU stepped a patient down to the ward.' });
+        say(state, null, `ICU step-down arranged into ${w.name}`, 'charge');
+        return done('ICU will step a patient down. Bed free in 20 min.');
+      }
+      if (a.what === 'discharge') {
+        if (state.phone.discharge <= 0) return fail('No more ward patients can go home tonight.');
+        state.phone.discharge -= 1;
+        state.timers.push({ at: t + 30, type: 'bedFree', kind: 'ward', why: 'Bed management sent a ward patient home.' });
+        say(state, null, 'Bed management: early ward discharge arranged', 'charge');
+        return done('Ward discharge arranged. Bed free in 30 min.');
+      }
+      if (a.what === 'blood') {
+        if (state.phone.blood) return fail('Blood is already on its way.');
+        state.phone.blood = true; state.timers.push({ at: t + 15, type: 'blood' });
+        return done('Blood bank sending 6 units. Here in 15 min.');
+      }
+      return fail('Unknown call.');
+    }
+    case 'divert': {
+      if (t < state.divertUntil) { state.divertUntil = t; return done('Diversion lifted.'); }
+      if (t < state.divertReadyAt) return fail(`Diversion cannot be called again before ${clock(state.divertReadyAt)}.`);
+      state.divertUntil = t + 60; state.divertReadyAt = t + 180;
+      say(state, null, 'Ambulance diversion declared for 60 min', 'charge');
+      return done('On diversion for 60 min. Ambulances go elsewhere; walk-ins still come.');
+    }
+    case 'huddle': {
+      const cyc = (a.pids || []).map((id) => state.patients[id]);
+      const n = cyc.length;
+      if (n < 2) return fail('Nothing to swap.');
+      for (let i = 0; i < n; i += 1) {
+        const s = stepOf(cyc[i]), nextLoc = state.units[cyc[(i + 1) % n].loc];
+        if (!s || cyc[i].stepState !== 'need' || !nextLoc || s.place !== nextLoc.kind) return fail('The swap no longer lines up.');
+      }
+      const locs = cyc.map((q) => q.loc);
+      cyc.forEach((q, i) => { q.loc = locs[(i + 1) % n]; state.units[q.loc].holder = q.id; q.preplaced = true; note(state, q, 'Charge', 'J. Alvarez RN', `Bed huddle: moved to ${state.units[q.loc].name} in a coordinated swap.`); });
+      say(state, cyc[0].id, `Bed huddle: ${cyc.map((q) => q.name.split(',')[0]).join(' and ')} swapped in one move`, 'charge');
+      acquirePass(state);
+      return done('Swapped. Both can move on.');
+    }
+    case 'ack': { for (const x of state.alerts) if (a.id === 'all' || x.id === a.id) x.ack = true; return done(''); }
+    default: return fail('Unknown action.');
+  }
+}
+
+/** The moves that make sense for this patient right now, ready for buttons. */
+function actionsFor(state, p) {
+  const out = [], step = stepOf(p), block = blockers(state, p);
+  const freeBeds = () => Object.values(state.units).filter((u) => KINDS[u.kind].ed && !u.holder && (!u.reservedFor || u.reservedFor === p.id) && allowedKinds(p).includes(u.kind));
+  if (p.status === 'waiting') {
+    out.push({ key: 'place', label: 'Assign bed', primary: true, choices: freeBeds().map((u) => ({ label: u.name, hint: KINDS[u.kind].label, action: { type: 'place', pid: p.id, unit: u.id } })), empty: 'No suitable bed is free. Move a boarder to the hallway or wait.' });
+  }
+  if (p.status === 'expected') {
+    const beds = Object.values(state.units).filter((u) => caseOf(p).bed.includes(u.kind) && !u.reservedFor && u.holder !== 'bg');
+    out.push({ key: 'reserveBed', label: 'Reserve a bed for arrival', primary: true, choices: beds.map((u) => ({ label: u.name, hint: u.holder ? `in use by ${state.patients[u.holder].name}` : 'free', action: { type: 'reserve', pid: p.id, unit: u.id } })), empty: 'No bed to reserve.' });
+  }
+  for (const cyc of state.gridlocks) if (cyc.includes(p.id)) out.push({ key: 'huddle', label: `Bed huddle: swap ${cyc.map((id) => state.patients[id].name.split(',')[0]).join(' and ')}`, primary: true, action: { type: 'huddle', pids: cyc } });
+  // people and places the pathway will need that are not in the building or not free
+  const ahead = caseOf(p).steps.slice(p.stepIdx).flatMap((s) => s.needs);
+  for (const k of Object.keys(ON_CALL)) {
+    if (k === 'rn' || state.called[k] || !ahead.some((n) => n.split('|').includes(k))) continue;
+    if ((k === 'surg' || k === 'anes') && !block.some((b) => b.kinds.includes(k))) continue;
+    out.push({ key: `call:${k}`, label: `Call in ${ON_CALL[k].label}`, hint: `${ON_CALL[k].eta} min`, primary: !unitsOfKinds(state, [k]).length, action: { type: 'callIn', kind: k } });
+  }
+  if (p.status === 'active') {
+    for (const b of block) {
+      if (b.kinds.includes('icu')) out.push({ key: 'stepdown', label: 'Phone ICU: step a patient down', hint: `${state.phone.stepdown} left`, action: { type: 'phone', what: 'stepdown' } });
+      if (b.kinds.includes('ward')) out.push({ key: 'discharge', label: 'Phone bed management: send a ward patient home', hint: `${state.phone.discharge} left`, action: { type: 'phone', what: 'discharge' } });
+      if (b.need === 'blood') out.push({ key: 'blood', label: 'Phone blood bank: 6 units', hint: '15 min', action: { type: 'phone', what: 'blood' } });
+    }
+    const next = p.stepState === 'need' ? step : caseOf(p).steps[p.stepIdx + 1];
+    if (next) for (const need of next.needs) {
+      const k = need.split('|')[0];
+      if (KINDS[k].staff || !unitsOfKinds(state, [k]).length || unitsOfKinds(state, [k]).some((u) => u.reservedFor === p.id)) continue;
+      out.push({ key: `res:${k}`, label: `Reserve ${KINDS[k].label.toLowerCase()}`, hint: 'kept for this patient', action: { type: 'reserve', pid: p.id, kind: k } });
+    }
+    out.push({ key: 'expedite', label: p.prio ? 'Stop expediting' : 'Expedite: first in every queue', on: p.prio, action: { type: 'expedite', pid: p.id } });
+    out.push({ key: 'hold', label: p.hold ? 'Release hold' : 'Hold: do not claim the next step', on: p.hold, action: { type: 'hold', pid: p.id } });
+    if (p.loc && KINDS[state.units[p.loc].kind].ed) out.push({ key: 'move', label: isBoarding(p) ? 'Move (board in hallway)' : 'Move to another bed', choices: freeBeds().map((u) => ({ label: u.name, hint: KINDS[u.kind].label, action: { type: 'move', pid: p.id, unit: u.id } })), empty: 'No other suitable bed is free.' });
+  }
+  return out;
+}
+
+/** Plays the obvious moves: sickest waiting patient into the best free bed. Used to warm the
+ * department up before 19:00 and as the baseline in tests. */
+function autopilot(state) {
+  const waiting = patientsOf(state).filter((p) => p.status === 'waiting').sort((a, b) => a.esi - b.esi || a.arriveAt - b.arriveAt);
+  for (const p of waiting) {
+    for (const kind of allowedKinds(p)) {
+      const u = unitsOfKinds(state, [kind]).find((x) => !x.holder && (!x.reservedFor || x.reservedFor === p.id));
+      if (u) { act(state, { type: 'place', pid: p.id, unit: u.id }); break; }
+    }
+  }
+}
+
+/** Numbers for the header and the end-of-shift review. */
+function summary(state) {
+  const all = patientsOf(state).filter((p) => p.arriveAt >= -200 && p.status !== 'expected');
+  const seen = all.filter((p) => p.seenAt !== null && p.arriveAt >= 0).map((p) => p.seenAt - p.arriveAt).sort((a, b) => a - b);
+  const clocks = all.flatMap((p) => Object.values(p.clocks)).filter((k) => k.met !== null);
+  const here = all.filter(inDepartment);
+  return {
+    census: here.filter((p) => p.status === 'active' && p.loc && KINDS[state.units[p.loc].kind].ed).length,
+    edBeds: Object.values(state.units).filter((u) => KINDS[u.kind].ed).length,
+    waiting: here.filter((p) => p.status === 'waiting').length,
+    boarding: here.filter((p) => p.status === 'active' && isBoarding(p)).length,
+    died: all.filter((p) => p.status === 'died').length,
+    lwbs: all.filter((p) => p.status === 'lwbs').length,
+    good: all.filter((p) => p.outcome && p.outcome.grade === 'good').length,
+    harm: all.filter((p) => p.outcome && p.outcome.grade === 'harm').length,
+    clocksMet: clocks.filter((k) => k.met).length, clocksTotal: clocks.length,
+    doorToDoc: seen.length ? seen[Math.floor(seen.length / 2)] : 0,
+    diverted: state.diverted,
+  };
+}
+
+
+return { seedFrom, rnd, rint, pick, jitter, news2, KINDS, ON_CALL, buildUnits, START_STOCK, SHIFT_START, SHIFT_MINUTES, clock, hm, CASES, CASE_WEIGHTS, NAMES, makePatient, vitalsOf, newsOf, caseOf, stepOf, isBoarding, inDepartment, buildSchedule, BED_RELEASES, newShift, patientsOf, allowedKinds, blockers, tick, findGridlocks, act, actionsFor, autopilot, summary };
+})();
+</script>
+<script>
+/* The emergency department behind the monitor. Drawn small and blurred by CSS, so it
+ * reads as a living room out of focus: staff crossing, stretchers rolling in, the
+ * ambulance bay flashing. It reacts to the game: arrivals bring a stretcher run,
+ * a Code Blue sends people sprinting. */
+const Backdrop = (() => {
+  const W = 480, H = 270, HORIZON = 118;
+  const SCRUBS = ['#1f3f6e', '#1b7f86', '#3f73b8', '#27506b', '#e9edf2', '#6b3fa0', '#2a8f5b'];
+  let ctx, people = [], last = 0, flash = 0, code = 0, busy = 0.5;
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  function person(fast) {
+    const depth = rand(0.25, 1);                         // 0 far, 1 near
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    return { x: dir > 0 ? -30 : W + 30, depth, dir, speed: (fast ? rand(70, 110) : rand(14, 34)) * (0.45 + depth * 0.7), color: SCRUBS[Math.floor(rand(0, SCRUBS.length))], phase: rand(0, 6), gurney: false, pause: 0 };
+  }
+  function stretcher() {
+    const p = person(true); p.gurney = true; p.depth = rand(0.55, 0.9); p.dir = 1; p.x = W * 0.5; p.fromBay = 1; p.color = '#c9d400';
+    return p;
+  }
+
+  function drawRoom(t) {
+    const g = ctx.createLinearGradient(0, 0, 0, HORIZON);
+    g.addColorStop(0, '#7f93a6'); g.addColorStop(1, '#c4d2dc');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, HORIZON);
+    for (let i = 0; i < 6; i += 1) {                     // ceiling light panels
+      ctx.fillStyle = 'rgba(255,255,255,.85)';
+      ctx.fillRect(30 + i * 78, 14 + (i % 2) * 5, 44, 5);
+    }
+    for (let i = 0; i < 8; i += 1) {                     // curtained bays along the back wall
+      const x = i * 60 + 2, isDoor = i === 3 || i === 4;
+      if (isDoor) continue;
+      ctx.fillStyle = i % 2 ? '#8fc3c9' : '#a9d3d0'; ctx.fillRect(x, 44, 54, HORIZON - 44);
+      ctx.fillStyle = 'rgba(20,40,60,.18)'; for (let k = 0; k < 6; k += 1) ctx.fillRect(x + 4 + k * 9, 44, 2, HORIZON - 44);
+      ctx.fillStyle = '#10202c'; ctx.fillRect(x + 16, 30, 20, 11);                    // wall monitor
+      ctx.fillStyle = ['#4dff5e', '#45d7ff', '#ffe14d'][i % 3]; ctx.fillRect(x + 18, 34 + Math.sin(t * 3 + i) * 2, 16, 1.5);
+    }
+    // ambulance bay doors
+    ctx.fillStyle = '#0c1a2a'; ctx.fillRect(184, 40, 112, HORIZON - 40);
+    const amb = flash > 0 ? 0.35 + 0.35 * Math.sin(t * 14) : 0.06;
+    ctx.fillStyle = `rgba(255,40,40,${amb})`; ctx.fillRect(184, 40, 56, HORIZON - 40);
+    ctx.fillStyle = `rgba(60,110,255,${flash > 0 ? 0.7 - amb : 0.06})`; ctx.fillRect(240, 40, 56, HORIZON - 40);
+    ctx.fillStyle = '#e9edf2'; ctx.fillRect(206, 32, 68, 7);
+    // floor
+    const f = ctx.createLinearGradient(0, HORIZON, 0, H);
+    f.addColorStop(0, '#93a5b2'); f.addColorStop(1, '#dfe7ec');
+    ctx.fillStyle = f; ctx.fillRect(0, HORIZON, W, H - HORIZON);
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; ctx.fillRect(150, HORIZON, 180, H - HORIZON);   // light pooling on the lino
+    if (code > 0) { ctx.fillStyle = `rgba(220,20,50,${0.12 + 0.1 * Math.sin(t * 8)})`; ctx.fillRect(0, 0, W, H); }
+  }
+
+  function drawPerson(p, t) {
+    const s = 0.45 + p.depth * 0.85, y = HORIZON + 6 + p.depth * (H - HORIZON - 38);
+    const bob = Math.sin(t * (p.speed / 6) + p.phase) * 1.2 * s;
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(p.x, y + 2, 9 * s, 2.5 * s, 0, 0, 7); ctx.fill();
+    if (p.gurney) {
+      ctx.fillStyle = '#f4f6f8'; ctx.fillRect(p.x - 22 * s, y - 16 * s, 44 * s, 6 * s);
+      ctx.fillStyle = '#5b6b7c'; ctx.fillRect(p.x - 20 * s, y - 10 * s, 2 * s, 10 * s); ctx.fillRect(p.x + 18 * s, y - 10 * s, 2 * s, 10 * s);
+      ctx.fillStyle = '#d98c6a'; ctx.beginPath(); ctx.arc(p.x + 16 * s, y - 18 * s, 3 * s, 0, 7); ctx.fill();
+      body(p.x - 28 * s, y, s, '#c9d400', bob); body(p.x + 28 * s, y, s, '#c9d400', -bob);
+    } else body(p.x, y, s, p.color, bob);
+  }
+  function body(x, y, s, color, bob) {
+    ctx.fillStyle = '#26323f'; ctx.fillRect(x - 3.5 * s, y - 14 * s, 3 * s, 14 * s + bob); ctx.fillRect(x + 0.5 * s, y - 14 * s, 3 * s, 14 * s - bob);
+    ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(x - 5 * s, y - 31 * s, 10 * s, 19 * s, 3 * s); ctx.fill();
+    ctx.fillStyle = '#d8a383'; ctx.beginPath(); ctx.arc(x, y - 35 * s, 3.6 * s, 0, 7); ctx.fill();
+  }
+
+  function frame(now) {
+    const t = now / 1000, dt = Math.min(0.05, t - last); last = t;
+    flash = Math.max(0, flash - dt); code = Math.max(0, code - dt);
+    const want = Math.round(10 + busy * 16);
+    if (people.length < want && Math.random() < 0.09) people.push(person(code > 0 && Math.random() < 0.6));
+    drawRoom(t);
+    people.sort((a, b) => a.depth - b.depth);
+    for (const p of people) {
+      if (p.pause > 0) p.pause -= dt; else { p.x += p.dir * p.speed * dt; if (!p.gurney && Math.random() < 0.002) p.pause = rand(0.8, 3); }
+      drawPerson(p, t);
+    }
+    people = people.filter((p) => p.x > -60 && p.x < W + 60);
+    // the nurses' station we are sitting at, out of focus in the foreground
+    ctx.fillStyle = '#2b3743'; ctx.fillRect(0, H - 26, W, 26);
+    ctx.fillStyle = '#3b4a59'; ctx.fillRect(0, H - 30, W, 5);
+    requestAnimationFrame(frame);
+  }
+
+  return {
+    start(canvas) { canvas.width = W; canvas.height = H; ctx = canvas.getContext('2d'); requestAnimationFrame(frame); for (let i = 0; i < 9; i += 1) { const p = person(false); p.x = rand(0, W); people.push(p); } },
+    ambulance() { flash = 9; people.push(stretcher()); },
+    codeBlue() { code = 10; for (let i = 0; i < 4; i += 1) people.push(person(true)); },
+    setBusy(k) { busy = Math.max(0, Math.min(1, k)); },
+  };
+})();
+
+/* Bedside monitor traces. Every <canvas data-wave="ecg|pleth|resp"> on the page is
+ * redrawn each frame from the values in its data attributes, so the app can rebuild
+ * its HTML freely and the traces keep scrolling without a flicker.
+ * Shapes are synthesized from the patient's actual rate and rhythm:
+ *   sinus  P wave, narrow QRS, T wave
+ *   stemi  the same with the ST segment lifted into the T wave
+ *   af     no P waves, irregular R-R intervals, fibrillating baseline
+ *   vf     chaotic, no complexes (cardiac arrest) */
+const Waves = (() => {
+  const gauss = (x, mu, sd) => Math.exp(-((x - mu) ** 2) / (2 * sd * sd));
+  const hash = (n) => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+
+  function ecg(time, hr, rhythm) {
+    if (rhythm === 'vf' || hr <= 0) return 0.32 * Math.sin(time * 31) * Math.sin(time * 7.3) + 0.2 * Math.sin(time * 19.7 + 1) + 0.1 * Math.sin(time * 47);
+    const beats = (time * hr) / 60 + 1000, n = Math.floor(beats); let ph = beats - n;
+    if (rhythm === 'af') { ph = Math.min(0.999, ph * (0.78 + 0.5 * hash(n))); }
+    let y = 0;
+    if (rhythm !== 'af') y += 0.12 * gauss(ph, 0.14, 0.025); else y += 0.035 * Math.sin(time * 41) + 0.025 * Math.sin(time * 67);
+    y += -0.1 * gauss(ph, 0.255, 0.008) + 1.0 * gauss(ph, 0.28, 0.011) - 0.24 * gauss(ph, 0.305, 0.01);
+    y += 0.28 * gauss(ph, 0.5, 0.05);
+    if (rhythm === 'stemi') y += 0.3 * (1 / (1 + Math.exp(-(ph - 0.315) * 220))) * (1 / (1 + Math.exp((ph - 0.5) * 40)));
+    return y;
+  }
+  function pleth(time, hr, spo2) {
+    if (hr <= 0) return 0.02 * Math.sin(time * 9);
+    const ph = ((((time * hr) / 60 + 0.22) % 1) + 1) % 1, amp = Math.max(0.25, (spo2 - 60) / 40);
+    return amp * (gauss(ph, 0.2, 0.09) + 0.42 * gauss(ph, 0.45, 0.11));
+  }
+  const resp = (time, rr) => (rr <= 0 ? 0 : 0.5 + 0.5 * Math.sin((time * rr * Math.PI * 2) / 60));
+
+  function draw(cv, now) {
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (!w) return;
+    if (cv.width !== w * 2) { cv.width = w * 2; cv.height = h * 2; }
+    const c = cv.getContext('2d'), d = cv.dataset, kind = d.wave;
+    const hr = +d.hr, rr = +d.rr, spo2 = +d.spo2, secs = +(d.secs || 6);
+    c.clearRect(0, 0, cv.width, cv.height);
+    c.strokeStyle = kind === 'ecg' ? '#4dff5e' : kind === 'pleth' ? '#45d7ff' : '#ffe14d';
+    c.lineWidth = 2.4; c.lineJoin = 'round'; c.beginPath();
+    const W2 = cv.width, H2 = cv.height;
+    for (let x = 0; x < W2; x += 2) {
+      const time = now - ((W2 - x) / W2) * secs;
+      let v;
+      if (kind === 'ecg') v = 0.72 - ecg(time, hr, d.rhythm) * 0.56;
+      else if (kind === 'pleth') v = 0.86 - pleth(time, hr, spo2) * 0.7;
+      else v = 0.85 - resp(time, rr) * 0.7;
+      const y = v * H2;
+      if (x === 0) c.moveTo(x, y); else c.lineTo(x, y);
+    }
+    c.stroke();
+  }
+  function loop(ms) {
+    const now = ms / 1000;
+    for (const cv of document.querySelectorAll('canvas[data-wave]')) draw(cv, now);
+    requestAnimationFrame(loop);
+  }
+  return { start() { requestAnimationFrame(loop); } };
+})();
+
+/* PULSE ED: the charge nurse's screen, plus the desk around it.
+ * The engine owns every rule. This file only draws state and forwards clicks. */
+const App = (() => {
+  const E = Engine;
+  const seed = new URLSearchParams(location.search).get('seed') || 'HARBOURSIDE';
+  let S = E.newShift(seed);
+  const ui = { sel: null, view: 'all', tab: 'overview', speed: 0, menu: null, open: null, toast: null, lens: false, intro: true, phone: false, logSeen: S.log.length };
+  const LENS = { grid: 'deadlock', forgot: 'starvation', news5: 'priority inversion', nobed: 'priority inversion', code: 'preemption', clock: 'deadline', lowblood: 'resource exhaustion' };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const act = (o) => `data-act="${esc(JSON.stringify(o))}"`;
+  const set = (k, v) => `data-ui="${k}:${v}"`;
+  const hm = (m) => `${Math.floor(Math.max(0, m) / 60)}:${String(Math.max(0, m) % 60).padStart(2, '0')}`;
+  const last = (name) => name.split(',')[0];
+  const low = (label) => label.replace(/^[A-Z][a-z]/, (m) => m.toLowerCase());   // keeps ED, ICU, CT, IM as written
+  const P = (id) => S.patients[id];
+  const unitOrder = Object.keys(S.units);
+  const kindOf = (p) => (p.loc ? S.units[p.loc].kind : null);
+
+  /* ---------- reading a patient ---------- */
+  function describe(q) {
+    if (q.arrest) return `${q.name} (Code Blue)`;
+    const st = E.stepOf(q);
+    if (q.stepState === 'run') return `${q.name} (${low(st.label)}, ${q.stepLeft} min left)`;
+    const b = E.blockers(S, q)[0];
+    return `${q.name}, who is waiting for ${b ? low(b.label) : 'the next step'}`;
+  }
+  function explain(b) {
+    if (b.need === 'bed' || b.need === 'blood') return b.label + '.';
+    if (b.absent) {
+      const k = b.kinds.find((x) => S.called[x]);
+      return `${b.label}: nobody in the building. ${k ? `Called in, here at ${E.clock(S.called[k].eta)}.` : 'Call them in.'}`;
+    }
+    const held = b.holders.filter((h) => h.pid).map((h) => `${h.name} has ${describe(P(h.pid))}`);
+    const res = b.holders.filter((h) => h.reservedFor).map((h) => `${h.name} is reserved for ${P(h.reservedFor).name}`);
+    const bg = b.holders.filter((h) => h.bg).length;
+    return `${b.label}: none free. ${[...held.slice(0, 3), ...res].join('. ')}${held.length > 3 ? ` and ${held.length - 3} more` : ''}${bg ? `${held.length ? '. ' : ''}${bg} occupied by inpatients` : ''}.`;
+  }
+  function statusOf(p) {
+    if (p.status === 'expected') return { c: 'grey', cls: 'exp', text: `Ambulance ETA ${p.arriveAt - S.t} min` };
+    if (p.arrest) return { c: 'red', cls: 'code', text: p.arrest.teamAt === null ? 'CODE BLUE: no team free yet' : 'CODE BLUE: CPR in progress' };
+    if (p.status === 'waiting') return { c: p.esi <= 2 ? 'red' : 'amber-f', cls: p.esi <= 2 ? 'bad' : '', text: `${p.via === 'ems' ? 'On ambulance stretcher' : 'Waiting room'}. No bed for ${S.t - p.arriveAt} min` };
+    const st = E.stepOf(p);
+    if (p.hold) return { c: 'grey', text: 'On hold (your order)' };
+    if (p.stepState === 'run') return { c: st.needs.length ? 'green' : 'grey', text: `${st.label}, ${p.stepLeft} min left` };
+    const b = E.blockers(S, p);
+    if (S.gridlocks.some((g) => g.includes(p.id))) return { c: 'red', cls: 'bad', text: 'GRIDLOCK: needs a bed huddle' };
+    if (E.isBoarding(p)) return { c: 'sky', text: `Boarding ${hm(S.t - p.reqAt)}. Needs ${b[0] ? low(b[0].label) : 'a bed'}` };
+    return { c: 'amber-f', text: `Waiting ${S.t - p.reqAt} min for ${b.map((x) => low(x.label)).join(', ') || 'the team'}` };
+  }
+  const newsCell = (p) => { if (p.status === 'expected') return ''; const n = E.newsOf(p, S.t).score; return `<span class="${n >= 7 ? 'r' : n >= 5 ? 'a' : ''}">${p.arrest ? 'ARREST' : n}</span>`; };
+  function dispoOf(p) { const end = E.caseOf(p).steps.at(-1); return end.end === 'home' ? 'Home' : { icu: 'ICU', ward: 'Ward', psych: 'Psych' }[end.place] || ''; }
+  function labCell(p) { if (!p.labs.length) return ''; const dn = p.labs.filter((x) => x.done); const ab = dn.filter((x) => x.l[4]).length; return `<span class="${dn.some((x) => /HH|LL/.test(x.l[4])) ? 'r' : ''}">[${dn.length}/${p.labs.length}/${ab}]</span>`; }
+
+  /* ---------- track board ---------- */
+  const VIEWS = [['all', 'All Patients'], ['expected', 'Expected'], ['waiting', 'Waiting'], ['dept', 'In Beds'], ['admit', 'To Be Admitted'], ['house', 'Cath / OR']];
+  const ACTIVITIES = [['central', 'Central Monitor'], ['beds', 'Beds & Resources'], ['staff', 'Staff'], ['alerts', 'Alerts']];
+  function inView(p, v) {
+    if (!['expected', 'waiting', 'active'].includes(p.status)) return false;
+    const ed = p.status === 'active' && E.KINDS[kindOf(p)].ed;
+    return v === 'all' || (v === 'expected' && p.status === 'expected') || (v === 'waiting' && p.status === 'waiting') || (v === 'dept' && ed) || (v === 'admit' && p.status === 'active' && E.isBoarding(p)) || (v === 'house' && p.status === 'active' && !ed);
+  }
+  function rows(v) {
+    const rank = { expected: 0, waiting: 1, active: 2 };
+    return E.patientsOf(S).filter((p) => inView(p, v)).sort((a, b) => rank[a.status] - rank[b.status] || (a.status === 'active' ? unitOrder.indexOf(a.loc) - unitOrder.indexOf(b.loc) : a.esi - b.esi || a.arriveAt - b.arriveAt));
+  }
+  function board() {
+    const body = rows(ui.view).map((p) => {
+      const s = statusOf(p);
+      const bed = p.status === 'expected' ? 'EXP' : p.status === 'waiting' ? (p.via === 'ems' ? 'EMS' : 'WR') : p.loc;
+      return `<tr class="${s.cls || ''} ${ui.sel === p.id ? 'sel' : ''}" ${set('sel', p.id)}>
+        <td class="st" style="background:var(--${s.c})"></td><td><b>${bed}</b></td><td class="acu e${p.esi}">${p.esi}</td>
+        <td>${p.status === 'expected' ? `Expected, EMS (${p.sex})` : `<b>${esc(p.name)}</b> (${p.sex})`}${p.prio ? ' <span class="r" title="Expedited">&#9650;</span>' : ''}</td>
+        <td class="c">${p.age}</td><td>${esc(p.cc)}</td><td>${p.status === 'expected' ? '' : hm(S.t - p.arriveAt)}</td>
+        <td>${p.author && p.seenAt !== null ? esc(p.author.replace(/^Dr\. /, '').split(' ').at(-1 - (/PA-C|RN/.test(p.author) ? 1 : 0)).slice(0, 4).toUpperCase()) : (p.status === 'expected' ? '' : '<span class="r">none</span>')}</td>
+        <td class="c">${newsCell(p)}</td><td>${labCell(p)}</td><td>${dispoOf(p)}</td><td class="${s.c === 'red' ? 'r' : ''}">${esc(s.text)}</td></tr>`;
+    }).join('');
+    return `<div class="board" id="boardscroll"><table><thead><tr><th></th><th>Bed</th><th>Acu</th><th>Patient</th><th>Age</th><th>Complaint</th><th>LOS</th><th>MD</th><th>NEWS</th><th title="results back / ordered / abnormal">Lab</th><th>Dispo</th><th style="width:36%">Status</th></tr></thead><tbody>${body || '<tr><td colspan="12" class="m" style="padding:14px">Nobody in this view.</td></tr>'}</tbody></table></div>`;
+  }
+
+  /* ---------- report pane ---------- */
+  function monitorPanel(p, big) {
+    const v = E.vitalsOf(p, S.t), c = E.caseOf(p), k = kindOf(p);
+    const wired = p.status === 'active' && E.KINDS[k].monitored;
+    const rhythm = p.arrest ? 'vf' : c.rhythm;
+    const alarms = [];
+    if (p.arrest) alarms.push(['hi', '*** VENTRICULAR FIBRILLATION  NO PULSE']);
+    else {
+      if (v.hr > 130 || v.hr < 40) alarms.push(['hi', `*** HR ${v.hr > 130 ? 'HIGH' : 'LOW'} ${v.hr}`]);
+      if (v.spo2 < 90) alarms.push(['hi', `*** SpO2 LOW ${v.spo2}`]);
+      if (v.sbp < 90) alarms.push(['hi', `*** NIBP LOW ${v.sbp}/${v.dbp}`]);
+      if (v.rr > 30 || v.rr < 8) alarms.push(['med', `** RESP ${v.rr > 30 ? 'HIGH' : 'LOW'} ${v.rr}`]);
+    }
+    const a = alarms[0] || ['', wired ? `${rhythm === 'af' ? 'ATRIAL FIBRILLATION' : rhythm === 'stemi' ? 'SINUS RHYTHM  ST ELEVATION' : v.hr > 100 ? 'SINUS TACHYCARDIA' : 'SINUS RHYTHM'}` : 'SPOT CHECK ONLY: NOT ON CONTINUOUS MONITORING HERE'];
+    const data = `data-hr="${v.hr}" data-rr="${v.rr}" data-spo2="${v.spo2}" data-rhythm="${rhythm}"`;
+    const map = Math.round((v.sbp + 2 * v.dbp) / 3);
+    if (!big) return `<div class="tile ${alarms[0] ? alarms[0][0] : ''}" ${set('sel', p.id)}><header><span><b>${p.loc}</b> ${esc(p.name)}</span><span>NEWS ${p.arrest ? '--' : E.newsOf(p, S.t).score}</span></header><canvas data-wave="ecg" ${data} data-secs="4"></canvas><div class="nums"><span class="hr">${p.arrest ? '---' : v.hr}</span><span class="sp">${p.arrest ? '--' : v.spo2}%</span><span class="bp">${p.arrest ? '--/--' : `${v.sbp}/${v.dbp}`}</span><span class="rs">${p.arrest ? '--' : v.rr}</span></div></div>`;
+    const wave = (w) => (wired ? `<canvas data-wave="${w}" ${data}></canvas>` : '<div style="height:48px"></div>');
+    return `<div class="mon"><div class="alarm ${a[0]}">${esc(p.name)} &middot; ${p.loc || 'waiting room'} &middot; ${a[1]}</div>
+      ${wave('ecg')}<div class="num hr"><small>HR  bpm  ${wired ? 'II' : ''}</small><b>${p.arrest ? '---' : v.hr}</b></div>
+      ${wave('pleth')}<div class="num sp"><small>SpO2 %${v.o2 ? '  on O2' : '  room air'}</small><b>${p.arrest ? '--' : v.spo2}</b></div>
+      ${wave('resp')}<div class="num rs"><small>RESP /min</small><b>${p.arrest ? '--' : v.rr}</b></div>
+      <div class="num bp" style="grid-column:1/3;flex-direction:row;gap:26px;align-items:baseline;padding:4px 0"><span><small>NIBP mmHg </small><b>${p.arrest ? '--/--' : `${v.sbp}/${v.dbp}`}</b> <small>(${p.arrest ? '--' : map})</small></span><span style="color:#fff"><small>TEMP &deg;C </small><b>${v.temp.toFixed(1)}</b></span><span style="color:#fff"><small>GCS </small><b>${v.gcs}</b></span></div></div>`;
+  }
+  function pathway(p) {
+    const c = E.caseOf(p), block = E.blockers(S, p);
+    const stepsHtml = c.steps.map((st, i) => {
+      const doneStep = i < p.stepIdx || ['admitted', 'home'].includes(p.status);
+      const cur = i === p.stepIdx && p.status === 'active';
+      const mark = doneStep ? '<span class="g">&#10003;</span>' : cur ? `<span class="${p.stepState === 'run' ? 'g' : 'a'}">&#9679;</span>` : '<span class="m">&#9675;</span>';
+      const right = doneStep ? '<span class="g" style="font-weight:400">done</span>' : cur ? (p.stepState === 'run' ? `<span class="g">${p.stepLeft} min left</span>` : `<span class="a">waiting ${S.t - p.reqAt} min</span>`) : `<span class="m">${st.dur ? `${st.dur} min` : ''}</span>`;
+      let needs = '';
+      if (cur || (i === p.stepIdx + 1 && p.stepState === 'run') || (p.status === 'waiting' && i === 0)) {
+        needs = `<div class="needs">${st.needs.map((n) => {
+          const b = cur && p.stepState === 'need' ? block.find((x) => x.need === n) : null;
+          const using = cur && p.stepState === 'run' ? [...p.using, p.loc].map((id) => S.units[id]).find((u) => n.split('|').includes(u.kind)) : null;
+          const label = n.split('|').map((k) => E.KINDS[k].label).join(' or ');
+          return `<span class="need ${b ? 'no' : cur ? 'ok' : ''}" title="${b ? esc(explain(b)) : ''}">${b ? '&#10005;' : cur ? '&#10003;' : ''} ${using ? esc(using.name) : label}</span>`;
+        }).join('')}${st.blood ? `<span class="need ${S.stock.prbc < st.blood && !doneStep && p.stepState === 'need' ? 'no' : ''}">${st.blood} units red cells</span>` : ''}${!st.needs.length ? '<span class="need">bed only</span>' : ''}</div>`;
+      }
+      return `<div class="step ${cur ? 'cur' : ''}">${mark}<span>${esc(st.label)}</span>${right}${needs}</div>`;
+    }).join('');
+    const clocks = Object.values(p.clocks).map((k) => {
+      const used = k.at !== null ? k.at : S.t - p.arriveAt;
+      return `<span class="need ${k.met === true ? 'ok' : k.met === false || used > k.limit ? 'no' : ''}">${esc(k.label)}: ${Math.max(0, used)} / ${k.limit} min${k.met === true ? ' met' : k.met === false ? ' missed' : ''}</span>`;
+    }).join('');
+    return `<span class="pill path">Care Pathway: ${esc(c.title)}</span><div class="steps">${stepsHtml}</div>${clocks ? `<div class="needs" style="display:flex;gap:4px;flex-wrap:wrap">${clocks}</div>` : ''}`;
+  }
+  function advisory(p) {
+    const c = E.caseOf(p), lines = [];
+    let red = false;
+    if (p.arrest) { red = true; lines.push(p.arrest.teamAt === null ? 'Cardiac arrest and no doctor and nurse are free. The code team is pulled from the least urgent patient as soon as one can be interrupted.' : 'Code team at the bedside. CPR in progress. The outcome depends on how fast they got here and on the cause.'); }
+    const grid = S.gridlocks.find((g) => g.includes(p.id));
+    if (grid) { red = true; lines.push(`Gridlock. ${grid.map((id) => `${last(P(id).name)} is in ${S.units[P(id).loc].name} and needs ${low(E.KINDS[E.stepOf(P(id)).place].label)}`).join('; ')}. Neither can move first. A bed huddle moves them together.`); if (ui.lens) lines.push('<i>Engineer lens: deadlock. Hold-and-wait plus a circular wait. The fix is an atomic swap.</i>'); }
+    if (p.status === 'expected') lines.push(`Arrives in ${p.arriveAt - S.t} min. Get ready now: reserve a bed and call in anyone the pathway needs who is at home.`);
+    if (!grid && !p.arrest) for (const b of E.blockers(S, p)) lines.push(esc(explain(b)));
+    if (p.hold) lines.push('You put this patient on hold. They will not claim staff, scanners or beds until you release it.');
+    if (p.status === 'active' && p.stepState === 'run' && !p.arrest) lines.push(`In progress: ${esc(low(E.stepOf(p).label))}. The team and equipment are released when it ends. The bed is kept.`);
+    if (c.tip && (p.status !== 'active' || p.stepIdx < 2)) lines.push(`<span class="m">Charge tip: ${esc(c.tip)}</span>`);
+    return `<span class="pill bpa">BestPractice Advisory</span><div class="bpa-box ${red ? 'red' : ''}">${lines.map((l) => `<p>${l}</p>`).join('') || '<p>Nothing is blocking this patient.</p>'}</div>`;
+  }
+  function actions(p) {
+    const list = E.actionsFor(S, p);
+    if (!list.length) return '';
+    return `<span class="pill act">Charge Actions</span><div class="acts">${list.map((a) => {
+      if (!a.choices) return `<button class="btn ${a.primary ? 'primary' : ''} ${a.on ? 'on' : ''}" ${act(a.action)}><span>${esc(a.label)}</span>${a.hint ? `<small>${esc(a.hint)}</small>` : ''}</button>`;
+      const open = ui.open === a.key || (a.primary && ui.open === null);
+      return `<button class="btn ${a.primary ? 'primary' : ''}" ${set('open', open ? 'none' : a.key)}><span>${esc(a.label)}</span><small>${a.choices.length} free ${open ? '&#9652;' : '&#9662;'}</small></button>${open ? `<div class="choices">${a.choices.map((ch) => `<button class="btn" ${act(ch.action)}>${esc(ch.label)}<small>${esc(ch.hint)}</small></button>`).join('') || `<span class="m">${esc(a.empty)}</span>`}</div>` : ''}`;
+    }).join('')}</div>`;
+  }
+  function overview(p) {
+    const v = E.vitalsOf(p, S.t), n = E.newsOf(p, S.t), c = E.caseOf(p);
+    const hi = (bad, txt) => `<span class="${bad ? 'r' : ''}">${txt}</span>`;
+    return `<div class="col narrow"><span class="pill cc">Chief Complaint</span><div>${esc(c.triage)}</div>
+      <span class="pill vs">Vitals ${E.clock(S.t)}</span>
+      ${p.arrest ? '<div class="r">No pulse. CPR in progress.</div>' : `<div class="vt"><span>BP</span>${hi(v.sbp <= 90 || v.sbp >= 200, `${v.sbp}/${v.dbp}`)}<span>HR</span>${hi(v.hr > 110 || v.hr < 50, v.hr)}<span>SpO2</span>${hi(v.spo2 < 92, `${v.spo2}%${v.o2 ? ' on O2' : ''}`)}<span>RR</span>${hi(v.rr > 24 || v.rr < 9, v.rr)}<span>Temp</span>${hi(v.temp > 38.5 || v.temp < 35.1, `${v.temp.toFixed(1)} &deg;C`)}<span>GCS</span>${hi(v.gcs < 15, v.gcs)}<span>NEWS2</span>${hi(n.score >= 5, `${n.score} (${n.risk})`)}<span>ESI</span><b>${p.esi}</b></div>`}</div>
+      <div class="col wide">${pathway(p)}</div><div class="col">${advisory(p)}${actions(p)}</div>`;
+  }
+  function chart(p) {
+    const c = E.caseOf(p);
+    return `<div class="col"><span class="pill cc">History</span><div class="kv"><span>HPI</span><span>${esc(c.hpi)}</span><span>Past history</span><span>${esc(c.pmh.join(', '))}</span><span>Medications</span><span>${esc(c.meds.join(', '))}</span><span>Allergies</span><span class="${c.allergies === 'NKDA' ? '' : 'r'}">${esc(c.allergies)}</span><span>Exam</span><span>${esc(c.exam)}</span>${c.ecg ? `<span>ECG</span><span>${esc(c.ecg)}</span>` : ''}<span>MRN</span><span>HGH #${p.mrn}</span></div></div>
+      <div class="col"><span class="pill note">Notes and procedures</span><div class="tl">${[...p.notes].reverse().map((x) => `<div class="${x.kind}"><small>${E.clock(x.t)} &middot; ${x.kind} &middot; ${esc(x.author)}</small>${esc(x.text)}</div>`).join('')}</div></div>`;
+  }
+  function results(p) {
+    const c = E.caseOf(p), dn = p.labs.filter((x) => x.done), pend = p.labs.length - dn.length;
+    const lab = dn.map((x) => { const [name, val, unit, ref, flag] = x.l; return `<tr><td>${E.clock(x.at)}</td><td>${esc(name)}</td><td class="${flag ? 'r' : ''}">${esc(val)} ${flag ? `<small>${flag}</small>` : ''}</td><td>${esc(unit)}</td><td class="m">${esc(ref)}</td></tr>`; }).join('');
+    return `<div class="col"><span class="pill vs">Laboratory</span>${dn.length ? `<table class="labs"><tr><th>Time</th><th>Test</th><th>Result</th><th>Unit</th><th>Reference</th></tr>${lab}</table>` : ''}<div class="m">${p.status === 'waiting' || p.status === 'expected' ? 'Bloods are drawn once the patient is in a bed.' : pend ? `${pend} result${pend > 1 ? 's' : ''} pending in the lab.` : c.labs.length ? 'All results back.' : 'No bloods needed.'}</div></div>
+      <div class="col"><span class="pill path">Imaging and procedures</span>${c.ecg && p.seenAt !== null ? `<div class="rep"><b>12-lead ECG</b>${esc(c.ecg)}</div>` : ''}${p.results.map((r) => `<div class="rep"><b>${esc(r.name)} &middot; ${E.clock(r.t)}</b>${esc(r.text)}</div>`).join('') || '<div class="m">No reports yet.</div>'}</div>`;
+  }
+  function report() {
+    const p = P(ui.sel);
+    if (!p) return '<div class="report"><div class="rbody m">Select a patient on the board to open their report.</div></div>';
+    const s = statusOf(p), c = E.caseOf(p), gone = !['expected', 'waiting', 'active'].includes(p.status);
+    const tabs = [['overview', 'Overview - Charge'], ['monitor', 'Live Monitor'], ['chart', 'Chart and Notes'], ['results', `Results (${p.labs.filter((x) => x.done).length + p.results.length})`]];
+    const body = gone ? `<div class="col"><div class="bpa-box ${p.outcome.grade === 'good' ? '' : 'red'}"><p><b>${{ admitted: 'Admitted', home: 'Discharged home', died: 'Died', lwbs: 'Left without being seen' }[p.status]} at ${E.clock(p.leftAt)}${p.dest ? `, ${esc(p.dest)}` : ''}.</b></p><p>${esc(p.outcome.text)}</p></div></div><div class="col wide">${pathway(p)}</div>`
+      : ui.tab === 'monitor' ? `<div class="col wide">${monitorPanel(p, true)}</div><div class="col"><span class="pill vs">NEWS2 breakdown</span><div class="kv">${Object.entries(E.newsOf(p, S.t).parts).map(([k, v]) => `<span>${{ rr: 'Resp rate', spo2: 'SpO2', o2: 'On oxygen', sbp: 'Systolic BP', hr: 'Pulse', avpu: 'Consciousness', temp: 'Temperature' }[k]}</span><span class="${v === 3 ? 'r' : v ? 'a' : ''}">${v}</span>`).join('')}</div><div class="m">0-4 low. 5-6 urgent review. 7 or more: emergency response. Patients in fast track, hallway or the waiting room only get spot checks, so trouble there is seen late.</div></div>`
+      : ui.tab === 'chart' ? chart(p) : ui.tab === 'results' ? results(p) : overview(p);
+    return `<div class="report"><div class="tabs">${tabs.map(([k, l]) => `<button class="${ui.tab === k ? 'on' : ''}" ${set('tab', k)}>${l}</button>`).join('')}</div>
+      <div class="phead"><span><span class="sq" style="background:var(--${gone ? 'grey' : s.c})"></span><b>${esc(p.name)}</b></span><span>HGH #${p.mrn}</span><span>${p.age} y.o. ${p.sex}</span><span>${p.loc ? esc(S.units[p.loc].name) : p.status === 'waiting' ? 'Waiting room' : ''}</span><span>ESI ${p.esi}</span><span>Arrived ${E.clock(p.arriveAt)} ${p.via === 'ems' ? 'by EMS' : p.via === 'house' ? '(inpatient)' : 'walk-in'}</span><span class="${c.allergies === 'NKDA' ? '' : 'r'}">Allergies: ${esc(c.allergies)}</span></div>
+      <div class="rbody" id="rscroll">${body}</div></div>`;
+  }
+
+  /* ---------- full-screen activities ---------- */
+  function centralView() {
+    const ps = E.patientsOf(S).filter((p) => p.status === 'active' && E.KINDS[kindOf(p)].monitored).sort((a, b) => unitOrder.indexOf(a.loc) - unitOrder.indexOf(b.loc));
+    return `<div class="view"><h3 class="sec">Central monitoring station: ${ps.length} patients on continuous monitoring</h3><div class="central">${ps.map((p) => monitorPanel(p, false)).join('')}</div></div>`;
+  }
+  function unitTile(u) {
+    const q = u.holder && u.holder !== 'bg' ? P(u.holder) : null;
+    const stuck = q && q.loc === u.id && q.stepState === 'need' && !q.arrest;
+    const cls = u.holder === 'bg' ? 'bg' : q ? (stuck ? 'busy stuck' : 'busy') : u.reservedFor ? 'res' : '';
+    const sub = u.holder === 'bg' ? 'inpatient' : q ? esc(q.name) : u.reservedFor ? `reserved: ${esc(last(P(u.reservedFor).name))}` : 'free';
+    return `<div class="unit ${cls}" ${q ? set('sel', q.id) : ''}><b>${esc(u.name)}</b><small>${sub}${u.holder && u.reservedFor && q ? ` &middot; next: ${esc(last(P(u.reservedFor).name))}` : ''}</small></div>`;
+  }
+  function bedsView() {
+    const groups = ['ED beds', 'Imaging', 'House'];
+    const html = groups.map((g) => { const us = Object.values(S.units).filter((u) => E.KINDS[u.kind].group === g); const free = us.filter((u) => !u.holder).length; return `<h3 class="sec">${g}: ${free} of ${us.length} free</h3><div class="grid">${us.map(unitTile).join('')}</div>`; }).join('');
+    return `<div class="view">${html}<h3 class="sec">Blood fridge</h3><div>${S.stock.prbc} units of red cells${S.phone.blood ? ' (6 more on the way)' : ''}. Red tiles: the patient is stuck there, waiting for something else.</div></div>`;
+  }
+  function staffView() {
+    const us = Object.values(S.units).filter((u) => E.KINDS[u.kind].staff);
+    const row = (u) => { const q = u.holder ? P(u.holder) : null; return `<tr ${q ? set('sel', q.id) : ''} style="${q ? 'cursor:pointer' : ''}"><td><b>${esc(u.name)}</b></td><td>${esc(u.role || '')}</td><td class="${q ? 'a' : 'g'}">${q ? 'Busy' : 'Free'}</td><td>${q ? `${esc(q.name)} &middot; ${q.arrest ? 'Code Blue' : esc(E.stepOf(q).label)}${q.arrest ? '' : `, ${q.stepLeft} min left`}` : ''}</td></tr>`; };
+    const oncall = Object.entries(E.ON_CALL).map(([k, oc]) => { const cl = S.called[k]; return `<tr><td><b>${esc(oc.label)}</b></td><td>On call from home, ${oc.eta} min away</td><td class="${cl ? (cl.here ? 'g' : 'a') : 'm'}">${cl ? (cl.here ? 'In house' : `Arriving ${E.clock(cl.eta)}`) : 'At home'}</td><td>${cl ? '' : `<button class="btn" ${act({ type: 'callIn', kind: k })}>Call in</button>`}</td></tr>`; }).join('');
+    return `<div class="view"><h3 class="sec">On shift</h3><table class="labs"><tr><th>Name</th><th>Role</th><th>Status</th><th>With</th></tr>${us.map(row).join('')}</table><h3 class="sec" style="margin-top:14px">On call</h3><table class="labs"><tr><th>Team</th><th></th><th>Status</th><th></th></tr>${oncall}</table></div>`;
+  }
+  function alertsView() {
+    return `<div class="view alist"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><h3 class="sec">Alerts</h3><button class="btn" ${act({ type: 'ack', id: 'all' })}>Acknowledge all</button></div>${S.alerts.map((a) => `<div class="al ${a.level} ${a.ack ? 'ack' : ''}" ${a.pid ? set('sel', a.pid) : ''}><span class="lv"></span><time>${E.clock(a.t)}</time><span><b>${esc(a.title)}</b>${ui.lens && LENS[a.key.split(':')[0]] ? `<em>${LENS[a.key.split(':')[0]]}</em>` : ''} &middot; ${esc(a.text)}</span></div>`).join('') || '<div class="m">Quiet. For now.</div>'}</div>`;
+  }
+  function reviewView() {
+    const m = E.summary(S), bad = E.patientsOf(S).filter((p) => p.outcome && p.outcome.grade !== 'good' && p.arriveAt >= 0);
+    const grade = m.died === 0 && m.harm <= 2 ? 'A' : m.died <= 1 && m.harm <= 5 ? 'B' : m.died <= 3 ? 'C' : 'D';
+    const jams = {}; for (const a of S.alerts) { const k = a.key.split(':')[0]; if (LENS[k]) jams[k] = (jams[k] || 0) + 1; }
+    return `<div class="view review"><h3 class="sec">Morbidity and mortality review: night of seed ${esc(seed)}</h3><div class="big">Grade ${grade}</div>
+      <p>${m.good} patients did well. <span class="r">${m.died} died.</span> <span class="a">${m.harm} were harmed by delay.</span> ${m.lwbs} left without being seen. Time targets met: ${m.clocksMet} of ${m.clocksTotal}. Ambulances diverted: ${m.diverted}.</p>
+      <table><tr><th style="text-align:left">Arrived</th><th style="text-align:left">Patient</th><th style="text-align:left">Diagnosis</th><th style="text-align:left">What happened</th></tr>${bad.map((p) => `<tr ${set('sel', p.id)} style="cursor:pointer"><td>${E.clock(p.arriveAt)}</td><td><b>${esc(p.name)}</b></td><td>${esc(E.caseOf(p).title)}</td><td class="${p.outcome.grade === 'died' ? 'r' : 'a'}">${esc(p.outcome.text)}</td></tr>`).join('')}</table>
+      <h3 class="sec" style="margin-top:14px">How the house jammed (engineer's names)</h3><p>${Object.entries(jams).map(([k, n]) => `${LENS[k]}: ${n}`).join(' &middot; ') || 'No jams recorded.'}</p>
+      <button class="btn" ${set('newshift', 1)}>Work another night</button></div>`;
+  }
+
+  /* ---------- chrome ---------- */
+  function screen() {
+    const m = E.summary(S), units = Object.values(S.units);
+    const count = (kind) => { const us = units.filter((u) => u.kind === kind); return `${us.filter((u) => u.holder).length} / ${us.length}`; };
+    const full = (kind) => units.filter((u) => u.kind === kind).every((u) => u.holder);
+    const open = S.alerts.filter((a) => !a.ack), top = open.find((a) => a.level === 'crit') || open.find((a) => a.level === 'warn');
+    const ct = units.find((u) => u.kind === 'ct'), ctq = E.patientsOf(S).filter((p) => p.status === 'active' && p.stepState === 'need' && E.stepOf(p).needs.includes('ct')).length;
+    const isBoard = VIEWS.some(([k]) => k === ui.view);
+    const menu = ui.menu === 'callin' ? `<div class="menu">${Object.entries(E.ON_CALL).map(([k, oc]) => { const cl = S.called[k]; return `<div class="row"><span><b>${esc(oc.label)}</b><small>${cl ? (cl.here ? 'In house' : `Arriving ${E.clock(cl.eta)}`) : `At home. ${oc.eta} min to get here.`}</small></span>${cl ? '' : `<button class="btn" ${act({ type: 'callIn', kind: k })}>Call in</button>`}</div>`; }).join('')}</div>` : '';
+    return `<div class="title"><span><b>PULSE ED</b>&nbsp; Track Board (Harbourside General ED)</span><span>ALVAREZ, JOSEFINA RN &middot; Charge Nurse &middot; Shift 1900-0700 &middot; <b>${E.clock(S.t)}</b></span></div>
+      <div class="tools"><button ${set('menu', 'callin')}>Call In Staff &#9662;</button><button ${set('phone', 1)}>Phone &#9662;</button><button class="${S.t < S.divertUntil ? 'on' : ''}" ${act({ type: 'divert' })}>${S.t < S.divertUntil ? `On diversion until ${E.clock(S.divertUntil)}` : 'Ambulance Diversion'}</button><span class="sep"></span><button class="${ui.lens ? 'on' : ''}" ${set('lens', 1)}>Engineer Lens</button><button ${set('intro', 1)}>How this works</button>
+        <div class="right"><button class="bell ${open.some((a) => a.level === 'crit') ? 'hot' : ''}" ${set('view', 'alerts')}>Alerts (${open.length})</button></div>${menu}</div>
+      ${top ? `<div class="banner ${top.level}">${esc(top.title)}<span>${esc(top.text)}</span>${top.pid ? `<button ${set('sel', top.pid)}>Open patient</button>` : ''}<button ${act({ type: 'ack', id: top.id })}>Acknowledge</button></div>` : ''}
+      <div class="tabs">${VIEWS.map(([k, l]) => `<button class="${ui.view === k ? 'on' : ''}" ${set('view', k)}>${l} (${E.patientsOf(S).filter((p) => inView(p, k)).length})</button>`).join('')}<span class="gap"></span>${ACTIVITIES.map(([k, l]) => `<button class="${ui.view === k ? 'on' : ''}" ${set('view', k)}>${l}</button>`).join('')}${S.over ? `<button class="${ui.view === 'review' ? 'on' : ''}" ${set('view', 'review')}>Shift Review</button>` : ''}</div>
+      <div class="cap"><span>ED beds <b class="${m.census >= m.edBeds ? 'r' : ''}">${m.census} / ${m.edBeds}</b></span><span>Waiting <b class="${m.waiting > 6 ? 'r' : ''}">${m.waiting}</b></span><span>Boarding <b class="${m.boarding > 3 ? 'r' : ''}">${m.boarding}</b></span><span>ICU <b class="${full('icu') ? 'r' : ''}">${count('icu')}</b></span><span>Ward <b class="${full('ward') ? 'r' : ''}">${count('ward')}</b></span><span>OR <b class="${full('or') ? 'a' : ''}">${count('or')}</b></span><span>CT <b class="${ct.holder ? 'a' : 'g'}">${ct.holder ? `in use${ctq ? `, ${ctq} queued` : ''}` : 'free'}</b></span><span>Blood <b class="${S.stock.prbc <= 2 ? 'r' : ''}">${S.stock.prbc} u</b></span>
+        <span class="goal">Tonight: <b class="${m.died ? 'r' : 'g'}">${m.died} died</b> &middot; <b class="${m.harm ? 'a' : 'g'}">${m.harm} harmed</b> &middot; <b>${m.good}</b> well &middot; targets <b>${m.clocksMet}/${m.clocksTotal}</b> &middot; LWBS <b>${m.lwbs}</b></span></div>
+      <div class="main">${isBoard ? `${board()}<div class="split">&#9662; Report</div>${report()}` : ui.view === 'central' ? centralView() : ui.view === 'beds' ? bedsView() : ui.view === 'staff' ? staffView() : ui.view === 'alerts' ? alertsView() : reviewView()}${!isBoard && ui.view !== 'review' && P(ui.sel) && ui.pin ? '' : ''}</div>
+      ${ui.toast ? `<div class="toast ${ui.toast.ok ? '' : 'fail'}">${esc(ui.toast.msg)}</div>` : ''}`;
+  }
+  function desk() {
+    const exp = E.patientsOf(S).filter((p) => p.status === 'expected').sort((a, b) => a.arriveAt - b.arriveAt);
+    const latest = S.alerts[0];
+    return `<div class="prop" id="radio"><h4><span class="led ${exp.length ? 'on' : ''}"></span>EMS RADIO</h4>${exp.slice(0, 2).map((p) => `<div class="lcd" ${set('sel', p.id)} style="cursor:pointer">ETA ${String(p.arriveAt - S.t).padStart(2, '0')}m ${esc((E.caseOf(p).prealert || p.cc).slice(0, 24).toUpperCase())}</div>`).join('') || '<div class="lcd green">NO UNITS INBOUND</div>'}</div>
+      <div class="prop" id="timer"><h4>NIGHT SHIFT ${S.over ? '&middot; HANDOVER' : ''}</h4><div style="display:flex;align-items:center;gap:12px"><span class="bigclock">${E.clock(S.t)}</span><div class="speed">${[[0, '&#10073;&#10073;'], [1, '1x'], [3, '3x'], [8, '8x']].map(([v, l]) => `<button class="${ui.speed === v ? 'on' : ''}" ${set('speed', v)}>${l}</button>`).join('')}</div></div></div>
+      <div class="prop" id="pager"><h4>PAGER</h4><div class="lcd green" style="white-space:normal">${latest ? `${E.clock(latest.t)} ${esc(latest.title.toUpperCase())}: ${esc(latest.text)}` : 'NO PAGES'}</div></div>
+      <div class="prop" id="phone" ${set('phone', 1)}><h4>DESK PHONE</h4><div>L1 ICU charge &middot; ${S.phone.stepdown}</div><div>L2 Bed management &middot; ${S.phone.discharge}</div><div>L3 Blood bank ${S.phone.blood ? '&middot; sending' : ''}</div></div>
+      ${ui.phone ? `<div id="phonemenu"><h3>Desk phone</h3>
+        <div class="row"><span><b>ICU charge nurse</b><small>Step a patient down to the ward. Needs a free ward bed. Frees an ICU bed in 20 min. ${S.phone.stepdown} left tonight.</small></span><button class="btn" ${act({ type: 'phone', what: 'stepdown' })}>Call</button></div>
+        <div class="row"><span><b>Bed management</b><small>Send a ward patient home early. Frees a ward bed in 30 min. ${S.phone.discharge} left tonight.</small></span><button class="btn" ${act({ type: 'phone', what: 'discharge' })}>Call</button></div>
+        <div class="row"><span><b>Blood bank</b><small>6 units of red cells in 15 min. ${S.stock.prbc} in the fridge now.</small></span><button class="btn" ${act({ type: 'phone', what: 'blood' })}>Call</button></div></div>` : ''}`;
+  }
+  const INTRO = `<div class="card"><h1>Night shift, Harbourside General</h1><div class="m">19:00 to 07:00. You are the charge nurse. You do not treat anyone. You decide who gets what, and when.</div>
+    <ol><li><b>Place.</b> Patients arrive by ambulance or walk in. Pick one on the board and assign a bed. Sickest first: ESI 1 is dying, ESI 5 can wait.</li>
+    <li><b>Read the pathway.</b> Each care step needs everything at once: a doctor, a nurse, a scanner, a theatre. A red chip is the missing piece, and the advisory says who has it.</li>
+    <li><b>Unblock.</b> Expedite the sick past the queue, hold or move patients, reserve what a dying patient will need, call teams in from home before they are needed, phone for inpatient beds.</li>
+    <li><b>Watch.</b> Alerts and the live monitors tell you who is getting worse. The waiting room is not monitored.</li></ol>
+    <div class="m" style="margin-bottom:14px">A patient keeps their place until the next place is free. That one rule is why hospitals jam.</div>
+    <button class="btn" data-ui="start:1">Take handover</button></div>`;
+
+  function render() {
+    const keep = ['boardscroll', 'rscroll'].map((id) => [id, $(id) ? $(id).scrollTop : 0]);
+    $('screen').innerHTML = screen();
+    $('desk').innerHTML = desk();
+    for (const [id, top] of keep) if ($(id)) $(id).scrollTop = top;
+    $('intro').style.display = ui.intro ? 'flex' : 'none';
+    $('vignette').className = E.patientsOf(S).some((p) => p.arrest) ? 'code' : '';
+  }
+  function toast(r) { if (!r || !r.msg) return; ui.toast = r; clearTimeout(toast.t); toast.t = setTimeout(() => { ui.toast = null; render(); }, 2600); }
+
+  function world() {   // let the room behind the screen react to what just happened
+    for (const e of S.log.slice(ui.logSeen)) { if (e.text === 'Ambulance arrived') Backdrop.ambulance(); if (e.type === 'code') Backdrop.codeBlue(); }
+    ui.logSeen = S.log.length;
+    const m = E.summary(S); Backdrop.setBusy((m.census + m.waiting) / (m.edBeds + 6));
+  }
+  function step() {
+    if (S.over) return;
+    E.tick(S); world();
+    if (S.over) { ui.speed = 0; ui.view = 'review'; }
+  }
+
+  document.addEventListener('pointerdown', (ev) => {
+    const a = ev.target.closest('[data-act]'), u = ev.target.closest('[data-ui]');
+    if (a) { toast(E.act(S, JSON.parse(a.dataset.act))); ui.open = null; ui.menu = null; }
+    else if (u) {
+      const [k, v] = u.dataset.ui.split(':');
+      if (k === 'sel') { ui.sel = +v; ui.open = null; if (!VIEWS.some(([x]) => x === ui.view)) ui.view = 'all'; if (!inView(P(ui.sel), ui.view)) ui.view = 'all'; }
+      else if (k === 'view') { ui.view = v; }
+      else if (k === 'tab') ui.tab = v;
+      else if (k === 'open') ui.open = v;
+      else if (k === 'menu') ui.menu = ui.menu === v ? null : v;
+      else if (k === 'phone') ui.phone = !ui.phone;
+      else if (k === 'lens') ui.lens = !ui.lens;
+      else if (k === 'speed') ui.speed = +v;
+      else if (k === 'intro') { ui.intro = true; ui.resume = ui.speed; ui.speed = 0; }
+      else if (k === 'start') { ui.intro = false; ui.speed = ui.resume || 1; }
+      else if (k === 'newshift') { location.search = `?seed=${Math.random().toString(36).slice(2, 8).toUpperCase()}`; return; }
+    } else { if (!ev.target.closest('.menu')) ui.menu = null; if (!ev.target.closest('#phonemenu')) ui.phone = false; }
+    render();
+  });
+  document.addEventListener('keydown', (ev) => { if (ev.code === 'Space' && !ui.intro) { ev.preventDefault(); ui.speed = ui.speed ? 0 : 1; render(); } });
+
+  let acc = 0, prev = performance.now();
+  setInterval(() => {
+    const now = performance.now(); acc += ((now - prev) / 1000) * ui.speed; prev = now;
+    let n = 0; while (acc >= 1 && n < 10) { step(); acc -= 1; n += 1; }
+    if (n) render();
+  }, 200);
+
+  $('intro').innerHTML = INTRO;
+  Backdrop.start($('world')); Waves.start();
+  ui.sel = (rows('all')[0] || {}).id || null;
+  render();
+  return { get state() { return S; }, ui, render, step };
+})();
+
+</script>
+</body>
+</html>
