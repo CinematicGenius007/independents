@@ -9,10 +9,11 @@ a care step starts only when **everything it needs is free at the same moment**,
 patient **keeps the place they are in until the next place is theirs**. Those two rules
 are atomic acquisition and hold-and-wait, and they are why real hospitals jam.
 
-Open `index.html` (no server). `?seed=ANYTHING` gives a different night. `?start=shift` skips the start screen. `handbook.html` is the manual on its own.
+Run `node build.mjs`, then open `dist/index.html` (no server needed). The landing page links to the game (`dist/play.html`) and the handbook (`dist/handbook.html`). In the game, `?seed=ANYTHING` gives a different night and `?start=shift` skips the start screen. `dist/` is not committed; the host builds it. Launch and hosting plan: `docs/LAUNCH.md`.
 
 ```
-node build.mjs            # src/ -> index.html, handbook.html, docs/CASEBOOK.md
+node build.mjs            # src/ -> dist/ (site, game, handbook, icons, metadata) and docs/CASEBOOK.md
+node scripts/brand.mjs    # redraw icons, social card and web images into src/brand (needs Chrome and cwebp)
 node --test test/         # engine tests
 node scripts/night.mjs [seed] [--smart] [--log]   # headless night, naive or competent bot
 ```
@@ -34,6 +35,7 @@ node scripts/night.mjs [seed] [--smart] [--log]   # headless night, naive or com
 | Screen | `src/ui/app.js` | PULSE ED: track board, report pane (overview, live monitor, chart and notes, results), central monitor, beds and resources, staff, alerts, end-of-shift review. Desk props: EMS radio, clock and speed, pager, phone. |
 | Monitor | `src/ui/monitor.js` | Synthesized ECG (sinus, ST elevation, atrial fibrillation, VF), pleth and respiration traces from the patient's real numbers. |
 | Backdrop | `src/ui/backdrop.js` | One photograph of the department (`src/assets/er-floor.jpg`) in layers, with a heavy blur and a clinical grade. The people who walk past are cut out of the same photograph, so they share its colour and light. Stretchers roll in when an ambulance arrives; a Code Blue tints the room. Static on phones and under reduced motion. |
+| Site | `src/site/landing.html`, `src/brand/` | The landing page, the brand mark, icons, social card and web images. `build.mjs` adds the meta tags, structured data, manifest, robots, sitemap and `llms.txt`. |
 | Guide text | `src/ui/guide-text.js` | One entry per control: where it is, what it means, what to do. Guide Mode, Orientation and the Handbook's "Every control" page all read from it, so they cannot disagree. |
 | Guide Mode | `src/ui/guide.js` | Stops the clock. Hover or focus explains any element. On touch, a tap opens a sheet instead of acting, with a button to use the control anyway. |
 | Orientation | `src/ui/tutorial.js` | 62 steps in 7 chapters on a separate practice night. Saves the chapter you reached. A shift in progress is set aside and handed back. |

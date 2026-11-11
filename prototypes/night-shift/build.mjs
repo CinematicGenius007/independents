@@ -1,10 +1,13 @@
 #!/usr/bin/env node
-/* Inlines src/ into one self-contained index.html (double-click, no server).
- *   node build.mjs
+/* Builds the website into dist/: the landing page (index.html), the game (play.html, one
+ * self-contained file apart from the backdrop photo), the handbook, icons and metadata.
+ *   node build.mjs                                   # local, open dist/index.html
+ *   SITE_URL=https://example.org node build.mjs      # production: absolute canonical, og:image, sitemap
  * Engine modules are plain ES modules so node can run and test them. Here they are
  * flattened into one IIFE by stripping import/export, the same approach as
  * prototypes/deadlock/build.mjs. Top-level names must be unique across modules. */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync, copyFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -98,27 +101,107 @@ const sections = whole.split(/^# /m).slice(1).map((chunk) => {
 for (const [where, , , , topic] of Object.values(GUIDE)) if (topic && !sections.some((s) => s.id === topic)) throw new Error(`guide entry in "${where}" links to missing handbook section "${topic}"`);
 const docs = JSON.stringify({ sections, diagrams: { jam: diagram('jam.svg') } }).replace(/<\/script/gi, '<\\/script');
 
-const floor = `data:image/jpeg;base64,${readFileSync(join(here, 'src/assets/er-floor.jpg')).toString('base64')}`;
-const css = read('ui/style.css').replace('__FLOOR__', floor);
+/* ---------- the site around the game ---------- */
+const OUT = join(here, 'dist');
+const SITE = (process.env.SITE_URL || '').replace(/\/$/, '');
+rmSync(OUT, { recursive: true, force: true });
+mkdirSync(join(OUT, 'assets'), { recursive: true });
+const assets = {};
+for (const [name, from] of [['er-floor.webp', 'src/assets/er-floor.webp'], ['board.webp', 'src/brand/board.webp'], ['guide-mode.webp', 'src/brand/guide-mode.webp'], ['phone.webp', 'src/brand/phone.webp'], ['og.jpg', 'src/brand/og.jpg']]) {
+  const buf = readFileSync(join(here, from)), hash = createHash('sha256').update(buf).digest('hex').slice(0, 10);
+  const file = `assets/${name.replace(/\.(\w+)$/, `.${hash}.$1`)}`;
+  writeFileSync(join(OUT, file), buf); assets[name] = file;
+}
+for (const f of ['favicon.ico', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png']) copyFileSync(join(here, 'src/brand', f), join(OUT, f));
+const MARK = readFileSync(join(here, 'src/brand/mark.svg'), 'utf8').trim();
+writeFileSync(join(OUT, 'favicon.svg'), MARK);
+const fillAssets = (t) => t.replace(/\{\{ASSET:([\w.-]+)\}\}/g, (_, n) => { if (!assets[n]) throw new Error(`unknown asset ${n}`); return assets[n]; });
 
+const NAME = 'Night Shift';
+const BLURB = 'A browser game where you run an emergency department at night as the charge nurse. Give out beds, call in teams and keep the hospital from jamming.';
+const abs = (path) => (SITE ? `${SITE}${path}` : '');
+function head({ title, description, path }) {
+  const url = abs(path), image = abs(`/${assets['og.jpg']}`);
+  return [
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
+    `<title>${esc(title)}</title>`,
+    `<meta name="description" content="${esc(description)}">`,
+    url && `<link rel="canonical" href="${url}">`,
+    '<meta name="theme-color" content="#0d1724">',
+    '<meta name="color-scheme" content="dark light">',
+    '<link rel="icon" href="favicon.ico" sizes="32x32">',
+    '<link rel="icon" href="favicon.svg" type="image/svg+xml">',
+    '<link rel="apple-touch-icon" href="apple-touch-icon.png">',
+    '<link rel="manifest" href="site.webmanifest">',
+    `<meta property="og:site_name" content="${NAME}">`,
+    '<meta property="og:type" content="website">',
+    `<meta property="og:title" content="${esc(title)}">`,
+    `<meta property="og:description" content="${esc(description)}">`,
+    url && `<meta property="og:url" content="${url}">`,
+    image && `<meta property="og:image" content="${image}">`,
+    image && '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">',
+    image && `<meta property="og:image:alt" content="${NAME}: twelve hours, twenty-one beds, you decide who gets one.">`,
+    '<meta name="twitter:card" content="summary_large_image">',
+    `<meta name="twitter:title" content="${esc(title)}">`,
+    `<meta name="twitter:description" content="${esc(description)}">`,
+    image && `<meta name="twitter:image" content="${image}">`,
+  ].filter(Boolean).join('\n');
+}
+
+/* the game */
+const css = read('ui/style.css').replace('__FLOOR__', assets['er-floor.webp']);
 const ui = ['ui/backdrop.js', 'ui/monitor.js', 'ui/guide-text.js', 'ui/handbook.js', 'ui/guide.js', 'ui/tutorial.js', 'ui/app.js'].map(read).join('\n');
 const html = read('index.template.html')
+  .replace('<!--{{HEAD}}-->', () => head({ title: `Play ${NAME}: run an emergency department tonight`, description: BLURB, path: '/play' }))
   .replace('/*{{CSS}}*/', () => css)
   .replace('/*{{DOCS}}*/', () => docs)
   .replace('/*{{ENGINE}}*/', () => safe(bundle))
   .replace('/*{{UI}}*/', () => safe(ui));
-writeFileSync(join(here, 'index.html'), html);
-console.log('index.html', (html.length / 1024).toFixed(1) + ' KB');
+writeFileSync(join(OUT, 'play.html'), html);
+
+/* the landing page */
+const jsonld = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', name: NAME, ...(SITE && { url: `${SITE}/` }), description: BLURB, inLanguage: 'en' },
+    { '@type': 'VideoGame', name: NAME, description: BLURB, ...(SITE && { url: `${SITE}/play`, image: abs(`/${assets['og.jpg']}`) }), genre: ['Simulation', 'Strategy', 'Management'], gamePlatform: 'Web browser', applicationCategory: 'Game', operatingSystem: 'Any', playMode: 'SinglePlayer', inLanguage: 'en' },
+  ],
+}).replace(/</g, '\\u003c');
+const landing = fillAssets(readFileSync(join(here, 'src/site/landing.html'), 'utf8'))
+  .replace('<!--{{HEAD}}-->', () => head({ title: `${NAME}: an emergency department game`, description: BLURB, path: '/' }))
+  .replace('{{JSONLD}}', () => jsonld)
+  .replace('{{MARK}}', () => MARK.replace(/<title>.*?<\/title>/, '').replace('<svg ', '<svg aria-hidden="true" '));
+writeFileSync(join(OUT, 'index.html'), landing);
 
 /* the same manual as a page of its own, for reading away from the game */
 const proseCss = read('ui/style.css').match(/\.prose h1[\s\S]*?(?=\.hb-hit)/)[0];
-const page = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Night Shift Handbook</title><style>
+const page = `<!doctype html><html lang="en"><head>${head({ title: `${NAME} Handbook: how to play, every control and condition`, description: 'The complete manual for Night Shift: the rules, the screen, vital signs and NEWS2, every action, every alert, every condition and a glossary.', path: '/handbook' })}<style>
 :root { --blue: #1f4e8c; --blue-d: #173b6b; --line: #d3dae3; --tab: #f6f8fb; --mute: #55647a; --sel: #cfe3fa; }
 * { box-sizing: border-box; } html { scroll-behavior: smooth; } body { margin: 0; background: #f4f6f9; color: #1a1a1a; font: 16px/1.6 Tahoma, 'Segoe UI', Verdana, sans-serif; }
-header { background: var(--blue); color: #fff; padding: 18px 20px; } header h1 { margin: 0; font-size: 22px; } header a { color: #fff; }
+header { background: #0d1724; color: #fff; padding: 18px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; } header h1 { margin: 0; font-size: 22px; flex: 1 1 auto; } header a { color: #fff; } header .play { background: #ffb454; color: #1b1306; padding: 8px 16px; border-radius: 5px; font-weight: 700; text-decoration: none; }
 nav { background: #fff; border-bottom: 1px solid var(--line); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; } nav a { color: var(--blue); }
 .prose { padding: 0 20px; } main { padding: 16px 0 60px; } section { margin-bottom: 26px; }
 table { border-collapse: collapse; width: 100%; }
-${proseCss}</style></head><body><header><h1>Night Shift Handbook</h1><a href="index.html">Open the game</a></header><nav>${sections.map((s) => `<a href="#${s.id}">${esc(s.title)}</a>`).join('')}</nav><main class="prose">${sections.map((s) => `<section id="${s.id}">${s.html}</section>`).join('\n')}</main></body></html>`;
-writeFileSync(join(here, 'handbook.html'), page);
-console.log('handbook.html', (page.length / 1024).toFixed(1) + ' KB');
+${proseCss}</style></head><body><header><h1>Night Shift Handbook</h1><a href="./">Home</a><a class="play" href="play.html">Play</a></header><nav aria-label="Sections">${sections.map((s) => `<a href="#${s.id}">${esc(s.title)}</a>`).join('')}</nav><main class="prose">${sections.map((s) => `<section id="${s.id}">${s.html}</section>`).join('')}</main></body></html>`;
+writeFileSync(join(OUT, 'handbook.html'), page);
+
+/* everything else a website is expected to have */
+writeFileSync(join(OUT, '404.html'), `<!doctype html><html lang="en"><head>${head({ title: `Not found · ${NAME}`, description: BLURB, path: '/404' }).replace(/<link rel="canonical"[^>]*>/, '')}<meta name="robots" content="noindex"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0d1724;color:#eef2f7;font:17px/1.6 Tahoma,'Segoe UI',Verdana,sans-serif;text-align:center;padding:24px}a{color:#ffb454}svg{width:56px;height:56px}</style></head><body><div>${MARK}<h1>No patient by that name.</h1><p>This page is not on the board.</p><p><a href="./">Back to the front desk</a> &middot; <a href="play.html">Start a shift</a></p></div></body></html>`);
+writeFileSync(join(OUT, 'site.webmanifest'), JSON.stringify({
+  name: NAME, short_name: NAME, description: BLURB, start_url: 'play.html', scope: './', display: 'standalone', orientation: 'any', background_color: '#0d1724', theme_color: '#0d1724',
+  icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }, { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }, { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }],
+}, null, 2));
+const PAGES = [['/', 'weekly', '1.0'], ['/play', 'weekly', '0.9'], ['/handbook', 'weekly', '0.8']];
+writeFileSync(join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\n${SITE ? `\nSitemap: ${SITE}/sitemap.xml\n` : ''}`);
+if (SITE) writeFileSync(join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PAGES.map(([p, f, pr]) => `  <url><loc>${SITE}${p}</loc><changefreq>${f}</changefreq><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`);
+const link = (p) => (SITE ? `${SITE}${p}` : p);
+/* llms.txt: a plain summary for AI search and assistants (llmstxt.org), with the whole manual beside it */
+writeFileSync(join(OUT, 'llms.txt'), `# ${NAME}\n\n> ${BLURB}\n\nThe player is the charge nurse of Harbourside General's emergency department (a fictional hospital), from 19:00 to 07:00. They never treat patients. They decide who gets which bed, who goes first, what is held back, who is called in from home, and when two patients swap places. Two rules drive the simulation: a care step starts only when everything it needs is free at the same moment, and a patient keeps the place they are in until the next place is theirs. It runs in any modern browser, on desktop and on phones, with no account. Medical content is plausible game content and has not been reviewed by a clinician.\n\n## Play\n\n- [Play Night Shift](${link('/play')}): the game. A new night: add ?seed=ANYTHING.\n\n## Docs\n\n- [Handbook](${link('/handbook')}): how to play, every control, every condition, glossary.\n- [Full handbook as text](${link('/llms-full.txt')}): the same manual in Markdown.\n`);
+writeFileSync(join(OUT, 'llms-full.txt'), `# ${NAME} Handbook\n\n> ${BLURB}\n\n${whole.replace(/^# (.*) \{#.*\}$/gm, '# $1')}`);
+/* response headers (Cloudflare and Netlify read _headers; vercel.json mirrors it) */
+writeFileSync(join(OUT, '_headers'), `/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: SAMEORIGIN\n  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()\n\n/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n`);
+
+const kb = (f) => `${(readFileSync(join(OUT, f)).length / 1024).toFixed(1)} KB`;
+console.log(`dist/ ${SITE ? `for ${SITE}` : '(no SITE_URL: canonical, og:image and sitemap left out)'}`);
+for (const f of ['index.html', 'play.html', 'handbook.html', assets['er-floor.webp']]) console.log(`  ${f.padEnd(34)} ${kb(f)}`);
