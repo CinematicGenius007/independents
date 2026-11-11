@@ -1,0 +1,8 @@
+flowchart LR
+  SC[Scenario: who arrives when] -->|creates| PT[Patient: chart, vitals, severity]
+  CB[Case book: 18 conditions] -->|supplies pathway, labs, clocks| PT
+  PT -->|asks for everything a step needs| SIM[Simulation: one minute per tick]
+  HO[Hospital: beds, scanners, staff] -->|lends units, all or nothing| SIM
+  SIM -->|raises| AL[Alerts and gridlock detection]
+  SIM -->|state| UI[PULSE ED screen and desk]
+  UI -->|place, expedite, hold, reserve, call in, phone, huddle| SIM

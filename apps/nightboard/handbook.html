@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!--site:head-->
+<link rel="stylesheet" href="./src/ui/prose.css">
+<style>
+:root { --blue: #1f4e8c; --blue-d: #173b6b; --line: #d3dae3; --tab: #f6f8fb; --mute: #55647a; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #f4f6f9; color: #1a1a1a; font: 16px/1.6 Tahoma, 'Segoe UI', Verdana, sans-serif; }
+header { background: #0d1724; color: #fff; padding: 18px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px; }
+header h1 { margin: 0; font-size: 22px; flex: 1 1 auto; }
+header a { color: #fff; }
+header .play { background: #ffb454; color: #1b1306; padding: 8px 16px; border-radius: 5px; font-weight: 700; text-decoration: none; }
+nav { background: #fff; border-bottom: 1px solid var(--line); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
+nav a { color: var(--blue); }
+main { padding: 16px 20px 60px; }
+section { margin-bottom: 26px; }
+table { border-collapse: collapse; width: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<header><h1>Nightboard Handbook</h1><a href="./">Home</a><a class="play" href="play.html">Play</a></header>
+<nav aria-label="Sections"><!--site:handbook-nav--></nav>
+<main class="prose"><!--site:handbook-main--></main>
+</body>
+</html>
