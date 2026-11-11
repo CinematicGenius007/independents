@@ -1,0 +1,11 @@
+flowchart TD
+  A[round starts] -->|no legal word| Z[Censor wins: silenced]
+  A -->|Poet traces a path| B{valid word, anchored, not suicidal?}
+  B -->|no| A
+  B -->|yes: ink new cells| C[lift stones with no air]
+  C -->|score or crossing reached| W[Poet wins]
+  C -->|else| D[Censor spends 2 actions]
+  D -->|stone or 2x2 turn| E[quarantine ink with 1 breath or fewer]
+  E -->|more actions| D
+  E -->|rounds used up| Y[Censor wins: clock]
+  E -->|else| A

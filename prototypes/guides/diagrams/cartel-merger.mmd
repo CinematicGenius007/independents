@@ -1,0 +1,8 @@
+flowchart TD
+  P[A tile is placed between two realms] -->|both hold a Coal director| Q{Which realm has more Coal tiles?}
+  Q -->|realm X has more| W[Realm X wins]
+  Q -->|tie| T[Older director wins]
+  T -->|older director wins| W
+  W -->|loser's director leaves the board| U[Unseated director returns to its owner]
+  U -->|winner's owner scores| S[Plus 2 spoil points in Coal]
+  S -->|realms fuse into one| R[One bigger realm, one director]

@@ -1,0 +1,6 @@
+flowchart LR
+  pick["every pick, 0.64 s"] -->|"counts up 0,1,2"| tread["treadle clock: 3 beats"]
+  pick -->|"counts up 0,1,2,3"| card["card clock: 4 beats"]
+  tread -->|"both reset together every 12 picks"| shed["shed opens for 2 picks"]
+  card -->|"both reset together every 12 picks"| shed
+  shed -->|"strike now: clean catch"| clean["cloth untouched"]

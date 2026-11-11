@@ -1,0 +1,6 @@
+stateDiagram-v2
+  [*] --> Thriving
+  Thriving --> Stressed : disturbance rises above 60
+  Stressed --> Thriving : disturbance falls below 45
+  Stressed --> Collapsed : health reaches 0
+  Collapsed --> [*] : the recipe survives as a daughter culture

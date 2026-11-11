@@ -1,0 +1,6 @@
+stateDiagram-v2
+  [*] --> Sharp
+  Sharp --> Widening : drift with no fix
+  Widening --> Widening : the cone grows, faster in the thermocline
+  Widening --> Sharp : a sonar echo from the beacon
+  Widening --> Lost : the leg budget runs out

@@ -1,0 +1,7 @@
+flowchart LR
+  fog["Fogwalk"] -->|"belief set collapses"| tc["Tonguecracker"]
+  fog -->|"candidate sets narrow"| sud["Sudoku / UTTT"]
+  so["Sealed Orders"] -->|"selective disclosure"| hw["Hushword"]
+  so -->|"commit, reveal, verify"| sb["Shadow Bidding"]
+  sud -->|"cell-local rule"| sp["Sporefront"]
+  fog -->|"state-space search"| dl["Deadlock"]

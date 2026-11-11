@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant C as Commander on the hill
+  participant A as Tower A
+  participant B as Tower B
+  participant T as Traitor tower
+  C->>A: Round 1 order
+  C->>B: Round 1 order
+  C->>T: Round 1 order
+  A->>B: Round 2 relay of what A heard
+  B->>A: Round 2 relay of what B heard
+  T->>A: lie Attack
+  T->>B: lie Retreat
+  Note over A,B: each takes the majority of its direct order plus on-time relays, a tie means Retreat

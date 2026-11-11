@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant H as Host
+  participant G as Guest
+  G->>H: hello (name, fresh)
+  H->>G: roster (seats, config, started)
+  H->>G: begin (seed, commitments)
+  G->>H: act (seq, move)
+  H->>G: event (seq, move + dealt tiles)
+  G->>H: ack (seq)
+  G-->>H: resync (lastSeq) after a gap
+  H-->>G: snapshot (seq, state)

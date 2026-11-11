@@ -1,0 +1,5 @@
+flowchart LR
+  G[A group of ink cells] -->|count empty squares touching it| L[Breaths, also called liberties]
+  L -->|2 or more| OK[Group lives]
+  L -->|1 or fewer| Q[Group is quarantined]
+  X[Censor stone fills a breath] -->|reduces| L

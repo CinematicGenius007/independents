@@ -1,0 +1,5 @@
+flowchart TB
+  read["read the plate and the 6-tick forecast"] -->|"spend up to 3 actions"| act["arm a drum, move a lens, or change a lens rule"]
+  act -->|"applied at the tick boundary"| pulse["pulse: armed drums plant their seed rings"]
+  pulse -->|"board runs 6 ticks by itself"| next["next round, 4 rounds in total"]
+  next -->|"at tick 24"| score["score: still lifes, oscillators, density band"]

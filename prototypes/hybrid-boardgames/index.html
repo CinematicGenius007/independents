@@ -1,0 +1,2288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hybrid Board Games</title>
+<meta name="description" content="Three browser-only board game prototypes, each fusing three classics: Cartel of Cartographers, Shadow Bidding, Lexicon Quarantine.">
+<style>
+/* ── shared chrome: the overview and the tab bar. Each table below paints its own register. ── */
+:root {
+  --bg: #efece5; --fg: #1d1b18; --mute: #6d675d; --line: #cfc9bc; --card: #f8f6f1; --acc: #8a2f1c;
+  --cartel: #1f4a3a; --bid: #7a1f1b; --zine: #111;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-force]) { --bg: #17160f; --fg: #ece7da; --mute: #a39d8d; --line: #3a372c; --card: #211f17; --acc: #e08a6a; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 ui-serif, Georgia, 'Times New Roman', serif; -webkit-font-smoothing: antialiased; }
+.skip { position: absolute; left: -999px; top: 0; background: #000; color: #fff; padding: 8px 12px; z-index: 99; }
+.skip:focus { left: 8px; top: 8px; }
+code, kbd { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: .88em; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid #e2a100; outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.masthead { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: baseline; justify-content: space-between; padding: 14px max(16px, 3vw); border-bottom: 1px solid var(--line); background: var(--bg); position: sticky; top: 0; z-index: 20; }
+.mast-title b { font-size: 18px; letter-spacing: .02em; }
+.mast-title span { margin-left: 12px; color: var(--mute); font-size: 13px; font-family: ui-monospace, Menlo, monospace; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs button { border: 1px solid var(--line); background: transparent; padding: 6px 14px; border-radius: 2px; font-size: 14px; }
+.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.foot { padding: 28px max(16px, 3vw) 40px; color: var(--mute); font-size: 13px; border-top: 1px solid var(--line); }
+.foot a { color: inherit; }
+main { min-height: 70vh; outline: none; }
+
+/* overview */
+.ov { max-width: 1120px; margin: 0 auto; padding: 40px max(16px, 3vw) 24px; }
+.ov h1 { font-size: clamp(28px, 4.4vw, 46px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -.01em; max-width: 20ch; }
+.ov .lede { font-size: 18px; color: var(--mute); max-width: 62ch; margin: 0 0 34px; }
+.ov-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.ov-card { border: 1px solid var(--line); background: var(--card); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.ov-card h2 { margin: 0; font-size: 22px; line-height: 1.15; }
+.ov-card .tag { font: 12px/1.2 ui-monospace, Menlo, monospace; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); }
+.ov-card p { margin: 0; font-size: 15px; }
+.ov-card .go { margin-top: auto; align-self: flex-start; border: 1px solid var(--fg); background: transparent; padding: 8px 14px; font-size: 14px; }
+.ov-card .go:hover { background: var(--fg); color: var(--bg); }
+.lineage { width: 100%; height: auto; display: block; color: var(--fg); }
+.lineage text { font-family: ui-sans-serif, system-ui, sans-serif; fill: currentColor; }
+.lineage .box { fill: none; stroke: currentColor; stroke-width: 1.2; }
+.lineage .hyb { fill: var(--fg); stroke: none; }
+.lineage .hybt { fill: var(--bg); font-weight: 600; }
+.lineage .arr { stroke: currentColor; stroke-width: 1.2; fill: none; }
+.lineage .lab { font-size: 9.5px; fill: var(--mute); }
+.cap { font-size: 12.5px; color: var(--mute); margin: -4px 0 0; }
+.facts { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13.5px; border-top: 1px solid var(--line); }
+.facts li { display: flex; gap: 10px; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.facts b { font-family: ui-monospace, Menlo, monospace; font-weight: 600; white-space: nowrap; }
+.ov h3 { margin: 40px 0 10px; font-size: 20px; }
+.ov .rules { columns: 2; column-gap: 28px; font-size: 15px; }
+.ov .rules p { margin: 0 0 12px; break-inside: avoid; }
+
+@media (max-width: 900px) { .ov-grid { grid-template-columns: 1fr; } .ov .rules { columns: 1; } }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; } }
+
+/* every table: a full-bleed page painted in its own register */
+.table { min-height: calc(100vh - 62px); padding: 28px max(16px, 3vw) 48px; }
+.table .wrap { max-width: 1180px; margin: 0 auto; }
+.toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 16px; font: 14px/1.3 ui-sans-serif, system-ui, sans-serif; z-index: 60; max-width: min(92vw, 520px); box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+
+/* ── CARTEL OF CARTOGRAPHERS · Gilded-Age railroad stock certificate ──
+   Cream rag paper, engraved bottle-green rules, a bank-note guilloche, one red wax-free seal,
+   and numerals set like a share register. Commodity inks are muted so the seals stay loud. */
+.t-cartel { --paper: #f1e7c9; --paper2: #e8dcb6; --engr: #1d4a3a; --engr2: #2f6a54; --seal: #8e1f1f; --gold: #a98524; --ink: #231d12;
+  --coal: #2d2a26; --timber: #2f6b45; --cattle: #9c4a2d; --grain: #c8962a; --p0: #8e1f1f; --p1: #1f4e79; --p2: #6a3c7e;
+  background: radial-gradient(1200px 600px at 20% -10%, #fff8df 0%, transparent 60%), #d9cfae; color: var(--ink); font-family: 'Bodoni 72', 'Didot', 'Hoefler Text', 'Baskerville', Georgia, serif; }
+.t-cartel .cert { position: relative; background: var(--paper); padding: 30px clamp(18px, 3vw, 40px) 26px; border: 2px solid var(--engr);
+  box-shadow: 0 0 0 6px var(--paper), 0 0 0 8px var(--engr), 0 0 0 11px var(--paper), 0 0 0 12px var(--engr), 0 18px 40px rgba(60,40,10,.28);
+  background-image: repeating-linear-gradient(0deg, rgba(29,74,58,.035) 0 1px, transparent 1px 4px), repeating-linear-gradient(90deg, rgba(29,74,58,.03) 0 1px, transparent 1px 4px); }
+.t-cartel .guil { position: absolute; inset: 8px; border: 1px solid var(--engr2); pointer-events: none;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0 0deg); }
+.t-cartel .guil::before, .t-cartel .guil::after { content: ""; position: absolute; left: 0; right: 0; height: 9px; background: repeating-linear-gradient(90deg, var(--engr2) 0 2px, transparent 2px 5px), repeating-linear-gradient(90deg, transparent 0 1px, var(--engr2) 1px 2px, transparent 2px 6px); opacity: .5; }
+.t-cartel .guil::before { top: 3px; } .t-cartel .guil::after { bottom: 3px; }
+.t-cartel .rose { position: absolute; width: 74px; height: 74px; color: var(--engr2); opacity: .8; }
+.t-cartel .rose.tl { left: 14px; top: 14px; } .t-cartel .rose.tr { right: 14px; top: 14px; } .t-cartel .rose.bl { left: 14px; bottom: 14px; } .t-cartel .rose.br { right: 14px; bottom: 14px; }
+.t-cartel .head { text-align: center; padding: 6px 80px 14px; }
+.t-cartel .head .no { font: 600 11px/1 'Courier New', monospace; letter-spacing: .2em; color: var(--seal); }
+.t-cartel .head h2 { margin: 8px 0 2px; font-weight: 700; font-size: clamp(22px, 3.4vw, 38px); letter-spacing: .06em; text-transform: uppercase; color: var(--engr); font-variant: small-caps; line-height: 1.05; }
+.t-cartel .head .sub { font-style: italic; font-size: 15px; color: #4a4030; }
+.t-cartel .head .rule { height: 6px; margin: 12px auto 0; max-width: 560px; border-top: 2px solid var(--engr); border-bottom: 1px solid var(--engr); }
+.t-cartel .layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 26px; margin-top: 14px; }
+.t-cartel .board-wrap { position: relative; }
+.t-cartel .board { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; border: 3px double var(--engr); background: var(--paper2); padding: 6px; aspect-ratio: 1; max-width: 640px; margin: 0 auto;
+  background-image: radial-gradient(rgba(29,74,58,.12) 1px, transparent 1.2px); background-size: 12px 12px; }
+.t-cartel .cell { position: relative; aspect-ratio: 1; border: 1px dashed rgba(29,74,58,.28); background: transparent; padding: 0; display: grid; place-items: center; font-family: inherit; }
+.t-cartel .cell.legal { background: rgba(47,106,84,.16); border-style: solid; border-color: var(--engr2); }
+.t-cartel .cell.legal:hover, .t-cartel .cell.legal:focus-visible { background: rgba(47,106,84,.34); }
+.t-cartel .cell.blocked { background: repeating-linear-gradient(45deg, rgba(142,31,31,.28) 0 3px, transparent 3px 7px); border-color: var(--seal); border-style: solid; }
+.t-cartel .cell.dpick { background: rgba(169,133,36,.26); border: 2px solid var(--gold); }
+.t-cartel .tile { position: absolute; inset: 1px; display: grid; place-items: center; color: #fffaf0; font-weight: 700; font-size: clamp(14px, 2.4vw, 24px);
+  border: 0 solid var(--engr); box-shadow: inset 0 0 0 2px rgba(255,250,235,.38), inset 0 0 0 3px rgba(0,0,0,.25); }
+.t-cartel .tile.c0 { background: linear-gradient(135deg, #3a3631, var(--coal)); }
+.t-cartel .tile.c1 { background: linear-gradient(135deg, #3d7e54, var(--timber)); }
+.t-cartel .tile.c2 { background: linear-gradient(135deg, #b25a39, var(--cattle)); }
+.t-cartel .tile.c3 { background: linear-gradient(135deg, #dba93c, var(--grain)); color: #2b2008; }
+.t-cartel .tile .g { filter: drop-shadow(0 1px 0 rgba(0,0,0,.35)); }
+.t-cartel .tile.fresh { animation: cc-drop .45s cubic-bezier(.2,.8,.2,1); }
+@keyframes cc-drop { from { transform: translateY(-14px) scale(1.12); opacity: 0; } to { transform: none; opacity: 1; } }
+/* realm silhouette: ink only where a tile meets a different realm or empty land */
+.t-cartel .tile.eT { border-top-width: 3px; } .t-cartel .tile.eR { border-right-width: 3px; } .t-cartel .tile.eB { border-bottom-width: 3px; } .t-cartel .tile.eL { border-left-width: 3px; }
+.t-cartel .dir { position: absolute; right: 2px; bottom: 2px; width: 46%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font: 700 11px/1 'Courier New', monospace; color: #fff; z-index: 2;
+  border: 2px solid #fffaf0; box-shadow: 0 1px 3px rgba(0,0,0,.55), inset 0 0 0 2px rgba(0,0,0,.2); }
+.t-cartel .dir.p0 { background: var(--p0); } .t-cartel .dir.p1 { background: var(--p1); } .t-cartel .dir.p2 { background: var(--p2); }
+.t-cartel .dir.flash { animation: cc-pop .7s; }
+@keyframes cc-pop { 0% { transform: scale(2.2); } 100% { transform: scale(1); } }
+.t-cartel .unseat { position: absolute; inset: 0; display: grid; place-items: center; color: var(--seal); font-size: 30px; z-index: 3; pointer-events: none; animation: cc-fade 1.2s forwards; text-shadow: 0 0 6px #fff; }
+@keyframes cc-fade { to { opacity: 0; transform: translateY(-14px) rotate(-8deg); } }
+
+.t-cartel .side { display: flex; flex-direction: column; gap: 16px; }
+.t-cartel .panel { border: 1px solid var(--engr); padding: 12px 14px 14px; background: rgba(255,250,235,.55); position: relative; }
+.t-cartel .panel > h3 { margin: -23px 0 8px; display: inline-block; background: var(--paper); padding: 0 8px; font: 700 11px/1.4 'Courier New', monospace; letter-spacing: .18em; text-transform: uppercase; color: var(--engr); }
+.t-cartel .reg { width: 100%; border-collapse: collapse; font-size: 13px; }
+.t-cartel .reg th, .t-cartel .reg td { padding: 4px 4px; text-align: center; border-bottom: 1px dotted var(--engr2); font-variant-numeric: tabular-nums lining-nums; }
+.t-cartel .reg th { font: 600 10px/1.2 'Courier New', monospace; letter-spacing: .06em; text-transform: uppercase; color: #5a4d33; }
+.t-cartel .reg td:first-child, .t-cartel .reg th:first-child { text-align: left; }
+.t-cartel .reg td.weak { background: rgba(29,74,58,.14); font-weight: 700; }
+.t-cartel .reg tr.me td:first-child { font-weight: 700; }
+.t-cartel .reg .tot { font-weight: 700; color: var(--engr); }
+.t-cartel .who { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: -1px; margin-right: 5px; border: 1px solid #fff; box-shadow: 0 0 0 1px #0004; }
+.t-cartel .who.p0 { background: var(--p0); } .t-cartel .who.p1 { background: var(--p1); } .t-cartel .who.p2 { background: var(--p2); }
+.t-cartel .hand { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.t-cartel .hand .tilebtn { width: 56px; height: 56px; border: 2px solid transparent; padding: 0; position: relative; display: grid; place-items: center; color: #fffaf0; font-size: 24px; font-weight: 700; box-shadow: inset 0 0 0 2px rgba(255,250,235,.38); }
+.t-cartel .tilebtn.c0 { background: var(--coal); } .t-cartel .tilebtn.c1 { background: var(--timber); } .t-cartel .tilebtn.c2 { background: var(--cattle); } .t-cartel .tilebtn.c3 { background: var(--grain); color: #2b2008; }
+.t-cartel .tilebtn[aria-pressed="true"] { border-color: var(--seal); outline: 2px solid var(--paper); box-shadow: 0 0 0 5px var(--seal); }
+.t-cartel .btn { border: 1.5px solid var(--engr); background: var(--paper); color: var(--engr); padding: 6px 12px; font: 600 12px/1 'Courier New', monospace; letter-spacing: .1em; text-transform: uppercase; }
+.t-cartel .btn:hover:not(:disabled) { background: var(--engr); color: var(--paper); }
+.t-cartel .btn:disabled { opacity: .4; cursor: not-allowed; }
+.t-cartel .btn.seal { background: var(--seal); border-color: var(--seal); color: #fff; }
+.t-cartel .btn.on { background: var(--engr); color: var(--paper); }
+.t-cartel .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.t-cartel .hint { font-size: 13px; font-style: italic; color: #4a4030; margin: 6px 0 0; }
+.t-cartel .hint b { font-style: normal; }
+.t-cartel .tape { font: 12px/1.45 'Courier New', monospace; max-height: 190px; overflow: auto; border-top: 1px dotted var(--engr2); padding-top: 6px; }
+.t-cartel .tape div { padding: 1px 0; border-bottom: 1px dotted rgba(29,74,58,.25); }
+.t-cartel .tape .war { color: var(--seal); font-weight: 700; }
+.t-cartel select, .t-cartel input[type=number] { font: 13px 'Courier New', monospace; padding: 4px 6px; border: 1px solid var(--engr); background: var(--paper); color: var(--ink); }
+.t-cartel .cov { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; font-size: 13px; border-bottom: 1px dotted var(--engr2); padding: 5px 0; }
+.t-cartel .cov i { font: 11px 'Courier New', monospace; font-style: normal; color: var(--seal); white-space: nowrap; }
+.t-cartel .lessons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 22px 64px 0; }
+.t-cartel .lessons .less { border-top: 3px double var(--engr); padding-top: 8px; font-size: 14px; }
+.t-cartel .lessons .less b { display: block; font: 700 11px 'Courier New', monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--seal); margin-bottom: 3px; }
+.t-cartel .stamp { position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%) rotate(-9deg); border: 5px double var(--seal); color: var(--seal); padding: 6px 18px; font: 700 clamp(22px, 5vw, 44px)/1 'Bodoni 72', Georgia, serif; letter-spacing: .1em; text-transform: uppercase; background: rgba(241,231,201,.88); animation: cc-stamp .3s cubic-bezier(.2,1.6,.4,1); z-index: 6; text-align: center; }
+@keyframes cc-stamp { from { transform: translate(-50%, -50%) rotate(-9deg) scale(1.7); opacity: 0; } }
+.t-cartel .scn { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+@media (max-width: 960px) { .t-cartel .layout { grid-template-columns: 1fr; } .t-cartel .lessons { grid-template-columns: 1fr; margin: 22px 0 0; } .t-cartel .head { padding: 6px 30px 12px; } .t-cartel .rose { display: none; } }
+
+/* ── buy-in: join a treaty between two other seats ── */
+.t-cartel .cov.buyin { background: rgba(31,74,50,.07); padding: 6px; border: 1px dashed var(--engr2); border-bottom: 1px dashed var(--engr2); margin: 4px 0; }
+
+/* ── SHADOW BIDDING · Venetian counting-house ledger ──
+   Vellum folio, oxblood rulings, iron-gall brown ink, double-entry DARE / AVERE columns,
+   ducats in a gold that never goes neon, and red sealing wax for anything still hidden. */
+.t-bid { --vel: #eadcb6; --vel2: #dfcd9d; --gall: #35261a; --ox: #7a1f1b; --wax: #a3231c; --wax2: #6d130f; --duc: #c79a2b; --duc2: #8d6a14; --sq1: #d9c391; --sq2: #a98a58; --moss: #3d4a2c;
+  background: radial-gradient(900px 500px at 80% 0%, #4d3a22 0%, transparent 70%), #2b1f14; color: var(--gall); font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', 'Iowan Old Style', Georgia, serif; }
+.t-bid .folio { background: var(--vel); border-radius: 3px 10px 10px 3px; padding: 26px clamp(16px, 3vw, 36px) 28px; position: relative; box-shadow: 0 0 0 1px #0006, 0 22px 50px rgba(0,0,0,.55), inset 0 0 90px rgba(120,80,20,.25);
+  background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(122,31,27,.16) 27px 28px); }
+.t-bid .folio::before { content: ""; position: absolute; left: 62px; top: 0; bottom: 0; width: 2px; border-left: 1px solid var(--ox); border-right: 1px solid var(--ox); opacity: .6; }
+.t-bid h2 { margin: 0 0 2px 40px; font-size: clamp(24px, 3.4vw, 40px); font-weight: 400; font-style: italic; letter-spacing: .01em; color: var(--ox); }
+.t-bid .sub { margin: 0 0 14px 40px; font-style: italic; font-size: 15px; color: #5a4733; }
+.t-bid .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; margin-left: 40px; }
+.t-bid .board { display: grid; grid-template-columns: 22px repeat(5, 1fr); grid-template-rows: repeat(5, 1fr) 22px; max-width: 520px; aspect-ratio: 1; border: 2px solid var(--gall); padding: 4px; background: var(--vel2); box-shadow: 4px 5px 0 rgba(53,38,26,.35); }
+.t-bid .sq { position: relative; border: 0; padding: 0; display: grid; place-items: center; font-size: clamp(28px, 6vw, 46px); line-height: 1; background: var(--sq1); aspect-ratio: 1; }
+.t-bid .sq.dk { background: var(--sq2); }
+.t-bid .sq .pc { filter: drop-shadow(0 1px 0 rgba(255,255,255,.35)); }
+.t-bid .sq .pc.w { color: #fff5da; text-shadow: -1px 0 var(--gall), 1px 0 var(--gall), 0 -1px var(--gall), 0 1px var(--gall), 0 0 6px rgba(0,0,0,.4); }
+.t-bid .sq .pc.b { color: #22160d; }
+.t-bid .sq.sel { box-shadow: inset 0 0 0 4px var(--duc); }
+.t-bid .sq.tgt::after { content: ""; position: absolute; width: 30%; height: 30%; border-radius: 50%; background: rgba(61,74,44,.7); }
+.t-bid .sq.tgt.cap::after { width: 86%; height: 86%; background: transparent; border: 4px solid rgba(122,31,27,.8); }
+.t-bid .sq.chosen { box-shadow: inset 0 0 0 4px var(--wax); }
+.t-bid .sq.last { box-shadow: inset 0 0 0 3px rgba(122,31,27,.55); }
+.t-bid .coord { font: italic 11px Georgia, serif; display: grid; place-items: center; color: #5a4733; }
+.t-bid .col { display: flex; flex-direction: column; gap: 14px; }
+.t-bid .lh { font-style: italic; color: var(--ox); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; border-bottom: 2px solid var(--ox); padding-bottom: 2px; margin: 0 0 6px; display: flex; justify-content: space-between; }
+.t-bid .acct { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--gall); }
+.t-bid .acct > div { padding: 6px 8px; min-height: 64px; }
+.t-bid .acct > div + div { border-left: 1px solid var(--gall); }
+.t-bid .acct .hd { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ox); display: block; margin-bottom: 3px; }
+.t-bid .acct .nm { font-style: italic; font-size: 16px; }
+.t-bid .acct .big { font-size: 26px; font-variant-numeric: oldstyle-nums tabular-nums; line-height: 1.1; }
+.t-bid .duc { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ecc866, var(--duc) 55%, var(--duc2)); box-shadow: 0 1px 0 rgba(0,0,0,.4); margin-right: 1px; vertical-align: middle; }
+.t-bid .duc.ghost { background: transparent; box-shadow: inset 0 0 0 1px rgba(141,106,20,.5); }
+.t-bid .stack { display: flex; flex-wrap: wrap; gap: 1px; max-width: 150px; margin-top: 3px; }
+.t-bid .order { border: 1px solid var(--gall); padding: 10px; background: rgba(255,250,230,.4); }
+.t-bid .order .line { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 15px; }
+.t-bid .step { display: inline-flex; border: 1px solid var(--gall); }
+.t-bid .step button { width: 30px; height: 30px; background: var(--vel); border: 0; font-size: 18px; line-height: 1; }
+.t-bid .step button:hover:not(:disabled) { background: var(--gall); color: var(--vel); }
+.t-bid .step output { width: 34px; display: grid; place-items: center; font-size: 17px; border-left: 1px solid var(--gall); border-right: 1px solid var(--gall); font-variant-numeric: oldstyle-nums; }
+.t-bid .wax { width: 100%; padding: 12px; border: 0; border-radius: 28px 24px 30px 26px / 26px 30px 24px 28px; color: #ffe9d8; font: italic 18px Georgia, serif; letter-spacing: .04em;
+  background: radial-gradient(circle at 32% 28%, #cc3b2f, var(--wax) 50%, var(--wax2)); box-shadow: 0 3px 0 #4b0d0a, 0 6px 10px rgba(0,0,0,.35); }
+.t-bid .wax:hover:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 0 #4b0d0a; }
+.t-bid .wax:disabled { opacity: .45; cursor: not-allowed; }
+.t-bid .tbtn { border: 1px solid var(--gall); background: transparent; padding: 5px 10px; font-style: italic; font-size: 14px; }
+.t-bid .tbtn:hover:not(:disabled) { background: var(--gall); color: var(--vel); }
+.t-bid .tbtn.on { background: var(--gall); color: var(--vel); }
+.t-bid .tbtn:disabled { opacity: .4; }
+.t-bid .entries { max-height: 250px; overflow: auto; font-size: 14px; border-top: 1px solid var(--gall); }
+.t-bid .entry { display: grid; grid-template-columns: 30px 1fr 54px 54px; gap: 4px; padding: 3px 0; border-bottom: 1px dotted rgba(53,38,26,.5); align-items: baseline; }
+.t-bid .entry .n { font-style: italic; color: var(--ox); }
+.t-bid .entry .d, .t-bid .entry .a { text-align: right; font-variant-numeric: oldstyle-nums tabular-nums; }
+.t-bid .entry .fz { color: var(--ox); font-style: italic; }
+.t-bid .auction { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; border: 1px solid var(--gall); padding: 10px; background: rgba(255,250,230,.5); }
+.t-bid .seal { width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto; color: #ffe9d8; font: italic 26px Georgia, serif;
+  background: radial-gradient(circle at 35% 30%, #cc3b2f, var(--wax) 55%, var(--wax2)); box-shadow: 0 3px 0 #4b0d0a, inset 0 0 0 4px rgba(0,0,0,.18), inset 0 0 0 6px rgba(255,255,255,.1); }
+.t-bid .seal.hid { font-size: 22px; }
+.t-bid .seal.broken { animation: sb-crack .7s ease-out both; }
+@keyframes sb-crack { 0% { transform: scale(1); } 35% { transform: scale(1.18) rotate(-5deg); } 100% { transform: scale(1) rotate(0); } }
+.t-bid .auction .who { text-align: center; font-style: italic; font-size: 14px; }
+.t-bid .auction .vs { font-size: 12px; font-style: italic; color: var(--ox); text-align: center; }
+.t-bid .verdict { margin: 8px 0 0; font-size: 15px; font-style: italic; }
+.t-bid .verdict b { color: var(--ox); font-style: normal; }
+.t-bid .lab { border: 1px dashed var(--gall); padding: 10px; background: rgba(255,250,230,.35); font-size: 13.5px; }
+.t-bid .lab code { display: block; word-break: break-all; font-size: 11.5px; background: rgba(53,38,26,.08); padding: 4px 6px; margin: 3px 0 7px; font-family: ui-monospace, Menlo, monospace; }
+.t-bid .lab .k { font-style: italic; color: var(--ox); }
+.t-bid .lab .bad { color: var(--wax); font-weight: 700; }
+.t-bid .lab .good { color: var(--moss); font-weight: 700; }
+.t-bid .scn { margin: 14px 0 0 40px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.t-bid .lessons { margin: 20px 0 0 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; font-size: 14.5px; }
+.t-bid .lessons b { display: block; color: var(--ox); font-style: italic; font-weight: 400; font-size: 16px; border-bottom: 1px solid var(--ox); margin-bottom: 3px; }
+.t-bid .over { position: absolute; left: 50%; top: 150px; transform: translateX(-50%) rotate(-5deg); background: var(--vel); border: 3px double var(--ox); color: var(--ox); padding: 8px 22px; font: italic clamp(22px, 4.5vw, 38px) Georgia, serif; z-index: 5; box-shadow: 0 6px 20px rgba(0,0,0,.35); text-align: center; }
+@media (max-width: 980px) { .t-bid .layout { grid-template-columns: 1fr; margin-left: 0; } .t-bid .folio::before { display: none; } .t-bid h2, .t-bid .sub, .t-bid .scn, .t-bid .lessons { margin-left: 0; } .t-bid .lessons { grid-template-columns: 1fr; } .t-bid .board { max-width: 100%; } }
+
+/* ── audit: what the turn was worth (fictitious play) ── */
+.t-bid .audit { border: 1px solid var(--gall); padding: 8px 10px; background: rgba(255,250,230,.4); }
+.t-bid .audit .verdict { margin: 4px 0 6px; font-size: 14.5px; }
+.t-bid .audit.sharp { border-left: 5px solid var(--moss); }
+.t-bid .audit.overpaid { border-left: 5px solid var(--wax); }
+.t-bid .audit.underbid { border-left: 5px solid var(--duc2); }
+.t-bid .mix { display: grid; gap: 2px; margin: 4px 0; }
+.t-bid .mixhead { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ox); }
+.t-bid .mixrow { display: grid; grid-template-columns: 22px 1fr 38px auto; gap: 6px; align-items: center; font-size: 12.5px; }
+.t-bid .mixrow .k { text-align: right; font-variant-numeric: tabular-nums; }
+.t-bid .mixrow .bar { height: 10px; background: rgba(53,38,26,.1); position: relative; }
+.t-bid .mixrow .bar i { position: absolute; inset: 0 auto 0 0; background: var(--duc2); }
+.t-bid .mixrow.mine .bar i { background: var(--wax); }
+.t-bid .mixrow .p { font-variant-numeric: tabular-nums; color: #5a4733; }
+.t-bid .mixrow .you { font-style: italic; color: var(--wax); white-space: nowrap; }
+.t-bid .audit .fine { margin: 4px 0 0; font-size: 11.5px; color: #6a5740; font-style: italic; }
+.t-bid .tbtn.mini { padding: 0 6px; font-size: 11px; margin-left: 4px; }
+
+/* ── the sealed-link desk (a <dialog>; it sits inside .t-bid so it inherits the palette) ── */
+.t-bid dialog.desk { width: min(760px, calc(100vw - 24px)); max-height: calc(100vh - 32px); overflow: auto; padding: 0; border: 2px solid var(--gall); border-radius: 4px; background: var(--vel); color: var(--gall); box-shadow: 0 24px 60px rgba(0,0,0,.6); background-image: repeating-linear-gradient(0deg, transparent 0 27px, rgba(122,31,27,.14) 27px 28px); }
+.t-bid dialog.desk::backdrop { background: rgba(20,12,6,.72); }
+.t-bid .deskbody { padding: 16px clamp(14px, 3vw, 28px) 22px; display: grid; gap: 10px; }
+.t-bid .deskhead { display: flex; justify-content: space-between; align-items: center; }
+.t-bid .deskhead h3 { margin: 0; font-weight: 400; font-style: italic; font-size: 26px; color: var(--ox); }
+.t-bid .deskbody .sub { margin: 0; font-size: 14px; }
+.t-bid .deskbody textarea { width: 100%; box-sizing: border-box; font: 12.5px/1.35 'Courier New', monospace; padding: 8px; border: 1px solid var(--gall); background: #fffaf0; color: var(--gall); resize: vertical; word-break: break-all; }
+.t-bid .deskbody .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.t-bid .deskerr { color: var(--wax); font-weight: 700; margin: 0; }
+.t-bid .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border-top: 1px solid var(--gall); border-left: 1px solid var(--gall); }
+.t-bid .facts > div { min-width: 0; padding: 5px 8px; border: 0 solid var(--gall); border-width: 0 1px 1px 0; }
+.t-bid .facts span { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ox); }
+.t-bid .facts b { font-weight: 400; font-size: 15px; overflow-wrap: anywhere; }
+.t-bid .whoami { border-left: 5px solid var(--duc); padding: 4px 10px; background: rgba(199,154,43,.14); font-size: 15px; }
+.t-bid .line { margin: 3px 0; font-size: 14.5px; }
+.t-bid .picker, .t-bid .resrow { display: grid; grid-template-columns: minmax(180px, 250px) 1fr; gap: 16px; align-items: start; }
+.t-bid .mboard { display: grid; grid-template-columns: repeat(5, 1fr); aspect-ratio: 1; border: 2px solid var(--gall); padding: 3px; background: var(--vel2); width: 100%; box-sizing: border-box; }
+.t-bid .msq { position: relative; border: 0; padding: 0; display: grid; place-items: center; font-size: clamp(20px, 5vw, 32px); line-height: 1; background: var(--sq1); aspect-ratio: 1; }
+.t-bid .msq.dk { background: var(--sq2); }
+.t-bid .msq .pc.w { color: #fff5da; text-shadow: -1px 0 var(--gall), 1px 0 var(--gall), 0 -1px var(--gall), 0 1px var(--gall); }
+.t-bid .msq .pc.b { color: #22160d; }
+.t-bid .msq.sel { box-shadow: inset 0 0 0 3px var(--duc); }
+.t-bid .msq.chosen { box-shadow: inset 0 0 0 3px var(--wax); }
+.t-bid .msq.tgt::after { content: ""; position: absolute; width: 30%; height: 30%; border-radius: 50%; background: rgba(61,74,44,.7); }
+.t-bid .hist p, .t-bid .result .ev, .t-bid .result p { margin: 2px 0; font-size: 13.5px; }
+.t-bid .result .ev.fz { color: var(--wax); font-style: italic; }
+.t-bid .outbox { border: 1px dashed var(--gall); padding: 8px; background: rgba(255,250,230,.5); display: grid; gap: 6px; }
+.t-bid .linkout { width: 100%; box-sizing: border-box; font: 12px 'Courier New', monospace; padding: 6px; border: 1px solid var(--gall); background: #fffaf0; color: var(--gall); }
+.t-bid .hashes { display: grid; gap: 4px; }
+.t-bid .hashes span { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ox); display: block; }
+.t-bid .hashes code { display: block; word-break: break-all; font-size: 12px; background: rgba(53,38,26,.08); padding: 3px 6px; }
+.t-bid .hashes .good { color: var(--moss); font-weight: 700; margin: 2px 0; }
+.t-bid .hashes .bad { color: var(--wax); font-weight: 700; margin: 2px 0; }
+.t-bid .wax.small { padding: 6px 14px; font-size: 14px; }
+.t-bid .desk-open { margin-left: 4px; }
+@media (max-width: 640px) { .t-bid .picker, .t-bid .resrow { grid-template-columns: 1fr; } .t-bid dialog.desk { margin: 12px auto; } }
+
+/* ── LEXICON QUARANTINE · samizdat typewriter zine ──
+   Photocopier grey, a ribbon that is almost out of black, red-pen annotations, censor's bars
+   that really are black rectangles, and everything a few degrees off true because it was
+   stapled by hand. The grain is a real SVG turbulence filter, not an image. */
+.t-zine { --pap: #e4e2dc; --pap2: #d6d3cb; --blk: #121212; --red: #c4251c; --grey: #8d8a82; --hl: #fbe46a;
+  background: #b9b6ad; color: var(--blk); font-family: 'American Typewriter', 'Courier New', Courier, 'Nimbus Mono PS', monospace; }
+.t-zine .sheet { position: relative; background: var(--pap); padding: 26px clamp(16px, 3vw, 38px) 34px; max-width: 1180px; margin: 0 auto; transform: rotate(-.25deg); box-shadow: 3px 4px 0 rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.25);
+  clip-path: polygon(0 1%, 4% 0, 9% .8%, 16% 0, 24% .6%, 31% 0, 40% .7%, 52% 0, 61% .8%, 72% 0, 83% .6%, 92% 0, 100% .8%, 100% 99%, 94% 100%, 85% 99.2%, 73% 100%, 64% 99.3%, 50% 100%, 38% 99.2%, 27% 100%, 15% 99.4%, 6% 100%, 0 99%); }
+.t-zine .sheet::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 -.18'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.t-zine h2 { font-size: clamp(30px, 5.4vw, 64px); line-height: .95; margin: 0; letter-spacing: -.03em; text-transform: uppercase; font-weight: 700; transform: rotate(.4deg); }
+.t-zine h2 s { text-decoration-thickness: .13em; text-decoration-color: var(--red); }
+.t-zine .sub { margin: 8px 0 18px; font-size: 14px; max-width: 70ch; }
+.t-zine .sub em { background: var(--hl); font-style: normal; padding: 0 3px; }
+.t-zine .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; }
+.t-zine .board { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; max-width: 560px; aspect-ratio: 1; border: 2px solid var(--blk); background: var(--pap2); position: relative; }
+.t-zine .z { position: relative; aspect-ratio: 1; border: 1px solid rgba(18,18,18,.35); background: transparent; padding: 0; display: grid; place-items: center; font: 700 clamp(18px, 4.2vw, 32px)/1 inherit; font-family: inherit; text-transform: uppercase; color: var(--blk); }
+.t-zine .z:nth-child(3n) { transform: rotate(.6deg); } .t-zine .z:nth-child(5n) { transform: rotate(-.7deg); } .t-zine .z:nth-child(7n) { transform: translateY(1px); }
+.t-zine .z small { position: absolute; right: 3px; bottom: 1px; font-size: 9px; font-weight: 400; color: var(--grey); }
+.t-zine .z.o1 { background: var(--blk); color: var(--pap); }
+.t-zine .z.o1 small { color: #aaa; }
+.t-zine .z.o2 { color: transparent; }
+.t-zine .z.o2::before { content: ""; position: absolute; inset: 3px 1px; background: var(--blk); transform: rotate(-1.2deg); }
+.t-zine .z.o2::after { content: "▨"; position: absolute; color: #555; font-size: 12px; top: 0; right: 3px; }
+.t-zine .z.o3 { color: var(--grey); text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 3px; background: repeating-linear-gradient(135deg, transparent 0 4px, rgba(0,0,0,.1) 4px 5px); }
+.t-zine .z.path { background: var(--hl); outline: 3px solid var(--red); outline-offset: -3px; z-index: 2; }
+.t-zine .z.o1.path { background: var(--red); color: #fff; }
+.t-zine .z .ord { position: absolute; left: 2px; top: 0; font: 700 10px 'Courier New', monospace; color: var(--red); }
+.t-zine .z.o1.path .ord { color: #fff; }
+.t-zine .z.libc { position: absolute; }
+.t-zine .z.tgt:hover, .t-zine .z.tgt:focus-visible { background: rgba(196,37,28,.22); }
+.t-zine .z.rotpv { outline: 3px dashed var(--red); outline-offset: -3px; background: rgba(196,37,28,.12); }
+.t-zine .z.flip { animation: zn-flip .5s ease; }
+@keyframes zn-flip { 0% { transform: rotate(0); } 50% { transform: rotate(90deg) scale(.85); } 100% { transform: rotate(0); } }
+.t-zine .z.newbar::before { animation: zn-bar .35s ease-out; transform-origin: left; }
+@keyframes zn-bar { from { transform: scaleX(0) rotate(-1.2deg); } }
+.t-zine .breath { position: absolute; left: -9px; top: -9px; z-index: 4; min-width: 20px; height: 20px; padding: 0 3px; border-radius: 50%; background: #fff; color: var(--red); border: 2px solid var(--red); font: 700 12px/16px 'Courier New', monospace; text-align: center; pointer-events: none; }
+.t-zine .breath.low { background: var(--red); color: #fff; }
+.t-zine .col { display: flex; flex-direction: column; gap: 16px; }
+.t-zine .card { border: 2px solid var(--blk); padding: 10px 12px 12px; background: rgba(255,255,255,.35); position: relative; }
+.t-zine .card h3 { margin: -22px 0 8px -4px; display: inline-block; background: var(--pap); padding: 0 6px; font: 700 12px 'Courier New', monospace; letter-spacing: .14em; text-transform: uppercase; }
+.t-zine .typed { min-height: 46px; font-size: 30px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; border-bottom: 2px dashed var(--blk); padding-bottom: 4px; word-break: break-all; }
+.t-zine .typed.ok { background: linear-gradient(transparent 55%, var(--hl) 55%); }
+.t-zine .why { font-size: 13px; min-height: 36px; margin: 6px 0; }
+.t-zine .why.bad { color: var(--red); }
+.t-zine .bt { border: 2px solid var(--blk); background: var(--pap); padding: 6px 12px; font: 700 13px 'Courier New', monospace; text-transform: uppercase; letter-spacing: .06em; box-shadow: 3px 3px 0 var(--blk); }
+.t-zine .bt:hover:not(:disabled) { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--blk); }
+.t-zine .bt:disabled { opacity: .35; box-shadow: none; cursor: not-allowed; }
+.t-zine .bt.red { background: var(--red); color: #fff; }
+.t-zine .bt.on { background: var(--blk); color: var(--pap); }
+.t-zine .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.t-zine .meter { height: 18px; border: 2px solid var(--blk); position: relative; background: repeating-linear-gradient(90deg, transparent 0 9px, rgba(0,0,0,.18) 9px 10px); }
+.t-zine .meter i { position: absolute; inset: 0 auto 0 0; background: var(--blk); transition: width .4s; }
+.t-zine .nums { display: flex; justify-content: space-between; font-size: 12px; margin-top: 3px; }
+.t-zine .rounds { display: flex; gap: 5px; margin-top: 8px; }
+.t-zine .rounds span { width: 26px; height: 26px; border: 2px solid var(--blk); display: grid; place-items: center; font: 700 12px 'Courier New', monospace; }
+.t-zine .rounds span.done { background: var(--blk); color: var(--pap); } .t-zine .rounds span.now { background: var(--hl); }
+.t-zine .log { max-height: 170px; overflow: auto; font-size: 13px; }
+.t-zine .log div { padding: 1px 0; }
+.t-zine .log .r { color: var(--red); font-weight: 700; }
+.t-zine .sw { display: flex; border: 2px solid var(--blk); width: max-content; }
+.t-zine .sw button { border: 0; padding: 4px 10px; background: transparent; font: 700 12px 'Courier New', monospace; text-transform: uppercase; }
+.t-zine .sw button[aria-pressed="true"] { background: var(--blk); color: var(--pap); }
+.t-zine .anno { position: absolute; font: 16px 'Bradley Hand', 'Segoe Script', 'Comic Sans MS', cursive; color: var(--red); transform: rotate(-4deg); pointer-events: none; max-width: 190px; line-height: 1.15; }
+.t-zine .lessons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 26px; font-size: 13.5px; }
+.t-zine .lessons b { display: inline-block; background: var(--blk); color: var(--pap); padding: 0 6px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+.t-zine .verdict { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%) rotate(-7deg); z-index: 7; border: 6px solid var(--red); color: var(--red); background: rgba(228,226,220,.92); padding: 6px 20px; font: 700 clamp(26px, 6vw, 56px)/1 inherit; font-family: inherit; text-transform: uppercase; letter-spacing: .05em; animation: zn-st .3s cubic-bezier(.2,1.6,.4,1); text-align: center; }
+@keyframes zn-st { from { transform: translate(-50%, -50%) rotate(-7deg) scale(1.8); opacity: 0; } }
+@media (max-width: 980px) { .t-zine .layout { grid-template-columns: 1fr; } .t-zine .lessons { grid-template-columns: 1fr; } .t-zine .sheet { transform: none; } .t-zine .anno { display: none; } }
+
+/* ── shear: ink the Censor could cut off ── */
+.t-zine .z.o1.loose { outline: 2px dashed var(--red); outline-offset: -4px; }
+.t-zine .z.o1.tear { background: repeating-linear-gradient(135deg, var(--red) 0 5px, var(--blk) 5px 10px); color: #fff; }
+.t-zine .legend { font-size: 11px; color: #444; display: inline-flex; align-items: center; gap: 4px; }
+.t-zine .loose-key { display: inline-block; width: 11px; height: 11px; background: var(--blk); outline: 2px dashed var(--red); outline-offset: -3px; }
+
+</style>
+</head>
+<body data-table="overview">
+<a class="skip" href="#stage">Skip to the table</a>
+<header class="masthead">
+  <div class="mast-title"><b>Hybrid Board Games</b><span>three prototypes · no server · no database</span></div>
+  <nav class="tabs" role="tablist" aria-label="Prototype tables"></nav>
+</header>
+<main id="stage" tabindex="-1"></main>
+<footer class="foot">Engine, rules and bots are the same file the headless harness runs (<code>src/engine.js</code>). Design notes: <a href="ARCHITECTURE.md">ARCHITECTURE.md</a>.</footer>
+<script>
+/*
+ * Hybrid board games — one engine file, three rule sets.
+ *
+ * Plain JavaScript, no DOM, no network, no dependencies. The browser prototype
+ * and the headless harness both load this exact file (build.mjs inlines it into
+ * index.html), so a number the harness prints is a number the page obeys.
+ *
+ * Everything is a pure function of (seed, ordered moves). Nothing reads a clock
+ * or Math.random; every tie-break is spelled out in ARCHITECTURE.md.
+ */
+const HB = (() => {
+  'use strict'
+
+  /* ────────────────────────────── utilities ────────────────────────────── */
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6d2b79f5) | 0
+      let t = Math.imul(a ^ (a >>> 15), 1 | a)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+  }
+  function hashSeed(s) {
+    let h = 2166136261
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) }
+    return h >>> 0
+  }
+  const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)]
+  function shuffle(rng, arr) {
+    const a = arr.slice()
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] }
+    return a
+  }
+
+  /* SHA-256, synchronous. WebCrypto is async-only, and a pure engine wants a pure hash.
+     Round constants are derived, not typed, so there is no table to mistype. */
+  const sha256 = (() => {
+    const primes = []
+    for (let n = 2; primes.length < 64; n++) if (primes.every((p) => n % p)) primes.push(n)
+    const frac = (x) => x - Math.floor(x)
+    const K = primes.map((p) => Math.floor(frac(Math.cbrt(p)) * 4294967296) >>> 0)
+    const H0 = primes.slice(0, 8).map((p) => Math.floor(frac(Math.sqrt(p)) * 4294967296) >>> 0)
+    const rotr = (x, n) => (x >>> n) | (x << (32 - n))
+    return function sha256(bytes) {
+      const len = bytes.length
+      const padded = new Uint8Array(((len + 9 + 63) >> 6) << 6)
+      padded.set(bytes); padded[len] = 0x80
+      const dv = new DataView(padded.buffer)
+      dv.setUint32(padded.length - 4, (len * 8) >>> 0); dv.setUint32(padded.length - 8, Math.floor((len * 8) / 4294967296))
+      const h = H0.slice(); const w = new Uint32Array(64)
+      for (let o = 0; o < padded.length; o += 64) {
+        for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4)
+        for (let i = 16; i < 64; i++) {
+          const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3)
+          const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10)
+          w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0
+        }
+        let [a, b, c, d, e, f, g, hh] = h
+        for (let i = 0; i < 64; i++) {
+          const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
+          const ch = (e & f) ^ (~e & g)
+          const t1 = (hh + S1 + ch + K[i] + w[i]) | 0
+          const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)
+          const mj = (a & b) ^ (a & c) ^ (b & c)
+          const t2 = (S0 + mj) | 0
+          hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0
+        }
+        h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0
+        h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0
+      }
+      const out = new Uint8Array(32); const odv = new DataView(out.buffer)
+      h.forEach((v, i) => odv.setUint32(i * 4, v >>> 0))
+      return out
+    }
+  })()
+  const enc = (s) => new TextEncoder().encode(s)
+  const cat = (...parts) => { const n = parts.reduce((a, p) => a + p.length, 0); const o = new Uint8Array(n); let k = 0; for (const p of parts) { o.set(p, k); k += p.length } return o }
+  const hex = (u8) => Array.from(u8, (b) => b.toString(16).padStart(2, '0')).join('')
+  function b64u(u8) { let s = ''; for (const b of u8) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') }
+  function unb64u(str) { const s = atob(str.replace(/-/g, '+').replace(/_/g, '/')); const o = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) o[i] = s.charCodeAt(i); return o }
+  function ctEqual(a, b) { if (a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a[i] ^ b[i]; return d === 0 }
+
+  /* ═══════════════════════════════ 1. SHADOW BIDDING ═══════════════════════════════
+     Gardner 5×5 minichess. Both sides write a move AND a bid in secret; the higher
+     bid resolves first, the loser's move is then re-validated against the changed
+     board and fizzles if it no longer exists. Pseudo-legal moves, king capture wins
+     (there is no "check" in a simultaneous game — only a race). */
+  const SB = {}
+  SB.W = 5
+  SB.VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 }
+  SB.GLYPH = { P: '♙', N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔', p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' }
+  const sideOf = (ch) => (!ch ? -1 : ch === ch.toUpperCase() ? 0 : 1)
+  const KN = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]]
+  const KG = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+  const DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]], ORTH = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+
+  SB.defaults = { mode: 'ledger', start: 5, income: 1, cap: 9, quietLimit: 30, turnLimit: 80, seal: 'every' }
+
+  SB.newGame = (opts = {}) => {
+    const o = Object.assign({}, SB.defaults, opts)
+    // Gardner layout: black back rank on row 0, pawns on 1; white pawns on 3, back rank on 4.
+    const board = Array(25).fill(null)
+    'rnbqk'.split('').forEach((ch, i) => { board[i] = ch; board[20 + i] = ch.toUpperCase() })
+    for (let i = 0; i < 5; i++) { board[5 + i] = 'p'; board[15 + i] = 'P' }
+    return { b: board, tr: [o.start, o.start], pot: 0, turn: 0, quiet: 0, over: null, o, hist: [], bank: 0 }
+  }
+  SB.clone = (st) => ({ ...st, b: st.b.slice(), tr: st.tr.slice(), hist: st.hist.slice(), o: st.o })
+
+  SB.movesFor = (b, side) => {
+    const out = []
+    for (let i = 0; i < 25; i++) {
+      const ch = b[i]; if (!ch || sideOf(ch) !== side) continue
+      const r = (i / 5) | 0, c = i % 5, t = ch.toLowerCase()
+      const add = (rr, cc, capOnly, moveOnly) => {
+        if (rr < 0 || rr > 4 || cc < 0 || cc > 4) return false
+        const tt = b[rr * 5 + cc], ts = sideOf(tt)
+        if (ts === side) return false
+        if (capOnly && ts !== 1 - side) return false
+        if (moveOnly && tt) return false
+        out.push({ f: i, t: rr * 5 + cc }); return !tt
+      }
+      if (t === 'p') {
+        const dr = side === 0 ? -1 : 1
+        add(r + dr, c, false, true); add(r + dr, c - 1, true); add(r + dr, c + 1, true)
+      } else if (t === 'n') KN.forEach(([dr, dc]) => add(r + dr, c + dc))
+      else if (t === 'k') KG.forEach(([dr, dc]) => add(r + dr, c + dc))
+      else {
+        const dirs = t === 'b' ? DIAG : t === 'r' ? ORTH : DIAG.concat(ORTH)
+        for (const [dr, dc] of dirs) { let rr = r + dr, cc = c + dc; while (add(rr, cc)) { rr += dr; cc += dc } }
+      }
+    }
+    return out
+  }
+  const material = (b, side) => { let s = 0; for (const ch of b) if (ch) s += (sideOf(ch) === side ? 1 : -1) * SB.VAL[ch.toLowerCase()]; return s }
+  SB.material = material
+
+  function exec(st, m, s) {
+    const piece = st.b[m.f], target = st.b[m.t]
+    st.b[m.f] = null
+    let np = piece
+    if (piece.toLowerCase() === 'p' && ((s === 0 && m.t < 5) || (s === 1 && m.t >= 20))) np = s === 0 ? 'Q' : 'q'
+    st.b[m.t] = np
+    const cap = target ? target.toLowerCase() : null
+    if (cap || piece.toLowerCase() === 'p') st.quiet = 0
+    return { piece, cap, promo: np !== piece }
+  }
+
+  /* One simultaneous turn. `o` = [orderWhite, orderBlack]; an order is {f,t,bid} or null (pass).
+     `coin` (0|1) breaks an exact bid tie: 0 → White first, 1 → Black first. */
+  SB.resolve = (st, o, coin) => {
+    const ev = []
+    const bids = [0, 1].map((s) => Math.max(0, Math.min(st.tr[s], Math.floor((o[s] && o[s].bid) || 0))))
+    const first = bids[0] > bids[1] ? 0 : bids[1] > bids[0] ? 1 : coin ? 1 : 0
+    const tie = bids[0] === bids[1]
+    const pay = bids[first]
+    st.tr[first] -= pay
+    if (st.o.mode === 'ledger') st.tr[1 - first] += pay; else st.pot += pay
+    st.quiet++
+    ev.push({ kind: 'auction', bids, first, tie, pay })
+    for (const s of [first, 1 - first]) {
+      if (st.over) break
+      const m = o[s]
+      if (!m || m.f < 0) { ev.push({ kind: 'pass', s }); continue }
+      const legal = SB.movesFor(st.b, s).some((x) => x.f === m.f && x.t === m.t)
+      if (!legal) { ev.push({ kind: 'fizzle', s, m, second: s !== first }); continue }
+      const r = exec(st, m, s)
+      ev.push({ kind: 'move', s, m, ...r })
+      if (r.cap && st.o.mode === 'pot' && st.pot) { ev.push({ kind: 'pot', s, amt: st.pot }); st.tr[s] += st.pot; st.pot = 0 }
+      if (r.cap === 'k') st.over = { winner: s, reason: 'king' }
+    }
+    // treasury: income, then a hard vault limit (anti-snowball). Overflow is burned.
+    for (let s = 0; s < 2; s++) st.tr[s] = Math.min(st.o.cap, st.tr[s] + st.o.income)
+    st.turn++
+    st.hist.push({ o: o.map((x) => (x ? { f: x.f, t: x.t, bid: x.bid | 0 } : null)), coin: tie ? coin : -1 })
+    if (!st.over) {
+      if (st.quiet >= st.o.quietLimit || st.turn >= st.o.turnLimit) {
+        const d = material(st.b, 0)
+        st.over = Math.abs(d) >= 2 ? { winner: d > 0 ? 0 : 1, reason: 'adjudicated' } : { winner: -1, reason: 'draw' }
+      }
+    }
+    return ev
+  }
+
+  /* ---- bots ---- */
+  const exposure = (b, to, side) => SB.movesFor(b, 1 - side).some((x) => x.t === to)
+  function scoreMove(st, m, side, rng) {
+    const b = st.b.slice(); const piece = b[m.f]
+    const cap = b[m.t]; b[m.f] = null
+    let np = piece
+    if (piece.toLowerCase() === 'p' && ((side === 0 && m.t < 5) || (side === 1 && m.t >= 20))) np = side === 0 ? 'Q' : 'q'
+    b[m.t] = np
+    let sc = (cap ? SB.VAL[cap.toLowerCase()] : 0) + (np !== piece ? 8 : 0)
+    if (exposure(b, m.t, side)) sc -= SB.VAL[np.toLowerCase()] * 0.9
+    // forward / centre nudge so greedy is not a statue
+    const r = (m.t / 5) | 0, c = m.t % 5
+    sc += 0.05 * (2 - Math.abs(c - 2)) + (side === 0 ? (4 - r) : r) * 0.03 + rng() * 0.01
+    return sc
+  }
+  SB.bots = {
+    random: { name: 'Random', choose(st, side, rng) { const ms = SB.movesFor(st.b, side); return ms.length ? { ...pick(rng, ms), bid: 0 } : null } },
+    greedy: {
+      name: 'Greedy',
+      choose(st, side, rng) {
+        let best = null, bs = -1e9
+        for (const m of SB.movesFor(st.b, side)) { const s = scoreMove(st, m, side, rng); if (s > bs) { bs = s; best = m } }
+        return best && { ...best, bid: 0 }
+      },
+    },
+    allin: {
+      name: 'All-in',
+      choose(st, side, rng) { const m = SB.bots.greedy.choose(st, side, rng); return m && { ...m, bid: st.tr[side] } },
+    },
+    economist: {
+      name: 'Economist',
+      choose(st, side, rng) {
+        const ms = SB.movesFor(st.b, side); if (!ms.length) return null
+        const opp = SB.bots.greedy.choose(st, 1 - side, () => 0.5)
+        const k = st.o.mode === 'ledger' ? 0.5 : 0.8
+        const c = st.o.mode === 'ledger' ? 2 : 1 // a ledger bid also enriches the rival
+        let best = null, bv = -1e9
+        for (const m of ms) {
+          const base = scoreMove(st, m, side, rng)
+          // value of each order against the opponent's predicted move
+          const vOrder = (meFirst) => {
+            const s2 = SB.clone(st); s2.over = null
+            const seq = meFirst ? [[side, m], [1 - side, opp]] : [[1 - side, opp], [side, m]]
+            let v = 0
+            for (const [s, mv] of seq) {
+              if (!mv || !SB.movesFor(s2.b, s).some((x) => x.f === mv.f && x.t === mv.t)) continue
+              const cp = s2.b[mv.t]; if (cp) v += (s === side ? 1 : -1) * SB.VAL[cp.toLowerCase()]
+              exec(s2, mv, s)
+            }
+            return v
+          }
+          const vF = vOrder(true), vS = vOrder(false)
+          // what the rival gains by going first, and so roughly what an economist rival would bid
+          const rivalGain = vF - vS // what I lose if they go first = same quantity
+          const bo = rivalGain < -0.5 ? Math.min(st.tr[1 - side], Math.ceil(k * -rivalGain)) : 0
+          const need = bo + 1
+          const fallback = bo > 0 ? vS : 0.5 * (vF + vS)
+          const payOpt = need <= st.tr[side] ? vF - c * need : -1e9
+          const useBid = payOpt > fallback
+          const v = base * 0.15 + (useBid ? payOpt : fallback)
+          if (v > bv) { bv = v; best = { ...m, bid: useBid ? need : 0 } }
+        }
+        return best
+      },
+    },
+  }
+
+  /* ---- turn evaluator: a 1-ply payoff matrix solved by fictitious play ----
+     The same technique apps/sealed-orders/src/engine/analysis.ts uses: both sides repeatedly best-respond
+     to the other's history, and the empirical frequencies converge on an equilibrium of the zero-sum
+     matrix. Rows are White's (move, bid), columns Black's. A cell is the material swing for White when
+     that pair of sealed orders is resolved, plus `coinValue` per coin of treasury swing.
+
+     Resolving every cell would be (moves × bids)² resolves. It is not needed: the board outcome depends
+     only on (move, move, who goes first), so the board is resolved 2 × moves² times and the bids only
+     decide *who* goes first and *what it costs*, which is arithmetic. */
+  SB.fictitious = (matrix, rounds = 1500) => {
+    const R = matrix.length, C = matrix[0].length
+    const rc = new Array(R).fill(0), cc = new Array(C).fill(0), rp = new Array(R).fill(0), cp = new Array(C).fill(0)
+    for (let t = 0; t < rounds; t++) {
+      let br = 0; for (let i = 1; i < R; i++) if (rp[i] > rp[br]) br = i
+      let bc = 0; for (let j = 1; j < C; j++) if (cp[j] < cp[bc]) bc = j
+      rc[br]++; cc[bc]++
+      for (let i = 0; i < R; i++) rp[i] += matrix[i][bc]
+      for (let j = 0; j < C; j++) cp[j] += matrix[br][j]
+    }
+    const row = rc.map((x) => x / rounds), col = cc.map((x) => x / rounds)
+    // value bracket: what the row mix guarantees (worst column) and what the column mix concedes (best row)
+    let lo = Infinity, hi = -Infinity
+    for (let j = 0; j < C; j++) { let v = 0; for (let i = 0; i < R; i++) v += row[i] * matrix[i][j]; if (v < lo) lo = v }
+    for (let i = 0; i < R; i++) { let v = 0; for (let j = 0; j < C; j++) v += col[j] * matrix[i][j]; if (v > hi) hi = v }
+    return { row, col, lo, hi, value: (lo + hi) / 2 }
+  }
+  SB.turnMatrix = (pre, opts = {}) => {
+    const lam = opts.coinValue == null ? 0.5 : opts.coinValue
+    const o = pre.o, mv = [0, 1].map((s) => [null, ...SB.movesFor(pre.b, s)]) // null = pass
+    const mat0 = SB.material(pre.b, 0)
+    // out[a][b][first] = { dm: material swing for White, caps: [side that captured, in order] }
+    const out = mv[0].map((ma) => mv[1].map((mb) => [0, 1].map((first) => {
+      const s2 = SB.clone(pre); s2.over = null; s2.pot = 0
+      const ev = SB.resolve(s2, [ma ? { ...ma, bid: 0 } : null, mb ? { ...mb, bid: 0 } : null], first)
+      return { dm: SB.material(s2.b, 0) - mat0, caps: ev.filter((e) => e.kind === 'move' && e.cap).map((e) => e.s), over: s2.over }
+    })))
+    const bidsOf = (s) => Array.from({ length: Math.min(pre.tr[s], 15) + 1 }, (_, b) => b)
+    const bw = bidsOf(0), bb = bidsOf(1)
+    const cell = (a, b, x, y) => { // White plays move a with bid x, Black move b with bid y
+      const w = Math.min(x, pre.tr[0]), k = Math.min(y, pre.tr[1])
+      const tie = w === k, firsts = tie ? [0, 1] : [w > k ? 0 : 1]
+      let v = 0
+      for (const first of firsts) {
+        const p = first === 0 ? w : k, r = out[a][b][first], tr = pre.tr.slice()
+        tr[first] -= p
+        let pot = pre.pot
+        if (o.mode === 'ledger') tr[1 - first] += p; else pot += p
+        if (o.mode === 'pot' && r.caps.length && pot) { tr[r.caps[0]] += pot; pot = 0 }
+        for (let s = 0; s < 2; s++) tr[s] = Math.min(o.cap, tr[s] + o.income)
+        v += r.dm + lam * ((tr[0] - tr[1]) - (pre.tr[0] - pre.tr[1]))
+      }
+      return v / firsts.length
+    }
+    const rows = [], cols = []
+    mv[0].forEach((m, a) => bw.forEach((x) => rows.push({ a, m, bid: x })))
+    mv[1].forEach((m, b) => bb.forEach((y) => cols.push({ b, m, bid: y })))
+    const matrix = rows.map((r) => cols.map((c) => cell(r.a, c.b, r.bid, c.bid)))
+    return { rows, cols, matrix, mv, out, cell, lam }
+  }
+  /* analyse a resolved turn. `pre` is the position BEFORE it (clone it before SB.resolve), `orders` the
+     two sealed orders as played, `side` the player the report is written for. */
+  SB.analyseTurn = (pre, orders, side, opts = {}) => {
+    const T = SB.turnMatrix(pre, opts), sg = side === 0 ? 1 : -1
+    const idx = (s, ord) => T.mv[s].findIndex((m) => (!m && (!ord || ord.f < 0)) || (m && ord && m.f === ord.f && m.t === ord.t))
+    const a = idx(0, orders[0]), b = idx(1, orders[1])
+    const bidW = Math.min(orders[0] ? orders[0].bid | 0 : 0, pre.tr[0]), bidB = Math.min(orders[1] ? orders[1].bid | 0 : 0, pre.tr[1])
+    const mine = side === 0 ? bidW : bidB, theirs = side === 0 ? bidB : bidW
+    // what going first was worth for THIS pair of moves (material only, no coins)
+    const o2 = T.out[a][b]
+    const worth = sg * (o2[side].dm - o2[1 - side].dm)
+    // equilibrium mixture over the whole matrix
+    const eq = SB.fictitious(T.matrix, opts.rounds || 1500)
+    const mixOf = (probs, list, n) => { const m = new Array(n + 1).fill(0); probs.forEach((p, i) => (m[list[i].bid] += p)); return m }
+    const myMix = side === 0 ? mixOf(eq.row, T.rows, Math.min(pre.tr[0], 15)) : mixOf(eq.col, T.cols, Math.min(pre.tr[1], 15))
+    const support = myMix.map((p, k) => [k, p]).filter(([, p]) => p >= 0.05).map(([k]) => k)
+    const mean = myMix.reduce((x, p, k) => x + p * k, 0)
+    // hindsight: with the same move, which bid would have been best against what the rival actually did?
+    const my = side === 0 ? a : b, their = side === 0 ? b : a
+    const mybids = Array.from({ length: Math.min(pre.tr[side], 15) + 1 }, (_, k) => k)
+    const val = (k) => sg * (side === 0 ? T.cell(my, their, k, theirs) : T.cell(their, my, theirs, k))
+    let bestK = 0, bestV = -1e9
+    for (const k of mybids) { const v = val(k); if (v > bestV + 1e-9) { bestV = v; bestK = k } }
+    const got = val(mine), regret = bestV - got
+    const wentFirst = mine > theirs ? true : mine < theirs ? false : null
+    let verdict, text
+    const w = Math.abs(worth) < 0.005 ? 0 : worth
+    const fw = SB.fmtWorth(w)
+    if (regret < 0.05) {
+      verdict = 'sharp'
+      text = mine === 0 && w <= 0 ? 'No collision, no price: a bid of 0 was right.' : mine > theirs ? `Sharp: you bought the order for ${mine} when ${theirs + 1} would have done${mine === theirs + 1 ? ' (exactly the minimum)' : ''}.` : mine === 0 ? `Sharp: going first was not worth the price, so you did not pay.` : `Sharp read of their ${theirs}.`
+    } else if (mine > bestK) {
+      verdict = 'overpaid'
+      text = w <= 0 ? `Overpaid: going first was worth nothing here, and you paid ${mine}.` : `Overpaid by ${mine - bestK}: ${bestK} was the best bid against their ${theirs}.`
+    } else {
+      verdict = 'underbid'
+      text = `Underbid: against their ${theirs}, ${bestK} would have won an order worth ${fw}.`
+    }
+    return { side, worth: w, decisive: Math.abs(w) >= 50, mine, theirs, wentFirst, tie: mine === theirs, bestBid: bestK, regret, verdict, text, eq: { mix: myMix, support, lo: support[0], hi: support[support.length - 1], mean, value: sg * eq.value, gap: eq.hi - eq.lo }, size: [T.rows.length, T.cols.length], coinValue: T.lam }
+  }
+  SB.fmtWorth = (w) => (Math.abs(w) >= 50 ? (w > 0 ? 'the game (a king)' : 'losing the game (a king)') : `${w >= 0 ? '+' : '−'}${Math.abs(w).toFixed(1)} material`)
+  SB.explainTurn = (an) => `Going first on this turn was worth ${SB.fmtWorth(an.worth)}; equilibrium bid mix was [${an.eq.lo}..${an.eq.hi}] coins (mean ${an.eq.mean.toFixed(1)}). You bid ${an.mine}, they bid ${an.theirs}. ${an.text}`
+
+  /* ---- stateless link codec ----
+     bytes: ver(1) flags(1) matchId(4) start(1) cap(1) n(2) | n×4 history | chain(8) | pending(1+...) */
+  SB.packOrder = (o) => (((o && o.f >= 0 ? o.f : 31) & 31) << 9) | (((o && o.t >= 0 ? o.t : 31) & 31) << 4) | (((o && o.bid) || 0) & 15)
+  SB.unpackOrder = (v) => { const f = (v >> 9) & 31, t = (v >> 4) & 31, bid = v & 15; return f === 31 ? { f: -1, t: -1, bid } : { f, t, bid } }
+  SB.commitOf = (matchId, turn, side, order, nonce) =>
+    sha256(cat(enc('sb1|'), matchId, enc('|' + turn + '|' + side + '|'), Uint8Array.of(SB.packOrder(order) >> 8, SB.packOrder(order) & 255), nonce)).slice(0, 16)
+  /* The tie coin mixes the sealer's nonce with the opener's *plain* order, so neither
+     side can grind it: the sealer cannot know the opener's order when picking a nonce,
+     and the opener cannot know the nonce when picking an order. */
+  SB.coinOf = (commit, openerOrder, nonce) =>
+    sha256(cat(enc('sb1:coin|'), commit, Uint8Array.of(SB.packOrder(openerOrder) >> 8, SB.packOrder(openerOrder) & 255), nonce))[0] & 1
+  SB.chainStep = (prev, o, coin) => {
+    const a = SB.packOrder(o[0]), b = SB.packOrder(o[1])
+    return sha256(cat(prev, Uint8Array.of(a >> 8, a & 255, b >> 8, b & 255, coin < 0 ? 2 : coin))).slice(0, 8)
+  }
+  SB.chainStart = (matchId) => sha256(cat(enc('sb1:chain|'), matchId)).slice(0, 8)
+
+  SB.encodeLink = ({ matchId, mode, start, cap, hist, pending }) => {
+    const n = hist.length
+    const head = [1, mode === 'pot' ? 1 : 0, ...matchId, start, cap, n >> 8, n & 255]
+    const body = []
+    let chain = SB.chainStart(matchId)
+    for (const h of hist) {
+      const a = SB.packOrder(h.o[0]), b = SB.packOrder(h.o[1])
+      body.push(a >> 8, a & 255, b >> 8, b & 255, h.coin < 0 ? 2 : h.coin)
+      chain = SB.chainStep(chain, h.o, h.coin)
+    }
+    const tail = [...chain]
+    if (!pending) tail.push(0)
+    else if (pending.kind === 'sealed') tail.push(1, pending.side, ...pending.commit)
+    else if (pending.kind === 'opened') { const v = SB.packOrder(pending.order); tail.push(2, pending.side, ...pending.commit, v >> 8, v & 255) }
+    else if (pending.kind === 'reveal') { const v = SB.packOrder(pending.order); tail.push(3, pending.side, ...pending.commit, v >> 8, v & 255, ...pending.nonce) }
+    return Uint8Array.from([...head, ...body, ...tail])
+  }
+  SB.decodeLink = (u8) => {
+    if (u8[0] !== 1) throw new Error('unknown link version')
+    const matchId = u8.slice(2, 6), start = u8[6], cap = u8[7], n = (u8[8] << 8) | u8[9]
+    let p = 10; const hist = []
+    for (let i = 0; i < n; i++) {
+      hist.push({ o: [SB.unpackOrder((u8[p] << 8) | u8[p + 1]), SB.unpackOrder((u8[p + 2] << 8) | u8[p + 3])], coin: u8[p + 4] === 2 ? -1 : u8[p + 4] })
+      p += 5
+    }
+    const chain = u8.slice(p, p + 8); p += 8
+    let chk = SB.chainStart(matchId); for (const h of hist) chk = SB.chainStep(chk, h.o, h.coin)
+    if (!ctEqual(chk, chain)) throw new Error('history chain broken')
+    const kind = u8[p++]; let pending = null
+    if (kind === 1) pending = { kind: 'sealed', side: u8[p], commit: u8.slice(p + 1, p + 17) }
+    if (kind === 2) pending = { kind: 'opened', side: u8[p], commit: u8.slice(p + 1, p + 17), order: SB.unpackOrder((u8[p + 17] << 8) | u8[p + 18]) }
+    if (kind === 3) pending = { kind: 'reveal', side: u8[p], commit: u8.slice(p + 1, p + 17), order: SB.unpackOrder((u8[p + 17] << 8) | u8[p + 18]), nonce: u8.slice(p + 19, p + 35) }
+    return { matchId, mode: u8[1] & 1 ? 'pot' : 'ledger', start, cap, hist, pending, chain }
+  }
+  SB.replay = (link) => {
+    const st = SB.newGame({ mode: link.mode, start: link.start, cap: link.cap })
+    for (const h of link.hist) SB.resolve(st, h.o, h.coin < 0 ? 0 : h.coin)
+    return st
+  }
+
+  /* ---- the link desk: a pure state machine for playing Shadow Bidding by pasting links ----
+     Three hops a turn. The sealer (side = turn mod 2) commits; the opener answers in plain; the sealer
+     reveals; the opener verifies and the next turn begins with the roles swapped. Nothing here touches
+     the DOM or storage: the caller keeps `secrets` (a Map-like keyed by commit hex) and feeds links back in. */
+  SB.LINK_TAG = 'sb1/'
+  SB.parseLink = (text) => {
+    let t = String(text || '').trim()
+    const hash = t.indexOf('#'); if (hash >= 0) t = t.slice(hash + 1)
+    if (t.startsWith(SB.LINK_TAG)) t = t.slice(SB.LINK_TAG.length)
+    t = t.replace(/\s+/g, '')
+    if (!t) throw new Error('nothing to read: paste a link')
+    if (!/^[A-Za-z0-9_-]+$/.test(t)) throw new Error('that is not a Shadow Bidding link (it has characters a link never carries)')
+    return SB.decodeLink(unb64u(t)) // throws 'history chain broken' / 'unknown link version'
+  }
+  SB.linkText = (link, base = '') => base + '#' + SB.LINK_TAG + b64u(SB.encodeLink(link))
+  SB.deskBegin = (matchId, opts = {}) => ({ matchId, mode: opts.mode || 'ledger', start: opts.start == null ? 5 : opts.start, cap: opts.cap == null ? 9 : opts.cap, hist: [], pending: null })
+  /* what the person holding this link must do next */
+  SB.deskRole = (link) => {
+    const st = SB.replay(link), turn = link.hist.length, p = link.pending
+    if (st.over) return { kind: 'over', side: -1, turn, st }
+    const sealer = turn % 2
+    if (!p) return { kind: 'seal', side: sealer, turn, st }
+    if (p.kind === 'sealed') return { kind: 'respond', side: 1 - p.side, turn, st }
+    if (p.kind === 'opened') return { kind: 'reveal', side: p.side, turn, st }
+    return { kind: 'verify', side: 1 - p.side, turn, st }
+  }
+  const orderOK = (st, side, o) => !o || o.f < 0 || SB.movesFor(st.b, side).some((m) => m.f === o.f && m.t === o.t)
+  const norm = (o) => (o && o.f >= 0 ? { f: o.f, t: o.t, bid: o.bid | 0 } : { f: -1, t: -1, bid: (o && o.bid) | 0 })
+  const bidOK = (st, side, o) => (o.bid | 0) >= 0 && (o.bid | 0) <= Math.min(15, st.tr[side])
+  SB.deskSeal = (link, order, nonce) => {
+    const r = SB.deskRole(link); if (r.kind !== 'seal') throw new Error('this link is not waiting for a seal')
+    const o = norm(order)
+    if (!orderOK(r.st, r.side, o)) throw new Error('that move is not legal for ' + (r.side ? 'Black' : 'White'))
+    if (!bidOK(r.st, r.side, o)) throw new Error('the bid must be between 0 and the purse (' + r.st.tr[r.side] + ')')
+    const commit = SB.commitOf(link.matchId, r.turn, r.side, o, nonce)
+    return { link: { ...link, pending: { kind: 'sealed', side: r.side, commit } }, secret: { kind: 'seal', turn: r.turn, side: r.side, order: o, nonce: hex(nonce) } }
+  }
+  SB.deskRespond = (link, order) => {
+    const r = SB.deskRole(link); if (r.kind !== 'respond') throw new Error('this link is not waiting for an answer')
+    const o = norm(order)
+    if (!orderOK(r.st, r.side, o)) throw new Error('that move is not legal for ' + (r.side ? 'Black' : 'White'))
+    if (!bidOK(r.st, r.side, o)) throw new Error('the bid must be between 0 and the purse (' + r.st.tr[r.side] + ')')
+    const p = link.pending
+    return { link: { ...link, pending: { kind: 'opened', side: p.side, commit: p.commit, order: o } }, secret: { kind: 'open', turn: r.turn, side: r.side, order: o } }
+  }
+  const unhex = (h) => Uint8Array.from(h.match(/../g).map((x) => parseInt(x, 16)))
+  const settle = (link, r, sealerOrder, openerOrder, nonce, commit) => {
+    const sealerSide = link.pending.side
+    const ord = sealerSide === 0 ? [sealerOrder, openerOrder] : [openerOrder, sealerOrder]
+    const coin = SB.coinOf(commit, openerOrder, nonce)
+    const pre = SB.clone(r.st), st = SB.clone(r.st)
+    const ev = SB.resolve(st, ord, coin)
+    return { pre, st, ev, orders: ord, coin, next: { matchId: link.matchId, mode: link.mode, start: link.start, cap: link.cap, hist: st.hist.slice(), pending: null } }
+  }
+  /* sealer, hop 3: needs the secret saved at hop 1. Returns the reveal link and the resolved turn. */
+  SB.deskReveal = (link, secret) => {
+    const r = SB.deskRole(link); if (r.kind !== 'reveal') throw new Error('this link is not waiting for a reveal')
+    if (!secret || secret.kind !== 'seal' || secret.turn !== r.turn || secret.side !== r.side) throw new Error('this browser does not hold the nonce for that seal (it was made somewhere else)')
+    const p = link.pending, nonce = unhex(secret.nonce)
+    if (!ctEqual(SB.commitOf(link.matchId, r.turn, r.side, secret.order, nonce), p.commit)) throw new Error('the saved order does not match the sealed hash')
+    const res = settle(link, r, secret.order, p.order, nonce, p.commit)
+    return { ...res, link: { ...link, pending: { kind: 'reveal', side: p.side, commit: p.commit, order: secret.order, nonce } } }
+  }
+  /* opener, hop 4: checks the seal, then resolves. `openerOrder` is the one it sent at hop 2 (from its own
+     saved secret, or read back out of link 2 if the person pastes that). */
+  SB.deskVerify = (link, openerOrder) => {
+    const r = SB.deskRole(link); if (r.kind !== 'verify') throw new Error('this link is not waiting for a verification')
+    const p = link.pending
+    const recomputed = SB.commitOf(link.matchId, r.turn, p.side, p.order, p.nonce)
+    if (!ctEqual(recomputed, p.commit)) return { ok: false, why: 'SEAL BROKEN: the order in this link does not hash to the commitment sent earlier. The sealer changed their mind.', recomputed }
+    if (!openerOrder) return { ok: false, need: 'opener', why: 'the seal is good, but this browser does not remember the answer you sent. Paste link 2 (the one you sent back) to supply it.', recomputed }
+    const res = settle(link, r, p.order, norm(openerOrder), p.nonce, p.commit)
+    return { ok: true, why: 'seal verified', recomputed, ...res }
+  }
+  /* read the opener's order back out of a pasted link 2 (the "opened" link carries it in plain) */
+  SB.openerOrderFrom = (link2, commit) => (link2.pending && link2.pending.kind === 'opened' && ctEqual(link2.pending.commit, commit) ? link2.pending.order : null)
+
+  /* ═══════════════════════════════ 2. CARTEL OF CARTOGRAPHERS ═══════════════════════════════
+     Shared tile map (Carcassonne), directors that score from other people's tiles and
+     fight hostile mergers (Tigris & Euphrates), and covenants — binding promises the
+     engine enforces by deleting the moves that would break them (Sidereal Confluence). */
+  const CC = {}
+  CC.N = 7
+  CC.COMM = ['Coal', 'Timber', 'Cattle', 'Grain']
+  CC.defaults = { seats: 3, perComm: 12, hand: 3, maxCov: 2, maxLeft: 3, covenants: true, spoil: 2, buyIn: true, count: 3 }
+
+  CC.newGame = (seed, opts = {}) => {
+    const o = Object.assign({}, CC.defaults, opts)
+    const rng = mulberry32(hashSeed('cc|' + seed))
+    const bag = []
+    for (let c = 0; c < 4; c++) for (let i = 0; i < o.perComm; i++) bag.push(c)
+    const st = {
+      o, seed, rng, bag: shuffle(rng, bag), tile: Array(49).fill(-1), dir: Array(49).fill(null),
+      reserve: Array.from({ length: o.seats }, () => [true, true, true, true]),
+      score: Array.from({ length: o.seats }, () => [0, 0, 0, 0]), hands: [], cov: [], covId: 1,
+      turn: 0, mover: 0, over: false, log: [], stats: { mergers: 0, removed: 0, forceMajeure: 0, broken: 0, signed: 0, fed: 0, buyIns: 0 },
+    }
+    for (const x of [22, 23, 24]) st.tile[x] = st.bag.pop()
+    for (let s = 0; s < o.seats; s++) st.hands.push([])
+    for (let r = 0; r < o.hand; r++) for (let s = 0; s < o.seats; s++) if (st.bag.length) st.hands[s].push(st.bag.pop())
+    return st
+  }
+  // rng cannot survive a deep copy, so clones share it; simulations never draw from it.
+  CC.clone = (st) => ({
+    ...st, tile: st.tile.slice(), dir: st.dir.map((d) => (d ? { ...d } : null)), reserve: st.reserve.map((r) => r.slice()),
+    score: st.score.map((r) => r.slice()), hands: st.hands.map((h) => h.slice()), cov: st.cov.map((c) => ({ ...c })), bag: st.bag.slice(),
+    log: [], stats: { ...st.stats },
+  })
+  const nbr = (i) => { const r = (i / 7) | 0, c = i % 7, o = []; if (r > 0) o.push(i - 7); if (r < 6) o.push(i + 7); if (c > 0) o.push(i - 1); if (c < 6) o.push(i + 1); return o }
+  CC.nbr = nbr
+  /* regions: array cell → region id, plus members */
+  CC.regions = (st) => {
+    const id = Array(49).fill(-1), members = []
+    for (let i = 0; i < 49; i++) {
+      if (st.tile[i] < 0 || id[i] >= 0) continue
+      const k = members.length, stack = [i], cells = []; id[i] = k
+      while (stack.length) { const x = stack.pop(); cells.push(x); for (const y of nbr(x)) if (st.tile[y] >= 0 && id[y] < 0) { id[y] = k; stack.push(y) } }
+      members.push(cells)
+    }
+    return { id, members }
+  }
+  const dirIn = (st, cells, c) => { for (const x of cells) { const d = st.dir[x]; if (d && d.c === c) return x } return -1 }
+
+  /* All legal (director?, hand index, cell) moves for `s`, after covenant filtering. */
+  CC.rawMoves = (st, s) => {
+    const { id, members } = CC.regions(st)
+    const dirOpts = [null]
+    for (let c = 0; c < 4; c++) {
+      if (!st.reserve[s][c]) continue
+      for (let x = 0; x < 49; x++) if (st.tile[x] === c && !st.dir[x] && dirIn(st, members[id[x]], c) < 0) dirOpts.push({ cell: x, c })
+    }
+    const cells = []
+    for (let x = 0; x < 49; x++) if (st.tile[x] < 0) cells.push(x) // anywhere: a lone tile founds a new realm
+    const out = []
+    const seen = new Set()
+    for (let h = 0; h < st.hands[s].length; h++) {
+      const c = st.hands[s][h]; if (seen.has(c)) continue; seen.add(c)
+      for (const d of dirOpts) for (const x of cells) out.push({ d, h, c, x })
+      out.push({ d: null, h, c, x: -1 }) // discard
+    }
+    return out
+  }
+  /* what a covenant says about one move: 'ok' | 'violates' | 'fulfils' */
+  function judge(st, cv, m, regs) {
+    const { id, members } = regs
+    const hasTo = (cells) => cells.some((x) => st.dir[x] && st.dir[x].p === cv.to)
+    const touching = (x) => { const rs = new Set(); for (const y of nbr(x)) if (st.tile[y] >= 0) rs.add(id[y]); return [...rs] }
+    if (cv.kind === 'embargo') {
+      if (m.x >= 0 && touching(m.x).some((r) => hasTo(members[r]))) return 'violates'
+      if (m.d && hasTo(members[id[m.d.cell]])) return 'violates'
+      return 'ok'
+    }
+    if (cv.kind === 'nomerge') {
+      if (m.x < 0) return 'ok'
+      const rs = touching(m.x); if (rs.length >= 2 && rs.some((r) => hasTo(members[r]))) return 'violates'
+      return 'ok'
+    }
+    if (cv.kind === 'feed') {
+      if (m.x < 0 || m.c !== cv.c) return 'ok'
+      for (const r of touching(m.x)) { const dx = dirIn(st, members[r], cv.c); if (dx >= 0 && st.dir[dx].p === cv.to) return 'fulfils' }
+      return 'ok'
+    }
+    return 'ok'
+  }
+  CC.legalMoves = (st, s) => {
+    const raw = CC.rawMoves(st, s); const mine = st.cov.filter((c) => c.from === s)
+    if (!mine.length || !st.o.covenants) return { moves: raw, blocked: [], forced: false }
+    const regs = CC.regions(st)
+    let ok = raw.filter((m) => mine.every((cv) => judge(st, cv, m, regs) !== 'violates'))
+    // a feed on its last turn must be honoured if any move can honour it
+    for (const cv of mine) if (cv.kind === 'feed' && cv.left <= 1) {
+      const f = ok.filter((m) => judge(st, cv, m, regs) === 'fulfils'); if (f.length) ok = f
+    }
+    const blocked = raw.filter((m) => !ok.includes(m))
+    if (!ok.length) return { moves: raw, blocked: [], forced: true }
+    return { moves: ok, blocked, forced: false }
+  }
+
+  /* Tigris & Euphrates counts only your weakest colour. With four colours and ~15 tiles a head
+   that is nearly always zero (measured: 0.00), so the rule here counts the two weakest. */
+  /* `count` weakest colours count (default 3: you drop only your best). With 2 the measured average final was 1.3. */
+  const sortedAsc = (p) => p.slice().sort((x, y) => x - y)
+  const weak = (p, n = 3) => { const a = sortedAsc(p); let v = 0; a.forEach((x, i) => (v += i < n ? x : 0.2 * x)); return v }
+  const softmin = weak
+  CC.value = (st, s) => weak(st.score[s], st.o.count)
+  CC.final = (st, s) => sortedAsc(st.score[s]).slice(0, st.o.count).reduce((x, y) => x + y, 0)
+  CC.finalKey = (st, s) => { const a = sortedAsc(st.score[s]); return CC.final(st, s) * 1000 + a.slice(st.o.count).reduce((x, y) => x + y, 0) }
+  CC.winner = (st) => {
+    let best = -1, bk = -1, tie = false
+    for (let s = 0; s < st.o.seats; s++) { const k = CC.finalKey(st, s); if (k > bk) { bk = k; best = s; tie = false } else if (k === bk) tie = true }
+    return tie ? -1 : best
+  }
+
+  /* Apply one move for `s`. Returns events for the UI. */
+  CC.apply = (st, s, m, forced) => {
+    const ev = []
+    const regs0 = CC.regions(st)
+    if (forced) {
+      st.stats.forceMajeure++
+      for (const cv of st.cov.filter((c) => c.from === s)) {
+        if (judge(st, cv, m, regs0) === 'violates') {
+          const low = st.score[cv.to].indexOf(Math.min(...st.score[cv.to])); st.score[cv.to][low]++
+          st.stats.broken++; ev.push({ kind: 'damages', cv, c: low })
+        }
+      }
+    }
+    // feed honoured?
+    const feedHits = st.cov.filter((cv) => cv.from === s && cv.kind === 'feed' && m.x >= 0 && judge(st, cv, m, regs0) === 'fulfils')
+    if (m.d) { st.dir[m.d.cell] = { p: s, c: m.d.c, age: st.turn }; st.reserve[s][m.d.c] = false; ev.push({ kind: 'director', s, ...m.d }) }
+    if (m.x < 0) {
+      st.hands[s].splice(m.h, 1); ev.push({ kind: 'discard', s, c: m.c })
+    } else {
+      st.hands[s].splice(m.h, 1)
+      const before = CC.regions(st)
+      const touched = [...new Set(nbr(m.x).filter((y) => st.tile[y] >= 0).map((y) => before.id[y]))]
+      st.tile[m.x] = m.c
+      ev.push({ kind: 'tile', s, x: m.x, c: m.c })
+      if (touched.length >= 2) {
+        st.stats.mergers++
+        for (let k = 0; k < 4; k++) {
+          const ds = []
+          for (const r of touched) { const dx = dirIn(st, before.members[r], k); if (dx >= 0) ds.push({ dx, n: before.members[r].filter((y) => st.tile[y] === k).length, age: st.dir[dx].age }) }
+          if (ds.length < 2) continue
+          ds.sort((a, b) => b.n - a.n || a.age - b.age) // bigger stock wins; tie → senior charter
+          const win = ds[0]
+          for (const l of ds.slice(1)) {
+            const owner = st.dir[l.dx].p, wo = st.dir[win.dx].p
+            st.reserve[owner][k] = true; st.dir[l.dx] = null; st.stats.removed++
+            let spoil = false
+            if (owner !== wo) { st.score[wo][k] += st.o.spoil; spoil = true }
+            ev.push({ kind: 'merger', k, win: win.dx, lose: l.dx, loser: owner, winner: wo, spoil, wn: win.n, ln: l.n })
+          }
+        }
+      }
+      const after = CC.regions(st)
+      const dx = dirIn(st, after.members[after.id[m.x]], m.c)
+      if (dx >= 0) { const owner = st.dir[dx].p; st.score[owner][m.c]++; ev.push({ kind: 'score', owner, c: m.c, x: dx, self: owner === s }) }
+    }
+    for (const cv of feedHits) { st.cov = st.cov.filter((c) => c.id !== cv.id); st.stats.fed++; ev.push({ kind: 'fed', cv }) }
+    // covenants age on the promiser's own turn
+    for (const cv of st.cov.filter((c) => c.from === s)) {
+      cv.left--
+      if (cv.left <= 0) {
+        st.cov = st.cov.filter((c) => c.id !== cv.id)
+        if (cv.kind === 'feed') { st.score[cv.to][cv.c]++; st.stats.broken++; ev.push({ kind: 'damages', cv, c: cv.c }) } else ev.push({ kind: 'expired', cv })
+      }
+    }
+    if (st.bag.length) st.hands[s].push(st.bag.pop())
+    st.turn++; st.mover = (st.mover + 1) % st.o.seats
+    if (st.hands.every((h) => !h.length)) st.over = true
+    return ev
+  }
+  CC.skip = (st) => { st.mover = (st.mover + 1) % st.o.seats; st.turn++; if (st.hands.every((h) => !h.length)) st.over = true }
+
+  CC.canSign = (st, cv) => {
+    if (!st.o.covenants) return false
+    if (cv.from === cv.to || cv.left < 1 || cv.left > st.o.maxLeft) return false
+    return st.cov.filter((c) => c.from === cv.from).length < st.o.maxCov
+  }
+  CC.sign = (st, cvs) => {
+    const sim = { cov: st.cov.slice(), o: st.o }
+    for (const cv of cvs) { if (!CC.canSign(sim, cv)) return false; sim.cov.push({ ...cv, id: -1 }) }
+    for (const cv of cvs) st.cov.push({ ...cv, id: st.covId++ })
+    st.stats.signed++
+    return true
+  }
+  /* Buy-in. Two seats have signed a mutual pair of the same kind (nomerge or embargo). A third seat may
+     join it: it pays ONE point (taken from its lowest non-empty colour, so it costs a point of final score)
+     and the pair becomes a triangle: the buyer and each member promise each other the same thing, for as
+     many turns as the pair has left. Nobody can veto it, because the members already carry the same
+     promise to each other. The point is burned. Without this, two signers shield each other and the
+     third seat is the only one a hostile merger can reach. */
+  CC.buyInOptions = (st, s) => {
+    if (!st.o.covenants || !st.o.buyIn || st.score[s].every((v) => v <= 0)) return []
+    const out = []
+    for (const a of st.cov) {
+      if (a.kind === 'feed' || a.from === s || a.to === s) continue
+      const b = st.cov.find((x) => x.from === a.to && x.to === a.from && x.kind === a.kind)
+      if (!b || a.from > a.to) continue // each pair once
+      if (st.cov.some((x) => (x.from === s && (x.to === a.from || x.to === a.to)) || (x.to === s && (x.from === a.from || x.from === a.to)))) continue
+      const left = Math.min(a.left, b.left)
+      const offer = [a.from, a.to].flatMap((m) => [{ from: s, to: m, kind: a.kind, left }, { from: m, to: s, kind: a.kind, left }])
+      if (!CC.canSignAll(st, offer)) continue
+      out.push({ members: [a.from, a.to], kind: a.kind, left, offer })
+    }
+    return out
+  }
+  CC.canSignAll = (st, cvs) => {
+    const sim = { cov: st.cov.slice(), o: st.o }
+    for (const cv of cvs) { if (!CC.canSign(sim, cv)) return false; sim.cov.push({ ...cv, id: -1 }) }
+    return true
+  }
+  CC.buyIn = (st, s, opt) => {
+    if (!CC.buyInOptions(st, s).some((o) => o.members.join() === opt.members.join() && o.kind === opt.kind)) return false
+    const low = st.score[s].map((v, k) => [v, k]).filter((x) => x[0] > 0).sort((x, y) => x[0] - y[0] || x[1] - y[1])[0][1]
+    st.score[s][low]--
+    for (const cv of opt.offer) st.cov.push({ ...cv, id: st.covId++ })
+    st.stats.buyIns++; st.stats.signed++
+    return true
+  }
+  CC.describe = (st, cv) => {
+    const n = (p) => 'P' + (p + 1)
+    if (cv.kind === 'embargo') return `${n(cv.from)} will not build beside ${n(cv.to)}'s kingdoms`
+    if (cv.kind === 'nomerge') return `${n(cv.from)} will not merge any realm holding ${n(cv.to)}'s director`
+    return `${n(cv.from)} will feed ${CC.COMM[cv.c]} into ${n(cv.to)}'s ${CC.COMM[cv.c]} realm`
+  }
+
+  /* conflict potential: do I hold a director that a hostile merger could unseat? */
+  function conflictWith(st, s, t) {
+    const { id, members } = CC.regions(st)
+    for (let k = 0; k < 4; k++) {
+      let mine = -1, theirs = -1
+      members.forEach((cells, r) => { const dx = dirIn(st, cells, k); if (dx >= 0) { if (st.dir[dx].p === s) mine = r; if (st.dir[dx].p === t) theirs = r } })
+      if (mine >= 0 && theirs >= 0 && mine !== theirs) {
+        // is there an empty cell touching both?
+        for (let x = 0; x < 49; x++) if (st.tile[x] < 0) { const rs = nbr(x).filter((y) => st.tile[y] >= 0).map((y) => id[y]); if (rs.includes(mine) && rs.includes(theirs)) return true }
+      }
+    }
+    return false
+  }
+  CC.conflictWith = conflictWith
+
+  function evalMove(st, s, m) {
+    const sim = CC.clone(st)
+    const before = sim.score.map((p) => softmin(p, st.o.count))
+    CC.apply(sim, s, m, false)
+    let v = softmin(sim.score[s], st.o.count) - before[s]
+    let others = 0
+    for (let t = 0; t < st.o.seats; t++) if (t !== s) others += softmin(sim.score[t], st.o.count) - before[t]
+    v -= 0.55 * (others / (st.o.seats - 1))
+    // a director of my weakest colour is worth planting; so is one in a big realm
+    if (m.d) { const low = st.score[s].indexOf(Math.min(...st.score[s])); v += m.d.c === low ? 0.5 : 0.25 }
+    // blocking: do not leave a hostile-merger square lying next to my directors
+    return v
+  }
+  CC.bots = {
+    greedy: {
+      name: 'Greedy',
+      move(st, s, rng) {
+        const { moves, forced } = CC.legalMoves(st, s)
+        let best = null, bv = -1e9
+        for (const m of moves) { const v = evalMove(st, s, m) + rng() * 0.02 - (m.x < 0 ? 0.4 : 0); if (v > bv) { bv = v; best = m } }
+        return { m: best, forced }
+      },
+      offers: () => [], accepts: () => false, buyIns: () => [],
+    },
+    diplomat: {
+      name: 'Diplomat',
+      move(st, s, rng) { return CC.bots.greedy.move(st, s, rng) },
+      offers(st, s) {
+        const out = []
+        if (!st.o.covenants) return out
+        for (let t = 0; t < st.o.seats; t++) {
+          if (t === s || !conflictWith(st, s, t)) continue
+          if (st.cov.some((c) => c.from === s && c.to === t)) continue
+          out.push([{ from: s, to: t, kind: 'nomerge', left: 2 }, { from: t, to: s, kind: 'nomerge', left: 2 }])
+        }
+        return out
+      },
+      accepts(st, s, offer) { return CC.canSign(st, offer.find((c) => c.from === s)) && conflictWith(st, s, offer.find((c) => c.to === s).from) },
+      buyIns: () => [],
+    },
+    /* the excluded third seat: proposes nothing, signs nothing, but buys into a treaty that could reach it */
+    joiner: {
+      name: 'Joiner',
+      move(st, s, rng) { return CC.bots.greedy.move(st, s, rng) },
+      offers: () => [], accepts: () => false,
+      buyIns(st, s) { return CC.buyInOptions(st, s).filter((o) => o.members.some((m) => conflictWith(st, s, m)) && CC.final(st, s) >= 1).slice(0, 1) },
+    },
+    /* a Diplomat that also buys into other people's treaties when a hostile merger could reach it */
+    broker: {
+      name: 'Broker',
+      move(st, s, rng) { return CC.bots.greedy.move(st, s, rng) },
+      offers(st, s) { return CC.bots.diplomat.offers(st, s) },
+      accepts(st, s, offer) { return CC.bots.diplomat.accepts(st, s, offer) },
+      buyIns(st, s) {
+        return CC.buyInOptions(st, s).filter((o) => o.members.some((m) => conflictWith(st, s, m)) && CC.final(st, s) >= 1).slice(0, 1)
+      },
+    },
+  }
+
+  /* ═══════════════════════════════ 3. LEXICON QUARANTINE ═══════════════════════════════
+     7×7 letters. The Poet traces Boggle chains (8-connected, no cell twice) and inks the
+     cells. The Censor plays Go-like stones (4-connected liberties) and may rotate any
+     2×2 block. Ink groups with no liberties are quarantined; stones that lose their
+     liberties are lifted. */
+  const LQ = {}
+  LQ.N = 7
+  LQ.defaults = { target: 60, rounds: 7, censorActions: 2, rotCool: 2, minLen: 3, anchor: true, libFloor: 1, shear: 'cut' }
+  LQ.words = new Set(); LQ.trie = {}
+  LQ.setWords = (list) => {
+    LQ.words = new Set(list); LQ.trie = {}
+    for (const w of list) { let n = LQ.trie; for (const ch of w) n = n[ch] || (n[ch] = {}); n.$ = 1 }
+  }
+  const LV = (ch) => ('eaiotnrsl'.includes(ch) ? 1 : 'dugcmhpb'.includes(ch) ? 2 : 3)
+  LQ.value = LV
+  const N8 = []; const N4 = []
+  for (let i = 0; i < 49; i++) {
+    const r = (i / 7) | 0, c = i % 7; N8[i] = []; N4[i] = []
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue
+      const rr = r + dr, cc = c + dc; if (rr < 0 || rr > 6 || cc < 0 || cc > 6) continue
+      N8[i].push(rr * 7 + cc); if (!dr || !dc) N4[i].push(rr * 7 + cc)
+    }
+  }
+  LQ.N8 = N8; LQ.N4 = N4
+  const FILL = 'eeeeeeaaaaaiiiiooooutnnnrrrsssllddgcmhpbfywkvj'
+  LQ.newGame = (seed, opts = {}) => {
+    const o = Object.assign({}, LQ.defaults, opts)
+    for (let bump = 0; bump < 40; bump++) {
+      const rng = mulberry32(hashSeed('lq|' + seed + '|' + bump))
+      const ch = Array(49).fill(null)
+      const list = [...LQ.words].filter((w) => w.length >= 4)
+      let planted = 0
+      for (let tries = 0; tries < 60 && planted < 6; tries++) {
+        const w = pick(rng, list); let path = null
+        for (let a = 0; a < 20 && !path; a++) {
+          let cur = Math.floor(rng() * 49); if (ch[cur] && ch[cur] !== w[0]) continue
+          const p = [cur]
+          for (let i = 1; i < w.length; i++) {
+            const nx = shuffle(rng, N8[cur]).find((x) => !p.includes(x) && (!ch[x] || ch[x] === w[i])); if (nx === undefined) { p.length = 0; break }
+            p.push(nx); cur = nx
+          }
+          if (p.length === w.length) path = p
+        }
+        if (path) { path.forEach((x, i) => (ch[x] = w[i])); planted++ }
+      }
+      for (let i = 0; i < 49; i++) if (!ch[i]) ch[i] = pick(rng, FILL.split(''))
+      const st = { o, seed, ch, own: Array(49).fill(0), pts: Array(49).fill(0), used: [], round: 0, score: 0, lastRot: -99, over: null, stats: { captured: 0, lifted: 0, rotations: 0, stones: 0, sheared: 0, shearedPts: 0 } }
+      if (LQ.findWords(st).length >= 25) return st
+    }
+    throw new Error('no playable board for seed ' + seed)
+  }
+  LQ.clone = (st) => ({ ...st, ch: st.ch.slice(), own: st.own.slice(), pts: st.pts.slice(), used: st.used.slice(), stats: { ...st.stats } })
+
+  LQ.findWords = (st) => {
+    const out = [], used = new Set(st.used)
+    const anchored = st.o.anchor && st.own.includes(1) // a poem grows from itself: later words must quote the ink
+    const walk = (i, node, path, word) => {
+      const nx = node[st.ch[i]]; if (!nx) return
+      path.push(i); word += st.ch[i]
+      if (nx.$ && word.length >= st.o.minLen && !used.has(word)) {
+        let gain = 0; for (const x of path) if (st.own[x] === 0) gain += LV(st.ch[x])
+        if (gain > 0 && (!anchored || path.some((x) => st.own[x] === 1))) out.push({ word, path: path.slice(), gain: gain + Math.max(0, word.length - 3) * 2 })
+      }
+      for (const j of N8[i]) if (!path.includes(j) && (st.own[j] === 0 || st.own[j] === 1)) walk(j, nx, path, word)
+      path.pop()
+    }
+    for (let i = 0; i < 49; i++) if (st.own[i] === 0 || st.own[i] === 1) walk(i, LQ.trie, [], '')
+    return out
+  }
+  /* Judge a hand-traced path (the human Poet's move). Returns {ok, why, mv}. */
+  LQ.evalPath = (st, path) => {
+    if (path.length < st.o.minLen) return { ok: false, why: 'at least ' + st.o.minLen + ' letters' }
+    for (let i = 0; i < path.length; i++) {
+      if (st.own[path[i]] > 1) return { ok: false, why: 'a blacked-out cell' }
+      if (i && !N8[path[i - 1]].includes(path[i])) return { ok: false, why: 'cells must touch' }
+    }
+    const word = path.map((x) => st.ch[x]).join('')
+    if (!LQ.words.has(word)) return { ok: false, why: '"' + word + '" is not in the lexicon' }
+    if (st.used.includes(word)) return { ok: false, why: 'already typed' }
+    let gain = 0; for (const x of path) if (st.own[x] === 0) gain += LV(st.ch[x])
+    if (!gain) return { ok: false, why: 'no fresh cell' }
+    if (st.o.anchor && st.own.includes(1) && !path.some((x) => st.own[x] === 1)) return { ok: false, why: 'must pass through your own ink' }
+    const mv = { word, path: path.slice(), gain: gain + Math.max(0, word.length - 3) * 2 }
+    if (!LQ.poetMove(st, mv).ok) return { ok: false, why: 'would leave your ink without air' }
+    return { ok: true, mv }
+  }
+  /* groups of one owner, 4-connected; liberties = free (own 0) orthogonal neighbours */
+  LQ.groups = (st, who) => {
+    const seen = Array(49).fill(false), gs = []
+    for (let i = 0; i < 49; i++) {
+      if (st.own[i] !== who || seen[i]) continue
+      const cells = [], libs = new Set(), stack = [i]; seen[i] = true
+      while (stack.length) { const x = stack.pop(); cells.push(x); for (const y of N4[x]) { if (st.own[y] === 0) libs.add(y); else if (st.own[y] === who && !seen[y]) { seen[y] = true; stack.push(y) } } }
+      gs.push({ cells, libs: libs.size })
+    }
+    return gs
+  }
+  function sweep(st, who) { // lift/capture every starved group of `who` (ink dies at libs <= libFloor; stones at 0)
+    let n = 0
+    const floor = who === 1 ? st.o.libFloor : 0
+    for (const g of LQ.groups(st, who)) if (g.libs <= floor) {
+      n += g.cells.length
+      for (const x of g.cells) { if (who === 1) { st.score -= st.pts[x]; st.pts[x] = 0; st.own[x] = 3 } else st.own[x] = 0 }
+    }
+    return n
+  }
+  LQ.crossing = (st) => LQ.groups(st, 1).some((g) => g.cells.some((x) => x % 7 === 0) && g.cells.some((x) => x % 7 === 6))
+  LQ.poetMove = (st, mv) => { // mv = a findWords entry; returns {ok, lifted} or {ok:false}
+    const nst = LQ.clone(st); const fresh = []
+    for (const x of mv.path) if (nst.own[x] === 0) { nst.own[x] = 1; nst.pts[x] = LV(nst.ch[x]); fresh.push(x) }
+    nst.score += mv.gain
+    const lifted = sweep(nst, 2)
+    if (LQ.groups(nst, 1).some((g) => g.libs <= nst.o.libFloor && g.cells.some((x) => fresh.includes(x)))) return { ok: false }
+    return { ok: true, st: nst, lifted, fresh }
+  }
+  LQ.commitPoet = (st, mv) => {
+    const r = LQ.poetMove(st, mv); if (!r.ok) return false
+    Object.assign(st, r.st); st.used.push(mv.word); st.stats.lifted += r.lifted
+    st.lastWord = mv
+    if (st.score >= st.o.target) st.over = { winner: 'poet', reason: 'score' }
+    else if (LQ.crossing(st)) st.over = { winner: 'poet', reason: 'crossing' }
+    return true
+  }
+  LQ.legalPoet = (st) => LQ.findWords(st).filter((w) => LQ.poetMove(st, w).ok)
+  LQ.rotate = (st, tl) => {
+    const a = tl, b = tl + 1, c = tl + 8, d = tl + 7 // tl, tr, br, bl
+    for (const k of ['ch', 'own', 'pts']) { const t = st[k][d]; st[k][d] = st[k][c]; st[k][c] = st[k][b]; st[k][b] = st[k][a]; st[k][a] = t }
+  }
+  /* Shear. Ink has a main body: the biggest orthogonal group (ties: more points, then the lowest cell).
+     When a block is turned, every inked cell inside that block that is not part of the main body
+     afterwards is torn off: it turns to dead ink (own 3) and its points are lost. So a turn is a cut:
+     it kills stray ink that sits in the block, and it kills whatever the turn itself severs from the
+     body. Without `shear` the turn only moves things (v1 behaviour, which measured as no effect). */
+  LQ.mainBody = (st) => {
+    let best = null, bk = null
+    for (const g of LQ.groups(st, 1)) {
+      const pts = g.cells.reduce((a, x) => a + st.pts[x], 0), low = Math.min(...g.cells)
+      const k = [g.cells.length, pts, -low]
+      if (!bk || k[0] > bk[0] || (k[0] === bk[0] && (k[1] > bk[1] || (k[1] === bk[1] && k[2] > bk[2])))) { bk = k; best = g }
+    }
+    return new Set(best ? best.cells : [])
+  }
+  const blockOf = (tl) => [tl, tl + 1, tl + 7, tl + 8]
+  /* for shear 'cut': the cells that WERE in the body before the turn, tracked to where they land */
+  LQ.bodyAfterTurn = (st, tl) => {
+    const body = LQ.mainBody(st), out = new Set(), b = blockOf(tl) // tl, tr, bl(tl+7), br(tl+8)
+    const dest = { [tl]: tl + 1, [tl + 1]: tl + 8, [tl + 8]: tl + 7, [tl + 7]: tl } // clockwise
+    for (const x of body) out.add(dest[x] !== undefined ? dest[x] : x)
+    return out
+  }
+  LQ.shearBlock = (st, tl, was) => {
+    const body = LQ.mainBody(st), torn = []
+    for (const x of blockOf(tl)) if (st.own[x] === 1 && !body.has(x) && (st.o.shear !== 'cut' || !was || was.has(x))) { torn.push(x); st.score -= st.pts[x]; st.stats.shearedPts += st.pts[x]; st.pts[x] = 0; st.own[x] = 3 }
+    st.stats.sheared += torn.length
+    return torn
+  }
+  /* what a turn at `tl` would do, without doing it (the UI hatches these cells on hover) */
+  LQ.previewRot = (st, tl) => {
+    const s2 = LQ.clone(st); s2.stats = { ...st.stats }; LQ.rotate(s2, tl)
+    if (!st.o.shear) return { torn: [], tornFrom: [], lost: 0 }
+    const before = s2.score, torn = LQ.shearBlock(s2, tl, LQ.bodyAfterTurn(st, tl))
+    const from = { [tl + 1]: tl, [tl + 8]: tl + 1, [tl + 7]: tl + 8, [tl]: tl + 7 } // where each landing square came from
+    return { torn, tornFrom: torn.map((x) => from[x]), lost: before - s2.score }
+  }
+  LQ.canRotate = (st) => st.o.rotCool < 99 && st.round - st.lastRot >= st.o.rotCool // rotCool 99 = rotation removed (stone-only)
+  LQ.censorActs = (st, rotLeft = true) => {
+    const acts = []
+    for (let i = 0; i < 49; i++) if (st.own[i] === 0) {
+      // not suicidal: some liberty remains, or it captures
+      acts.push({ k: 'stone', cell: i })
+    }
+    if (rotLeft && LQ.canRotate(st)) for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) acts.push({ k: 'rot', cell: r * 7 + c })
+    return acts
+  }
+  LQ.censorApply = (st, act) => {
+    if (act.k === 'rot') {
+      const was = st.o.shear ? LQ.bodyAfterTurn(st, act.cell) : null
+      LQ.rotate(st, act.cell); st.lastRot = st.round; st.stats.rotations++
+      if (st.o.shear) LQ.shearBlock(st, act.cell, was)
+    } else {
+      if (st.own[act.cell] !== 0) return false
+      st.own[act.cell] = 2; st.stats.stones++
+    }
+    const cap = sweep(st, 1); st.stats.captured += cap
+    // a stone group left without liberties by its own placement is lifted too (no suicide)
+    sweep(st, 2)
+    return true
+  }
+  LQ.endRound = (st) => {
+    st.round++
+    if (!st.over && st.round >= st.o.rounds) st.over = { winner: 'censor', reason: 'rounds' }
+  }
+  LQ.silenced = (st) => LQ.legalPoet(st).length === 0
+
+  /* bots */
+  LQ.bots = {
+    poetGreedy: { name: 'Greedy Poet', move(st) { const ws = LQ.legalPoet(st); ws.sort((a, b) => b.gain - a.gain || (a.word < b.word ? -1 : 1)); return ws[0] || null } },
+    poetSafe: {
+      name: 'Careful Poet',
+      move(st) {
+        const ws = LQ.legalPoet(st); let best = null, bv = -1e9
+        for (const w of ws) {
+          const r = LQ.poetMove(st, w); const gs = LQ.groups(r.st, 1)
+          const minLib = gs.length ? Math.min(...gs.map((g) => g.libs)) : 9
+          const totLib = gs.reduce((a, g) => a + g.libs, 0)
+          const cols = r.st.own.map((o, i) => (o === 1 ? i % 7 : -1)).filter((c) => c >= 0)
+          const span = cols.length ? Math.max(...cols) - Math.min(...cols) : 0
+          const v = w.gain + 1.5 * Math.min(minLib, 4) + 0.15 * totLib + 0.5 * span + (w.word < 'm' ? 0.001 : 0)
+          if (v > bv) { bv = v; best = w }
+        }
+        return best
+      },
+    },
+    /* a Poet that knows a turn is a cut: it counts ink outside the main body as a liability */
+    poetWary: {
+      name: 'Wary Poet',
+      move(st) {
+        const ws = LQ.legalPoet(st); let best = null, bv = -1e9
+        for (const w of ws) {
+          const r = LQ.poetMove(st, w); const gs = LQ.groups(r.st, 1)
+          const minLib = gs.length ? Math.min(...gs.map((g) => g.libs)) : 9
+          const totLib = gs.reduce((a, g) => a + g.libs, 0)
+          const body = LQ.mainBody(r.st); let loose = 0, looseVal = 0
+          r.st.own.forEach((o, i) => { if (o === 1 && !body.has(i)) { loose++; looseVal += r.st.pts[i] } })
+          const cols = r.st.own.map((o, i) => (o === 1 ? i % 7 : -1)).filter((c) => c >= 0)
+          const span = cols.length ? Math.max(...cols) - Math.min(...cols) : 0
+          const v = w.gain + 1.5 * Math.min(minLib, 4) + 0.15 * totLib + 0.5 * span - 0.25 * looseVal - 0.1 * loose + (w.word < 'm' ? 0.001 : 0)
+          if (v > bv) { bv = v; best = w }
+        }
+        return best
+      },
+    },
+    censorRandom: { name: 'Random Censor', actions(st, rng) { const out = []; for (let i = 0; i < st.o.censorActions; i++) { const a = LQ.censorActs(st, false); if (a.length) out.push(pick(rng, a)) } return out } },
+    censorHunter: {
+      name: 'Hunter Censor',
+      actions(st, rng) {
+        const sim = LQ.clone(st), out = []
+        for (let n = 0; n < st.o.censorActions; n++) {
+          const gs = LQ.groups(sim, 1).sort((a, b) => a.libs - b.libs)
+          let cell = -1
+          if (gs.length) { const libs = new Set(); for (const x of gs[0].cells) for (const y of N4[x]) if (sim.own[y] === 0) libs.add(y); cell = pick(rng, [...libs]) }
+          if (cell < 0) { // no ink yet: seal off the richest letters
+            const free = []; for (let i = 0; i < 49; i++) if (sim.own[i] === 0) free.push(i)
+            free.sort((a, b) => LV(sim.ch[b]) - LV(sim.ch[a]) || a - b); cell = free[0]
+          }
+          const a = { k: 'stone', cell }; out.push(a); LQ.censorApply(sim, a)
+        }
+        return out
+      },
+    },
+    censorDenier: {
+      name: 'Denier Censor',
+      /* one-ply denial: take the stone or rotation that most reduces the Poet's best word,
+         with a bonus for stones that tighten an ink group's liberties (the Go threat). */
+      actions(st, rng) {
+        const sim = LQ.clone(st), out = []
+        for (let n = 0; n < st.o.censorActions; n++) {
+          let best = null, bv = 1e9
+          const consider = (a) => {
+            const s2 = LQ.clone(sim); if (!LQ.censorApply(s2, a)) return
+            const ws = LQ.legalPoet(s2); let v = ws.length ? Math.max(...ws.map((w) => w.gain)) : 0
+            const gs = LQ.groups(s2, 1); if (gs.length) v -= 2 * (4 - Math.min(4, Math.min(...gs.map((g) => g.libs))))
+            v += (s2.score - sim.score) * 0.8 * -1 * -1 // captured ink lowers the score: reward it
+            if (v < bv) { bv = v; best = a }
+          }
+          for (let i = 0; i < 49; i++) if (sim.own[i] === 0) consider({ k: 'stone', cell: i })
+          if (LQ.canRotate(sim) && !out.some((a) => a.k === 'rot')) for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) consider({ k: 'rot', cell: r * 7 + c })
+          if (!best) break
+          out.push(best); LQ.censorApply(sim, best)
+        }
+        return out
+      },
+    },
+    censorScrambler: {
+      name: 'Scrambler Censor',
+      actions(st, rng) {
+        const sim = LQ.clone(st), out = []
+        if (LQ.canRotate(st)) {
+          let best = null, bv = 1e9
+          for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) {
+            const s2 = LQ.clone(sim); LQ.censorApply(s2, { k: 'rot', cell: r * 7 + c }) // through censorApply, so a shear counts
+            const ws = LQ.findWords(s2); const v = (ws.length ? Math.max(...ws.map((w) => w.gain)) : 0) + (s2.score - sim.score) * 0.8
+            if (v < bv) { bv = v; best = r * 7 + c }
+          }
+          const a = { k: 'rot', cell: best }; out.push(a); LQ.censorApply(sim, a)
+        }
+        while (out.length < st.o.censorActions) {
+          const a = LQ.bots.censorHunter.actions({ ...sim, o: { ...sim.o, censorActions: 1 } }, rng)[0]; out.push(a); LQ.censorApply(sim, a)
+        }
+        return out
+      },
+    },
+  }
+  LQ.play = (seed, poet, censor, opts, rng) => {
+    const st = LQ.newGame(seed, opts)
+    while (!st.over) {
+      const w = poet.move(st); if (!w) { st.over = { winner: 'censor', reason: 'silenced' }; break }
+      LQ.commitPoet(st, w); if (st.over) break
+      for (const a of censor.actions(st, rng)) LQ.censorApply(st, a)
+      LQ.endRound(st)
+    }
+    return st
+  }
+
+  return { mulberry32, hashSeed, pick, shuffle, sha256, enc, cat, hex, b64u, unb64u, ctEqual, SB, CC, LQ }
+})()
+if (typeof module !== 'undefined') module.exports = HB
+
+</script>
+<script>
+HB.LQ.setWords("able about above absorb abuse accent accept access accuse acid across act action active actor actual acute adapt add admire admit adopt adult advice afford afraid after again age aged agency agenda agent ago agree ahead aid aim air alarm album alert alien align alive all allow almost alone along also alter always among amount and angel anger angle angry animal annual answer ant any apart ape appeal appear apple apply arc arch are area arena argue arise arm armor army aroma around array arrest arrive arrow art artist ash aside ask aspect assess asset assign assist assume ate atlas atom attack attend audio audit august aunt author autumn avenue avoid awake award aware away awe axe baby back backed bad badly bag bake baker ball ballad ballot bamboo ban banana band bank banker banner bar bare bark barn barrel base bases basic basil basin basis basket bat batch bath battle bay beach beacon bead beak beam bean bear beat beauty become bed bee beef before beg began begin begun behalf behave behind being belief bell belong below belt bench bend bent beside best bet better beyond big bike bill bind binder bird birth bishop bit bite bitter black blade blame bland blank blast blaze blazer bleak blend bless blind block blood bloom blouse blow blown blue blues blunt blush boa boar board boast boat bodily body bold bolt bomb bond bone bonus book boost boot booth border bore boring born borrow boss bottle bottom bounce bound bounds bow bowl box boy brain brake branch brand brands brass brave breach bread break breath breed breeze brick bridge brief bright bring brisk broad broke broken broker bronze brown brush bubble bucket bud buddy budget buffet bug build built bulk bumper bunch bundle burden bureau burial burn burnt burst bus bush busy but butter button buy buyer buying cab cabin cable cache cafe cage cake calm came camel camera camp campus canal cancel cancer candy canoe canvas canyon cap car carbon card care career cargo carol carpet carrot carry cart carve case cash casino cast castle casual cat catch cattle caught cause cave cavern cease cedar cell cellar centre cereal chain chair chalk chance change charge charm chart chase cheap cheat check cheer cheese cherry chess chest chief child chill chin china chip choice choir choose chord chore chorus chose chunk church cider cigar cinema circle circus city civic civil claim claims clam clamp clan clash class clay clean clear clerk click client cliff climax climb cling clip clock clone close closet cloth cloud clouds clown club clue coach coal coast coat cocoa code coffee coil coin cold collar colon colony color column combat come comedy comet comic coming commit common cook cool cop cope copper copy coral cord core cork corn cost cotton cough could count couple course court cousin cover covers cow crab crack cradle craft crane crank crash crate crazy cream create credit creek creep crept crest crew crime crisis crisp critic crook crop cross crow crowd crown crude cruel crush crust cry cub cube cubic cup cure curl curly curse curve custom cut cycle dad daily dairy daisy dam damage dame damp dance dandy danger dare dark dart dash data date dated dawn day days dead deaf deal dealer dealt dear death debate debit debt debut decade decay decent decide deck decor deed deep deer defeat defend define degree delay delete delta demand den dense depart depend deploy depot depth derby desert design desire desk detail detect deter device devil dew dial diary dice did diet differ dig dim dime dine diner dinner dip direct dirt dirty dish ditch dive diver divide dizzy dock doctor dodge dog doing dollar domain dome donate donor door dose dot double doubt dough dove down dozen draft drag dragon drain drama drank draw drawer drawn dread dream dress drew dried drift drill drink drip drive driver drone drop drove drown drum dry dryer dub duck due dug dull during dusk dust duty dwarf dwell dying each eager eagle ear earl early earn ease easel east easy eat eater edge editor eel effect effort egg ego eight either elbow elder elect elf elite elk elm else emerge employ empty enable enact end ended ending enemy energy engage engine enjoy enough ensure enter entire entry envoy equal equip equity era erase error escape essay estate ether ethic ethics evade eve event every evil evolve exact exam excel excess excuse exempt exert exile exist expand expect expel expert expire export extend extra eye fable fabric face facet fact factor fade fail failed faint fair fairy faith fall false fame family famous fan fancy far farm fast fat fatal fate father fault favor fear feast fed fee feed feel feet fell fellow felt female fence fern ferry fetch fever few fiber field fiery fifth fifty fig fight figure file fill filly film filter fin final finch find fine finer finger finish fire firm firmly first fiscal fish fist fit five fix fixed flag flair flake flame flank flash flask flat flavor fleet flesh flew flick flier flight fling flint flip float flock flood floor flora flour flow flower flown flu fluent fluid flung flush flute fly foam focal focus fog foggy fold folk fond font food fool foot for force forest forge forget fork form formal formed former fort forth forty forum foster found four fourth fox frail frame frank fraud freak free french fresh friar frog from front frost frown frozen fruit fuel full fuller fully fun fund funny fur future fuzzy gain gait galaxy game gap garden garlic gas gate gather gauge gaunt gauze gave gear geese gel gem gender genie genre gentle german get ghost giant giddy gift gifted gin ginger girl give given giver giving glad glade glance gland glare glass gleam glide glint global globe gloom glory glove glow glue goal goat god going gold golden golf gone good goose gorge gospel got govern gown grab grace grade graft grain grand grant grape graph grasp grass grate grave gravy gray graze great greed green greet grew grid grief grill grim grime grin grind grip gripe groan groom grope gross ground group grove grow growl grown growth gruff guard guess guest guide guild guilt guitar gulf gull gum gun gust gut guy gym habit had hail hair hairy half hall ham hand handle handy hang happen happy harbor hard hardly hardy harm harp harsh has haste hasty hat hatch hate haunt have haven havoc hawk hay hazard hazel head headed heal health heap hear heard heart heat heath heave heavy hedge heel hefty height held hell hello helmet help hen hence hens her herb herbs herd here hero heron hid hidden hide high highly hill hilly him hinge hint hip hippo hire his hit hitch hoard hobby hog hoist hold hole hollow holly holy home honest honey honor hood hook hop hope horde horn horror horse hose host hot hotel hound hour house hover how hub hug huge hull human humble humid humor hung hunger hunt hunter hurry hurt husky hut hyena hymn ice icy idea ideal idiom ignore ill image impact imply import inch income indeed index inept infer injury inlet inn inner input inside intend invent invest ion iron irony island isle issue item itself ivory ivy jack jacket jade jail jar jaw jay jazz jelly jerky jersey jet jewel job jog join joint joke joker jolly joy judge jug juice juicy jumbo jump jungle junior juror jury just karma kayak keen keep kept kernel key khaki kick kid kidney kill killer kin kind kindly king kinky kiosk kiss kit kite kitty knack knead knee kneel knew knife knight knit knob knock knot know known koala lab label labor labour lace lack lad ladder laden ladle lady lag lager laid lake lamb lamp lance land lane lap lapse laptop lard large lark larva laser lasso last latch late lately later latest lathe latter laugh launch law lawn lawyer lay layer lazy lead leader leaf league leak lean leap learn lease leash least leave led ledge left leg legacy legal legend lemon lend length lens less lesson let letter level lever liar libel lick lid lie life lift light likely liken lilac limbo lime limit limits line linear linen liner link lion lip lipid liquid list listen lit liter little live lively liver living llama load loaf loan lobby local locate lock lodge loft lofty log logic lone lonely long longer look looked loop loose lord lorry lose loser losing loss lost lot lotus loud lounge love lovely low loyal lucid luck lucky lull lumber lump lumpy lunar lung lunge lure lurid lush luxury lying lyric macaw mad made magic magma magnet mail main mainly maize major make maker making male mall malt man manage mane mango mania manner manor manual many map maple marble march mare margin marine mark market marsh mask mason mass mast master mat match mate matter mature may maybe mayor maze meadow meal mean meant meat medal media medic medium meet melon melt member memo memory men mend mental mentor menu mercy mere merely merge merger merit merry mesh messy met metal meter method mid middle midst might mighty mild mile milk mill mimic mince mind mine miner mining minor mint minus minute mirror mirth miser misery miss mist mix mixed mixer moan moat mob mobile mock mode model modem modern modest moist molar mold mole mom moment money monkey month months moon moor moral morale more morph mortal moss most motel moth mother motif motion motive motor motto mound mount mourn mouse mouth move mover movie mower much mucus mud muddy mug mule mummy mural murder murky muscle museum mushy music must musty mutual myself myth nail naive naked name nanny nap nasal nasty nation native nature naval navel navy near nearby nearly neat neck need needle needy nephew nerve nerves nest net never new newer newly news next nice niche niece night nine ninth nip noble nod node noise noisy nomad none noon nor norm normal north nose not notch note noted notice notion noun novel now nudge number nun nurse nut nylon oak oar oasis oat oath obese obey object obtain occupy occur ocean odd off offer office offset often oil old olive omega once one onion online only onset onto open opened opera optic option oral orange orb orbit orbits order ore organ origin other otter ought ounce our out outer outfit output outset ovary oven over overt owing owl own owner oxide oxygen ozone pace pack packed packet pad page paid pail pain paint pair palace pale palm pan pane paper parade parcel parent park parka parse part partly party pass passed past pasta paste pat patch patent path patio patrol pause pave paw pay pea peace peach peak pear pearl peat pedal peel peer pen penal pencil penny people pepper perch peril period perky permit person pesky pet petal petty phase phone photo phrase piano pick picked picky picnic pie piece pier pig piggy pile pill pillar pillow pilot pin pinch pine pink pipe pirate pistol pit pitch pithy pivot pixel pizza place plaid plain plan plane planet plank plant plasma plate play player plaza plead please plenty plot plow pluck plum plumb plume plump plus plush pocket pod poem poet poetry point poise poison poker polar pole police policy polish polite polka poll pollen pond pony pool poor poorly pop poppy porch pork port portal pose post poster pot potato pouch pound pour powder power prank pray prayer preach prefer press pretty prey price prick pride prime prince print prior prism prison prize probe profit prompt prone prong proof proper proud prove proven prowl prune public pull pulp pulse pump pun punch pupil puppy pure purse pursue push put putty puzzle quarry quartz queen queer quell query quest queue quick quiet quill quilt quirk quit quite quiz quota quote rabbit rabid race racer racing rack radar radio radius raft rag rage raid rail rain rainy raise rally ran ranch random range rank rapid rare rarely rash rat rate rather rating ratio raven raw ray razor reach react read reader ready real really realm reap rear reason rebel recall recap recent recipe record recur red reduce reedy reef refer reform refuge refuse regal regard regime region regret reign reject relate relax relay relic relief rely remain remedy remind remit remote remove renal render renew rent rental repair repay repeat repel replay reply report rescue reset resign resin resist resort rest result retail retain retire retro return reveal review revise reward rhino rhyme rhythm rib ribbon rice rich rid ridden ride rider ridge rife rifle rig right rigid rigor rim ring rinse riot rip ripen rise risen riser risk risky ritual rival river rivet road roam roar roast rob robe robin robot robust rock rocket rocky rod rode rodeo rogue role roll roller roman roof room roomy roost root rope rose roster rot rotor rouge rough round rouse route rover row rowdy royal rub rubber ruddy rude rug ruin rule ruler ruling rum rumor run runner runny rural rush rust rusty saber sack sacred sad sadly safe safer safety sag sage said sail saint sake salad salary sale salmon salon salsa salt salty salvo same sample sand sandy sang sanity sank sat satin satire sauce saucy sauna savage save saving savor savvy saw say scale scalp scan scant scare scarf scarfs scary scene scent scheme school scion scoff scold scone scoop scope score scorer scorn scout scrap screen script scrub sea seal search season seat second secret sector secure sedan see seed seedy seek seem seen seize seldom select self sell send senior sense senses sensor sent sepia series serum serve served set sets settle setup seven sever severe sew sewer sewing shack shade shadow shady shaft shake shaken shaky shale shall shame shape shard share shark sharp shave shawl she sheaf shear shed sheen sheep sheer sheet shelf shell shield shift shine shiny ship shire shirt shock shoe shone shook shoot shop shore short shot should shout shove shovel show shown showy shrub shrug shuck shut shy shyly sick side siege sieve sigh sight sigma sign signal silent silk silky silly silver simple simply sin since sinew sing singe single sink sip sir siren sister sit site six sixth sixty size sized skate sketch ski skill skin skip skirt skull sky slab slack slain slam slang slant slap slash slate slave sleek sleep sleet slept slice slid slide slight slim slime slimy sling slink slip slope slot sloth slow slump slush sly small smart smash smear smell smelt smile smirk smite smith smock smoke smoky smooth snack snail snake snare snarl sneak sneer sniff snipe snoop snore snort snout snow snowy soak soap soar sob sober soccer social sock socket soft softly soggy soil sold sole solely solemn solid solve solved some son sonar song sonic soon sore sorry sort soul sound soup sour source south soviet sow space spade span spank spare spark spasm spawn speak spear speck speed spell spend spent sperm sphere spice spicy spike spiky spill spilt spin spine spiny spire spirit spite split spoil spoke spoken spoof spook spool spoon spore sport spot spout spray spread sprig spring sprite spun spurn spurt spy squad square squat squid stable stack staff stage stain stair stake stakes stale stalk stall stamp stance stand staple star stare stared stark start state stated statue status stave stay stayed stead steady steak steal steam steed steel steep steer stem step stern stick sticky stiff still stilt sting stink stint stir stitch stock stocks stoic stoke stole stolen stomp stone stones stony stood stool stoop stop store stork storm story stout stove strain strand strap straw stray streak stream street stress strict strike string strip strive stroke strong struck strut stuck studio study stuff stump stung stunt stupid style suave sub submit subtle suburb such sudden suffer sugar suit suite sulky sum summer summit sun sung sunny sunset super superb supply sure surely surge surly survey sushi swam swamp swan swarm swear sweat sweep sweet swell swept swift swim swine swing swirl switch sword swore sworn symbol syrup system tab table taboo tacit tackle tacky tag tail tailor taint take taken taker taking tale talent talk tall tally talon tame tamer tan tandem tangle tango tangy tank tap tape taper tar tardy target tarry task taste tasty taught taunt tavern tawny tax taxi tea teach team tear teary tease teeth tell temple tempo tempt ten tend tender tennis tenor tense tent tenth tenure tepid term terror terse test testy text than thank that the theft their them theme then theory there these thesis they thick thief thigh thin thing think third thirty this thorn those though thread threat three threw thrill thrive throb throne throw thrown thumb thump thus ticket tidal tide tidy tie tied tiger tight tile tiled till timber time timer timid tin tiny tip tipsy tire tired tissue titan title toad toast today toe token told toll tomb ton tonal tone tongue tonic too took tool tooth top topaz topic torch torn total totem touch tough tour toward towel tower town toxic toxin toy trace track tract trade tragic trail trails train trait tramp trance trap trash travel tray tread treat treaty tree trench trend trends triad trial tribal tribe trick tried tries trim trio trip troll troop trophy tropic trout truce truck true truly trump trunk trust truth try tub tube tuck tug tulip tumor tune tunic tunnel turban turbo turkey turn turtle tutor tweak tweed tweet twelve twenty twice twin twine twirl twist two type typing ugly ulcer ultra uncle under unfair unfit unfold unify union unique unit unite united unity unless unlike unlock unpaid until update upheld upon upset urban urge urgent urn usage use used useful user usher using usual utter vague vain valid valley valor value valued valve van vapor varied vary vast vastly vat vault vegan veil vein vendor venom venue verb verge verify verse versus very vessel vest vested vet via vicar victim video view viewer vigil vigor villa vine vinyl viola violet viper viral virtue virus vision visit visor vista visual vital vivid vocal vodka vogue voice void volt volume vote voter vouch vow vowel voyage wade wafer wag wage wager wagon waist wait waiter waive wake walk wall waltz wander want war ward warm warmth warn warned was wash wasp waste watch water wave waver wax way weak wealth weapon wear weary weave web wed wedge weed week weekly weigh weight weird well went were west wet whale wharf what wheat wheel when where which whiff while whine whirl whisk white who whole wholly whom whose why wicked wide widen wider widow width wield wife wig wild wildly will win wince wind windy wine wing wink winner winter wipe wiper wire wired wisdom wise wisely wiser wish wispy wit witch with within witty woe woken wolf woman women won wonder wood wooden woody wool word wore work worker world worlds worm worn worry worse worst worth worthy would wound woven wow wrap wrath wreck wrest wring wrist write writer wrong wrote yacht yak yam yap yard yarn year yeast yell yellow yes yet yew yield you young your yours youth zebra zero zesty zip zippy zonal zone zoo".split(" "));
+</script>
+<script>
+/* UI for the three tables. Everything the page does to a game goes through HB.SB / HB.CC / HB.LQ —
+   the same functions the harness plays — so what you can click is exactly what the engine allows. */
+(() => {
+  'use strict'
+  const { SB, CC, LQ } = HB
+
+  /* ───────── tiny DOM kit ───────── */
+  const NS = 'http://www.w3.org/2000/svg'
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag)
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v == null || v === false) continue
+      if (k === 'class') el.className = v
+      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v)
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v)
+      else if (v === true) el.setAttribute(k, '')
+      else el.setAttribute(k, v)
+    }
+    add(el, kids); return el
+  }
+  function sv(tag, props, ...kids) {
+    const el = document.createElementNS(NS, tag)
+    for (const [k, v] of Object.entries(props || {})) if (v != null) el.setAttribute(k, v)
+    add(el, kids); return el
+  }
+  function add(el, kids) { for (const k of kids.flat(9)) { if (k == null || k === false) continue; el.append(k.nodeType ? k : document.createTextNode(String(k))) } }
+  const clear = (el) => { while (el.firstChild) el.removeChild(el.firstChild) }
+  let toastT = 0
+  function toast(msg) {
+    document.querySelectorAll('.toast').forEach((n) => n.remove())
+    const t = h('div', { class: 'toast', role: 'status' }, msg); document.body.append(t)
+    clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 3200)
+  }
+  const rnd16 = () => { const a = new Uint8Array(16); crypto.getRandomValues(a); return a }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : ms))
+  const stage = document.getElementById('stage')
+
+  /* ───────── router ───────── */
+  const TABS = [['overview', 'Overview'], ['cartel', 'Cartel of Cartographers'], ['shadow', 'Shadow Bidding'], ['lexicon', 'Lexicon Quarantine']]
+  const ALIAS = { bidding: 'shadow', sb: 'shadow', cc: 'cartel', lq: 'lexicon', home: 'overview' } // old and short names still land
+  const nav = document.querySelector('.tabs')
+  const views = {}
+  function go(name, focus) {
+    document.body.dataset.table = name
+    nav.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.t === name)))
+    clear(stage); stage.append(views[name]())
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name)
+    window.scrollTo(0, 0); if (focus) stage.focus()
+  }
+  for (const [k, label] of TABS) nav.append(h('button', { role: 'tab', 'data-t': k, 'aria-selected': 'false', onclick: () => go(k, true) }, label))
+  /* #cartel · #shadow · #lexicon pick a table. #sb1/… is a sealed link: it opens Shadow Bidding with the link desk
+     already reading it. (The fragment is never sent to a server, which is why the protocol lives there.) */
+  function route() {
+    const raw = location.hash.slice(1)
+    if (raw.startsWith(SB.LINK_TAG)) {
+      if (document.body.dataset.table !== 'shadow') go('shadow')
+      history.replaceState(null, '', '#shadow')
+      if (sb.deskOpen) sb.deskOpen('#' + raw)
+      return
+    }
+    const k = ALIAS[raw] || raw
+    if (views[k] && document.body.dataset.table !== k) go(k)
+    else if (!views[k] && raw && document.body.dataset.table === 'overview') history.replaceState(null, '', '#overview')
+  }
+  addEventListener('hashchange', route)
+
+  /* ═══════════════════════ OVERVIEW ═══════════════════════ */
+  function lineage(parents, child, caption) {
+    const W = 372, rowH = 38, H = parents.length * rowH + 14
+    const s = sv('svg', { class: 'lineage', viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': caption })
+    const cy = H / 2
+    parents.forEach((p, i) => {
+      const y = 7 + i * rowH
+      s.append(sv('rect', { class: 'box', x: 2, y, width: 118, height: rowH - 8, rx: 2 }))
+      s.append(sv('text', { x: 10, y: y + 15, 'font-size': 12, 'font-weight': 600 }, p.name))
+      s.append(sv('text', { class: 'lab', x: 10, y: y + 26 }, p.keeps))
+      s.append(sv('path', { class: 'arr', d: `M120 ${y + (rowH - 8) / 2} C 190 ${y + (rowH - 8) / 2}, 180 ${cy}, 228 ${cy}` }))
+    })
+    s.append(sv('path', { class: 'arr', d: `M222 ${cy - 4} L230 ${cy} L222 ${cy + 4}` }))
+    s.append(sv('rect', { class: 'hyb', x: 230, y: cy - 30, width: 140, height: 60, rx: 2 }))
+    child.forEach((ln, i) => s.append(sv('text', { class: i ? 'lab hybs' : 'hybt', x: 238, y: cy - 10 + i * 14, 'font-size': i ? 9.5 : 12, style: i ? 'fill:var(--bg);opacity:.8' : '' }, ln)))
+    return s
+  }
+  const MEASURED = {
+    cartel: [['average final score, first draft → now', '1.2 → 5.9'], ['hostile mergers per game (greedy ×3)', '7.4'], ['directors unseated, no treaties → all-diplomat table', '7.6 → 0.0'], ['third seat wins vs two diplomats, no buy-in → buy-in', '50 % → 40 %']],
+    bidding: [['Economist vs Greedy', '100 – 0'], ['Economist vs All-in', '66 – 35'], ['turns where going first is worth ≥ ½ a pawn', '≈ 35 %'], ['equilibrium bid on those turns (fictitious play)', '4.3 coins']],
+    lexicon: [['Poet wins vs the Denier, rotation removed → rotation that cuts', '78 % → 43 %'], ['ink quarantined per game, v1 → final', '0.1 → 3.5'], ['cells a turn severs from the poem per game', '3.9'], ['games won by crossing the page (of 43 % won)', '25 %']],
+  }
+  views.overview = () => {
+    const card = (key, tag, title, body, parents, child, cap, facts, label) =>
+      h('article', { class: 'ov-card' }, h('div', { class: 'tag' }, tag), h('h2', {}, title), lineage(parents, child, cap), h('p', { class: 'cap' }, cap), h('p', {}, body),
+        h('ul', { class: 'facts' }, facts.map(([a, b]) => h('li', {}, h('span', {}, a), h('b', {}, b)))), h('button', { class: 'go', onclick: () => go(key, true) }, label))
+    return h('div', { class: 'ov' },
+      h('h1', {}, 'Three games, each built from three old ones'),
+      h('p', { class: 'lede' }, 'Every table below runs the real rules engine in this page. There is no server, no account and no database. Shadow Bidding can be played by two people entirely through pasted links whose contents are sealed by a hash (open the link desk on its table); Cartel and Lexicon are specified for WebRTC sync and played here against bots. Open #cartel, #shadow or #lexicon to land on a table.'),
+      h('div', { class: 'ov-grid' },
+        card('cartel', 'Three to four players · WebRTC', 'Cartel of Cartographers', 'A shared map where other people’s tiles feed your directors, a tile can start a hostile merger, and a promise you sign is enforced by deleting the moves that would break it.',
+          [{ name: 'Carcassonne', keeps: 'shared tile map' }, { name: 'Tigris & Euphrates', keeps: 'hostile mergers' }, { name: 'Sidereal Confluence', keeps: 'binding promises' }], ['Covenants', 'a promise deletes moves', ''],
+          'Each parent lends one rule. The new part is that the board itself enforces the promise.', MEASURED.cartel, 'Sit at the table'),
+        card('shadow', 'Two players · links or WebRTC', 'Shadow Bidding', 'Chess where both sides write a move and a sealed bid at once. The higher bid moves first, so the second move may find its piece gone. Tempo has a price, and the price is hidden.',
+          [{ name: 'Chess', keeps: 'no luck, spatial tactics' }, { name: 'Modern Art', keeps: 'closed-fist bids' }, { name: 'Diplomacy', keeps: 'simultaneous orders' }], ['Sealed tempo', 'bid = who moves first', ''],
+          'The bid does not buy a move. It buys the order in which two moves collide.', MEASURED.bidding, 'Open the ledger'),
+        card('lexicon', 'Two players · history in the link', 'Lexicon Quarantine', 'The Poet traces words through a 7×7 grid of letters and inks them. The Censor places stones and rotates blocks. Ink with one breath left is quarantined; stones with none are lifted; and turning a 2×2 block cuts off any ink it separates from the poem’s body.',
+          [{ name: 'Boggle', keeps: 'word-chain tracing' }, { name: 'Go', keeps: 'liberties and capture' }], ['Quarantine', 'a poem needs air', ''],
+          'Boggle sets the Poet’s verb, Go sets the Censor’s. They meet on the same 49 cells.', MEASURED.lexicon, 'Pick up the typewriter')),
+      h('h3', {}, 'How to read these numbers'),
+      h('div', { class: 'rules' },
+        h('p', {}, 'Every figure comes from ', h('code', {}, 'node harness.mjs'), ', which plays bots against each other on the same engine file this page uses. Samples are 60 to 200 games, so differences under about eight points are noise.'),
+        h('p', {}, 'The bots are not strong players. They are probes: a Greedy bot that never bids and an All-in bot that always does bracket what a human could do, and an Economist that reasons one step about its rival sits between them.'),
+        h('p', {}, 'Several first-draft rules failed these probes and were changed before this page was drawn. ', h('a', { href: 'ARCHITECTURE.md' }, 'ARCHITECTURE.md'), ' records what broke and what replaced it.')))
+  }
+
+  /* ═══════════════════════ 1. CARTEL ═══════════════════════ */
+  const CGLYPH = ['◆', '♣', '♉\uFE0E', '❋']
+  const cc = { st: null, sel: null, dirMode: false, dpick: null, log: [], busy: false, fresh: -1, flash: new Set(), unseat: new Set(), offers: [], scenario: null, over: false, draft: { kind: 'nomerge', to: 1, left: 2, c: 0 } }
+  function ccBots() { return [null, CC.bots.greedy, CC.bots.diplomat] }
+  function ccNew(seed, scenario) {
+    cc.seed = seed || 'cartel-' + (Math.random() * 1e6 | 0); cc.st = CC.newGame(cc.seed); cc.sel = null; cc.dirMode = false; cc.dpick = null; cc.log = []; cc.offers = []; cc.scenario = scenario || null; cc.fresh = -1; cc.flash = new Set(); cc.unseat = new Set(); cc.over = false
+    if (!scenario) cc.log.push('Three tiles lie on the map. Seat a director, then lay a tile. Your directors score from anyone’s tiles.')
+    if (scenario === 'merger' || scenario === 'peace') {
+      const st = cc.st
+      st.tile.fill(-1); st.dir.fill(null); st.reserve.forEach((r) => r.fill(true)); st.score.forEach((r) => r.fill(0))
+      const put = (r, c, k) => (st.tile[r * 7 + c] = k)
+      put(2, 0, 0); put(2, 1, 1); put(2, 2, 0)            // Rail P1: coal, timber, coal  (two coal)
+      put(3, 2, 0)                                           // third coal, down the spur
+      put(2, 4, 0); put(2, 5, 0)                            // Rail P2: two coal
+      put(5, 5, 2); put(5, 6, 3)                            // a bystander realm
+      st.dir[2 * 7 + 0] = { p: 0, c: 0, age: 0 }; st.reserve[0][0] = false
+      st.dir[2 * 7 + 5] = { p: 1, c: 0, age: 1 }; st.reserve[1][0] = false
+      st.dir[5 * 7 + 5] = { p: 2, c: 2, age: 2 }; st.reserve[2][2] = false
+      st.score[0][0] = 1; st.score[1][0] = 1
+      st.hands = [[0, 1], [0, 3], [2, 3]]; st.turn = 3; st.mover = 0
+      if (scenario === 'peace') { CC.sign(st, [{ from: 0, to: 1, kind: 'nomerge', left: 3 }, { from: 1, to: 0, kind: 'nomerge', left: 3 }]); st.stats.signed = 0 }
+      cc.log.push(scenario === 'merger'
+        ? 'Lab: your Coal realm holds 3 coal tiles, P2’s holds 2. Square d3 joins them. Drop a Coal tile there.'
+        : 'Lab: the same board, but both sides have signed a no-merge covenant. The joining square is now struck out.')
+    }
+  }
+  function ccEnd() {
+    if (cc.over) return
+    const st = cc.st; cc.over = true
+    const w = CC.winner(st); cc.log.push(w < 0 ? 'Register closed: a tie.' : `Register closed: P${w + 1} holds the senior certificate.`)
+  }
+  async function ccBotsTurn() {
+    if (cc.busy) return; cc.busy = true
+    const st = cc.st, bots = ccBots()
+    while (!st.over && st.mover !== 0) {
+      const s = st.mover; render()
+      await sleep(600)
+      if (!st.hands[s].length) { CC.skip(st); continue }
+      // bots table treaties: ones that name the human wait for an answer, bot↔bot ones sign themselves
+      for (const offer of bots[s].offers(st, s)) {
+        const other = offer.find((c) => c.from !== s).from
+        if (other === 0) { if (!cc.offers.some((o) => o.by === s)) cc.offers.push({ by: s, offer }) }
+        else if (bots[other].accepts(st, other, offer)) { if (CC.sign(st, offer)) cc.log.push(`P${s + 1} & P${other + 1} sign: ${CC.describe(st, offer[0])}; ${CC.describe(st, offer[1])}.`) }
+      }
+      for (const opt of bots[s].buyIns(st, s)) if (CC.buyIn(st, s, opt)) cc.log.push(`P${s + 1} buys into the treaty of P${opt.members[0] + 1} & P${opt.members[1] + 1} for one point.`)
+      const { m, forced } = bots[s].move(st, s, HB.mulberry32(st.turn * 31 + 7))
+      if (!m) { CC.skip(st); continue }
+      ccPlay(s, m, forced)
+    }
+    cc.busy = false
+    if (st.over) ccEnd()
+    cc.offers = cc.offers.filter((o) => o.by !== 0)
+    render()
+  }
+  function ccPlay(s, m, forced) {
+    const st = cc.st
+    const ev = CC.apply(st, s, m, forced)
+    cc.flash = new Set(); cc.unseat = new Set(); cc.fresh = m.x
+    for (const e of ev) {
+      const c = CC.COMM
+      if (e.kind === 'tile') cc.log.push(`P${e.s + 1} lays ${c[e.c]} at ${'abcdefg'[e.x % 7]}${(e.x / 7 | 0) + 1}.`)
+      if (e.kind === 'director') { cc.log.push(`P${e.s + 1} seats a ${c[e.c]} director.`); cc.flash.add(e.cell) }
+      if (e.kind === 'score') cc.log.push(`  ${e.self ? 'P' + (e.owner + 1) + ' banks' : 'P' + (e.owner + 1) + ' is fed'} +1 ${c[e.c]}.`)
+      if (e.kind === 'merger') { cc.log.push(`MERGER (${c[e.k]}): realm of ${e.wn} beats ${e.ln}. P${e.loser + 1}'s director is unseated${e.spoil ? `, P${e.winner + 1} takes +${st.o.spoil}.` : '.'}`); cc.unseat.add(e.lose) }
+      if (e.kind === 'damages') cc.log.push('COVENANT BROKEN under duress: damages paid.')
+      if (e.kind === 'fed') cc.log.push('Feed covenant honoured.')
+      if (e.kind === 'expired') cc.log.push('A covenant expires.')
+      if (e.kind === 'discard') cc.log.push(`P${e.s + 1} discards ${c[e.c]}.`)
+    }
+    if (st.over) ccEnd()
+    return ev
+  }
+  function ccView(st) {
+    const R = CC.regions(st), N = CC.N
+    const cells = []
+    const { moves, blocked, forced } = CC.legalMoves(st, 0)
+    const mine = st.mover === 0 && !st.over && !cc.busy
+    const sel = cc.sel != null ? st.hands[0][cc.sel] : null
+    const dsel = cc.dpick
+    const legal = new Set(), block = new Set(), dcells = new Set()
+    if (mine) {
+      const same = (m) => (dsel ? m.d && m.d.cell === dsel.cell : !m.d)
+      if (cc.dirMode && !dsel) { moves.forEach((m) => m.d && dcells.add(m.d.cell)) }
+      else if (sel != null) {
+        moves.filter((m) => m.c === sel && m.x >= 0 && same(m)).forEach((m) => legal.add(m.x))
+        blocked.filter((m) => m.c === sel && m.x >= 0 && same(m)).forEach((m) => block.add(m.x))
+      }
+    }
+    for (let i = 0; i < 49; i++) {
+      const k = st.tile[i], reg = R.id[i], d = st.dir[i]
+      const cls = ['cell']
+      if (legal.has(i)) cls.push('legal'); if (block.has(i)) cls.push('blocked'); if (dcells.has(i) || (dsel && dsel.cell === i)) cls.push('dpick')
+      const kids = []
+      if (k >= 0) {
+        const nb = (j, ok) => (ok && st.tile[j] >= 0 && R.id[j] === reg)
+        const r = i / N | 0, c = i % N
+        const t = ['tile', 'c' + k]
+        if (!nb(i - N, r > 0)) t.push('eT'); if (!nb(i + N, r < N - 1)) t.push('eB'); if (!nb(i - 1, c > 0)) t.push('eL'); if (!nb(i + 1, c < N - 1)) t.push('eR')
+        if (cc.fresh === i) t.push('fresh')
+        kids.push(h('span', { class: t.join(' ') }, h('span', { class: 'g' }, CGLYPH[k])))
+        if (d) kids.push(h('span', { class: 'dir p' + d.p + (cc.flash.has(i) ? ' flash' : ''), title: `P${d.p + 1} · ${CC.COMM[d.c]} director` }, 'P' + (d.p + 1)))
+      }
+      if (cc.unseat.has(i)) kids.push(h('span', { class: 'unseat', 'aria-hidden': 'true' }, '✕'))
+      const name = `${'abcdefg'[i % 7]}${(i / 7 | 0) + 1}`
+      let title = name
+      if (k >= 0) { const cnt = [0, 0, 0, 0]; R.members[reg].forEach((x) => cnt[st.tile[x]]++); title += ` · realm of ${R.members[reg].length}: ${cnt.map((n, q) => n + ' ' + CC.COMM[q]).join(', ')}` }
+      if (block.has(i)) title += ' · struck out by a covenant'
+      cells.push(h('button', { class: cls.join(' '), 'aria-label': title, title, onclick: () => ccClick(i) }, kids))
+    }
+    return { cells, forced, mine, moves }
+  }
+  function ccClick(i) {
+    const st = cc.st; if (st.over || st.mover !== 0 || cc.busy) return
+    const { moves, blocked, forced } = CC.legalMoves(st, 0)
+    if (cc.dirMode && !cc.dpick) {
+      const m = moves.find((m) => m.d && m.d.cell === i)
+      if (m) { cc.dpick = m.d; render() } else toast('A director sits on a tile of its own colour, in a realm that has none of that colour yet.')
+      return
+    }
+    if (cc.sel == null) return toast('Choose one of your tiles first.')
+    const c = st.hands[0][cc.sel], same = (m) => (cc.dpick ? m.d && m.d.cell === cc.dpick.cell && m.d.c === cc.dpick.c : !m.d)
+    let m = moves.find((m) => m.c === c && m.x === i && same(m))
+    if (!m && blocked.some((b) => b.c === c && b.x === i && same(b))) return toast('A covenant you signed forbids that square. That is the point.')
+    if (!m) return toast(st.tile[i] >= 0 ? 'That square is taken.' : 'Not a legal square for that choice.')
+    ccPlay(0, m, forced); cc.sel = null; cc.dirMode = false; cc.dpick = null
+    ccBotsTurn(); render()
+  }
+  function ccRegister(st) {
+    const rows = [h('tr', {}, h('th', {}, 'Holder'), CC.COMM.map((n, k) => h('th', {}, h('span', { 'aria-hidden': 'true' }, CGLYPH[k] + ' '), n)), h('th', {}, 'Counts'))]
+    for (let s = 0; s < 3; s++) {
+      const weak = st.score[s].map((v, k) => [v, k]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).slice(0, st.o.count).map((x) => x[1])
+      rows.push(h('tr', { class: s === 0 ? 'me' : '' }, h('td', {}, h('span', { class: 'who p' + s }), s === 0 ? 'You' : s === 1 ? 'P2 · greedy' : 'P3 · diplomat'),
+        st.score[s].map((v, k) => h('td', { class: weak.includes(k) ? 'weak' : '' }, v)), h('td', { class: 'tot' }, CC.final(st, s))))
+    }
+    return h('table', { class: 'reg' }, rows)
+  }
+  views.cartel = () => {
+    if (!cc.st) ccNew(null)
+    const root = h('div', { class: 'table t-cartel' }); const wrap = h('div', { class: 'wrap' }); root.append(wrap)
+    cc.render = () => {
+      const st = cc.st, v = ccView(st); clear(wrap)
+      const sel = cc.sel != null ? st.hands[0][cc.sel] : null
+      const status = st.over ? 'The register is closed.' : cc.busy ? 'The other holders are laying their tiles…' : st.mover === 0 ? (cc.dirMode && !cc.dpick ? 'Choose a tile to seat your director on.' : sel == null ? 'Your turn. Pick a tile from your hand.' : 'Choose a square. Green is lawful, hatched is forbidden by your own covenants.') : '…'
+      const myCov = st.cov.filter((c) => c.from === 0 || c.to === 0)
+      wrap.append(
+        h('div', { class: 'cert' }, h('div', { class: 'guil' }), ...['tl', 'tr', 'bl', 'br'].map((p) => rose(p)),
+          h('div', { class: 'head' }, h('div', { class: 'no' }, 'Nº 000417 · SERIES OF 1873 · COMMON & PREFERRED'),
+            h('h2', {}, 'Cartographers’ Pacific & Western Railway'), h('div', { class: 'sub' }, 'This certifies that the holder is entitled to such shares of the realms below as his directors can defend.'), h('div', { class: 'rule' })),
+          cc.over && h('div', { class: 'stamp' }, CC.winner(st) === 0 ? 'Paid in full' : CC.winner(st) < 0 ? 'Deferred' : 'Cancelled'),
+          h('div', { class: 'layout' },
+            h('div', { class: 'board-wrap' }, h('div', { class: 'board', role: 'grid', 'aria-label': 'Seven by seven map' }, v.cells),
+              h('div', { class: 'scn' }, h('button', { class: 'btn', onclick: () => { ccNew(null); render() } }, 'New map'),
+                h('button', { class: 'btn' + (cc.scenario === 'merger' ? ' on' : ''), onclick: () => { ccNew('lab', 'merger'); render() } }, 'Lab · hostile merger'),
+                h('button', { class: 'btn' + (cc.scenario === 'peace' ? ' on' : ''), onclick: () => { ccNew('lab', 'peace'); render() } }, 'Lab · same board, with a covenant')),
+              h('p', { class: 'hint' }, status)),
+            h('div', { class: 'side' },
+              h('section', { class: 'panel' }, h('h3', {}, 'Share register'), ccRegister(st), h('p', { class: 'hint' }, 'Your ', h('b', {}, st.o.count === 3 ? 'three weakest' : 'two weakest'), ' colours count (shaded): you drop only your best. A director scores for its owner whenever ', h('b', {}, 'anyone'), ' lays its colour in the realm.')),
+              h('section', { class: 'panel' }, h('h3', {}, 'Your hand'),
+                h('div', { class: 'hand' }, st.hands[0].map((c, i) => h('button', { class: 'tilebtn c' + c, 'aria-pressed': String(cc.sel === i), 'aria-label': CC.COMM[c] + ' tile', title: CC.COMM[c], disabled: !v.mine, onclick: () => { cc.sel = cc.sel === i ? null : i; render() } }, CGLYPH[c])),
+                  h('span', { class: 'hint' }, `bag ${st.bag.length}`)),
+                h('div', { class: 'row' },
+                  h('button', { class: 'btn' + (cc.dirMode ? ' on' : ''), disabled: !v.mine, onclick: () => { cc.dirMode = !cc.dirMode; cc.dpick = null; render() } }, cc.dpick ? 'Director chosen ✓' : cc.dirMode ? 'Cancel director' : 'Seat a director'),
+                  h('button', { class: 'btn', disabled: !v.mine || cc.sel == null, onclick: () => { const c = st.hands[0][cc.sel]; ccPlay(0, { d: null, h: cc.sel, c, x: -1 }, false); cc.sel = null; ccBotsTurn(); render() } }, 'Discard')),
+                v.forced && h('p', { class: 'hint' }, h('b', {}, 'Deadlock. '), 'Every move breaks a covenant, so the engine lets you through and pays damages.'),
+                h('p', { class: 'hint' }, 'Directors: ', [0, 1, 2, 3].map((k) => h('span', { style: { opacity: st.reserve[0][k] ? 1 : .3, marginRight: '6px' } }, CGLYPH[k] + ' ' + CC.COMM[k][0])))),
+              ccCovenants(st),
+              h('section', { class: 'panel' }, h('h3', {}, 'Ledger tape'), h('div', { class: 'tape', role: 'log' }, cc.log.slice(-40).reverse().map((l) => h('div', { class: /MERGER|BROKEN/.test(l) ? 'war' : '' }, l)))))),
+          h('div', { class: 'lessons' },
+            h('div', { class: 'less' }, h('b', {}, 'Carcassonne'), 'One shared map. Tiles that touch form a realm, and a lone tile founds a new one.'),
+            h('div', { class: 'less' }, h('b', {}, 'Tigris & Euphrates'), 'A tile that joins two realms holding the same colour of director starts a war. The bigger stock of that colour wins; the loser is unseated and the winner takes +2.'),
+            h('div', { class: 'less' }, h('b', {}, 'Sidereal Confluence'), 'A covenant is a signed promise the engine enforces. Break it? You cannot. The hatched squares are the promise. A third seat can buy into a treaty between two others for one point.'))))
+    }
+    function render() { cc.render() }
+    render()
+    if (cc.st.mover !== 0 && !cc.busy && !cc.st.over) ccBotsTurn()
+    return root
+  }
+  function render() { cc.render && cc.render() }
+  function rose(pos) {
+    const s = sv('svg', { class: 'rose ' + pos, viewBox: '-50 -50 100 100', 'aria-hidden': 'true' })
+    for (let i = 0; i < 12; i++) s.append(sv('ellipse', { rx: 40, ry: 9, fill: 'none', stroke: 'currentColor', 'stroke-width': .8, transform: `rotate(${i * 15})` }))
+    for (const r of [44, 30, 18]) s.append(sv('circle', { r, fill: 'none', stroke: 'currentColor', 'stroke-width': .9, 'stroke-dasharray': r === 44 ? '1 2.2' : null }))
+    return s
+  }
+  function ccCovenants(st) {
+    const d = cc.draft
+    const wrap = h('section', { class: 'panel' }, h('h3', {}, 'Covenants'))
+    for (const o of cc.offers) {
+      wrap.append(h('div', { class: 'cov' }, h('span', {}, `P${o.by + 1} proposes: ${CC.describe(st, o.offer[0])}; and ${CC.describe(st, o.offer[1])}.`),
+        h('span', {}, h('button', { class: 'btn seal', onclick: () => { if (CC.sign(st, o.offer)) { cc.log.push('You sign: ' + CC.describe(st, o.offer[0]) + '.'); toast('Signed. It cannot be unsigned.') } else toast('Cap reached: two covenants per promiser.'); cc.offers = cc.offers.filter((x) => x !== o); render() } }, 'Sign'), ' ',
+          h('button', { class: 'btn', onclick: () => { cc.offers = cc.offers.filter((x) => x !== o); render() } }, 'Decline'))))
+    }
+    if (!st.cov.length && !cc.offers.length) wrap.append(h('p', { class: 'hint' }, 'None in force.'))
+    st.cov.forEach((cv) => wrap.append(h('div', { class: 'cov' }, h('span', {}, CC.describe(st, cv)), h('i', {}, cv.left + (cv.left === 1 ? ' turn' : ' turns') + ' left'))))
+    // a treaty between two OTHER seats can be joined for one point: you promise each of them what they promised each other
+    const buy = st.mover === 0 && !st.over && !cc.busy ? CC.buyInOptions(st, 0) : []
+    for (const opt of buy) {
+      const kind = { nomerge: 'no-merge', embargo: 'embargo' }[opt.kind]
+      wrap.append(h('div', { class: 'cov buyin' }, h('span', {}, `P${opt.members[0] + 1} and P${opt.members[1] + 1} hold a ${kind} treaty for ${opt.left} more turn${opt.left === 1 ? '' : 's'}. Join it: they keep their word to you, you keep yours to them.`),
+        h('span', {}, h('button', { class: 'btn seal', onclick: () => { if (CC.buyIn(st, 0, opt)) { cc.log.push(`You buy into the treaty of P${opt.members[0] + 1} & P${opt.members[1] + 1} for one point.`); toast('Bought in. One point paid from your weakest colour.') } else toast('You cannot buy in now.'); render() } }, 'Buy in · 1 point'))))
+    }
+    if (!buy.length && st.cov.some((c) => c.from !== 0 && c.to !== 0) && st.o.buyIn) wrap.append(h('p', { class: 'hint' }, 'Treaty between the others: you can buy in for one point once you hold a point and both of them have room for another covenant.'))
+    const sel = (opts, val, on) => h('select', { onchange: (e) => on(e.target.value) }, opts.map(([v, l]) => h('option', { value: v, selected: String(v) === String(val) }, l)))
+    wrap.append(h('div', { class: 'row' },
+      sel([['nomerge', 'will not merge'], ['embargo', 'will not build beside'], ['feed', 'will feed']], d.kind, (v) => { d.kind = v; render() }),
+      sel([[1, 'P2'], [2, 'P3']], d.to, (v) => { d.to = +v; render() }),
+      d.kind === 'feed' && sel(CC.COMM.map((n, i) => [i, n]), d.c, (v) => { d.c = +v }),
+      sel([[1, '1 turn'], [2, '2 turns'], [3, '3 turns']], d.left, (v) => { d.left = +v })))
+    wrap.append(h('div', { class: 'row' }, h('button', { class: 'btn', disabled: cc.busy || st.mover !== 0 || st.over, onclick: () => ccPropose() }, 'Propose mutual treaty')))
+    wrap.append(h('p', { class: 'hint' }, 'A treaty binds both sides the same way. Only the diplomat (P3) will sign; the greedy bot never does.'))
+    return wrap
+  }
+  function ccPropose() {
+    const st = cc.st, d = cc.draft, bots = ccBots()
+    const offer = [{ from: 0, to: d.to, kind: d.kind, c: d.c, left: d.left }, { from: d.to, to: 0, kind: d.kind === 'feed' ? 'nomerge' : d.kind, c: d.c, left: d.left }]
+    if (!CC.canSign(st, offer[0])) return toast('You already carry two covenants.')
+    if (bots[d.to].accepts(st, d.to, offer)) { CC.sign(st, offer); cc.log.push('Treaty signed with P' + (d.to + 1) + ': ' + CC.describe(st, offer[0]) + '; ' + CC.describe(st, offer[1]) + '.'); toast('P' + (d.to + 1) + ' signs.') }
+    else toast(d.to === 1 ? 'P2 (greedy) never signs anything.' : 'P3 sees no conflict worth a treaty and declines.')
+    render()
+  }
+
+  /* ═══════════════════════ 2. SHADOW BIDDING ═══════════════════════ */
+  const sb = { st: null, bot: 'economist', mode: 'ledger', from: null, to: null, bid: 0, log: [], last: null, lab: null, seed: 1, matchId: null, busy: false, scenario: null, auction: null, audit: null }
+  const sqn = (i) => 'abcde'[i % 5] + (5 - ((i / 5) | 0))
+  function sbNew(scenario) {
+    sb.st = SB.newGame({ mode: sb.mode }); sb.from = sb.to = null; sb.bid = 0; sb.log = []; sb.last = null; sb.lab = null; sb.auction = null; sb.audit = null; sb.scenario = scenario || null
+    sb.matchId = rnd16().slice(0, 4); sb.seed = (Math.random() * 1e9) | 0
+    if (scenario === 'duel') {
+      const b = Array(25).fill(null)
+      b[24] = 'K'; b[2] = 'Q'; b[0] = 'k'; b[20] = 'r'; b[12] = 'P'; b[7] = 'p'
+      sb.st.b = b
+      sb.log.push({ n: '', text: 'Sudden death. Your queen on c5 attacks their king on a5, and their rook on a1 attacks your king on e1. Whoever strikes first wins. The bid is the only argument.' })
+    }
+  }
+  const isCap = (st, m) => !!st.b[m.t]
+  function sbMyMoves() { return SB.movesFor(sb.st.b, 0) }
+  views.shadow = () => {
+    if (!sb.st) sbNew()
+    const root = h('div', { class: 'table t-bid' }), wrap = h('div', { class: 'wrap' }); root.append(wrap)
+    sb.render = () => {
+      clear(wrap); const st = sb.st
+      const moves = sbMyMoves(), targets = sb.from != null ? moves.filter((m) => m.f === sb.from) : []
+      const board = h('div', { class: 'board', role: 'grid', 'aria-label': 'Five by five board' })
+      for (let r = 0; r < 5; r++) {
+        board.append(h('div', { class: 'coord' }, 5 - r))
+        for (let c = 0; c < 5; c++) {
+          const i = r * 5 + c, pc = st.b[i]; const cls = ['sq']; if ((r + c) % 2) cls.push('dk')
+          const t = targets.find((m) => m.t === i)
+          if (sb.from === i) cls.push('sel'); if (t) cls.push('tgt'); if (t && pc) cls.push('cap')
+          if (sb.to === i && sb.from != null) cls.push('chosen')
+          if (sb.last && (sb.last.includes(i))) cls.push('last')
+          board.append(h('button', { class: cls.join(' '), 'aria-label': sqn(i) + (pc ? ' ' + pc : ''), onclick: () => sbClick(i, moves) }, pc && h('span', { class: 'pc ' + (pc === pc.toUpperCase() ? 'w' : 'b') }, SB.GLYPH[pc])))
+        }
+      }
+      board.append(h('div', { class: 'coord' }), ...'abcde'.split('').map((f) => h('div', { class: 'coord' }, f)))
+      const me = st.tr[0], foe = st.tr[1], maxBid = Math.min(me, 15)
+      const bot = SB.bots[sb.bot]
+      wrap.append(h('div', { class: 'folio' },
+        st.over && h('div', { class: 'over' }, st.over.winner === 0 ? 'Settled in your favour' : st.over.winner === 1 ? 'The house takes the table' : 'Books balanced · no decision'),
+        h('h2', {}, 'Shadow Bidding'), h('p', { class: 'sub' }, 'Libro Mastro of the Counting-House · every turn, one sealed move and one sealed sum'),
+        h('div', { class: 'layout' },
+          h('div', {}, board,
+            h('div', { class: 'scn', style: { marginLeft: 0 } },
+              h('button', { class: 'tbtn', onclick: () => { sbNew(); sb.render() } }, 'New game'),
+              h('button', { class: 'tbtn' + (sb.scenario === 'duel' ? ' on' : ''), onclick: () => { sbNew('duel'); sb.render() } }, 'Sudden death'),
+              h('button', { class: 'tbtn desk-open', onclick: () => sb.deskOpen() }, '✉ Paste / inspect a sealed link'),
+              h('span', { class: 'sub', style: { margin: 0 } }, 'Opponent:'),
+              ['greedy', 'economist', 'allin'].map((k) => h('button', { class: 'tbtn' + (sb.bot === k ? ' on' : ''), onclick: () => { sb.bot = k; sb.render() } }, SB.bots[k].name)),
+              h('span', { class: 'sub', style: { margin: 0 } }, 'Bids go to:'),
+              [['ledger', 'rival’s purse'], ['pot', 'centre pot']].map(([k, l]) => h('button', { class: 'tbtn' + (sb.mode === k ? ' on' : ''), onclick: () => { sb.mode = k; sbNew(sb.scenario); sb.render() } }, l)))),
+          h('div', { class: 'col' },
+            h('div', {}, h('div', { class: 'lh' }, h('span', {}, 'Conto · treasuries'), h('span', {}, `turn ${st.turn + 1}`)),
+              h('div', { class: 'acct' },
+                h('div', {}, h('span', { class: 'hd' }, 'Avere · you (white)'), h('span', { class: 'big' }, me), purse(me, st.o.cap)),
+                h('div', {}, h('span', { class: 'hd' }, `Dare · ${bot.name} (black)`), h('span', { class: 'big' }, foe), purse(foe, st.o.cap))),
+              st.o.mode === 'pot' && h('p', { class: 'verdict' }, `Centre pot: ${st.pot} ducats, to whoever next captures.`)),
+            sb.auction ? auctionView(sb.auction) : null,
+            sb.audit ? auditView(sb.audit) : null,
+            !st.over && h('div', { class: 'order' },
+              h('div', { class: 'lh' }, h('span', {}, 'Your sealed order'), h('span', {}, `vault limit ${st.o.cap}`)),
+              h('div', { class: 'line' }, 'Move: ', h('b', {}, sb.from != null && sb.to != null ? `${st.b[sb.from] ? SB.GLYPH[st.b[sb.from]] : ''} ${sqn(sb.from)} → ${sqn(sb.to)}` : sb.from != null ? `${sqn(sb.from)} → pick a square` : 'pick a piece, then a square')),
+              h('div', { class: 'line' }, 'Bid: ', h('span', { class: 'step' }, h('button', { 'aria-label': 'lower bid', disabled: sb.bid <= 0, onclick: () => { sb.bid--; sb.render() } }, '−'), h('output', {}, sb.bid), h('button', { 'aria-label': 'raise bid', disabled: sb.bid >= maxBid, onclick: () => { sb.bid++; sb.render() } }, '+')), h('span', { class: 'sub', style: { margin: 0, fontSize: '13px' } }, st.o.mode === 'ledger' ? 'paid to your rival if you move first' : 'paid to the pot if you move first')),
+              h('button', { class: 'wax', disabled: sb.busy || sb.to == null, onclick: () => sbSeal(false) }, 'Seal & reveal together'),
+              h('div', { class: 'line' }, h('button', { class: 'tbtn', disabled: sb.busy, onclick: () => sbSeal(true) }, 'Pass the turn instead'))),
+            h('div', {}, h('div', { class: 'lh' }, h('span', {}, 'Giornale · journal'), h('span', {}, 'move · dare · avere')),
+              h('div', { class: 'entries', role: 'log' }, sb.log.slice().reverse().map((e) => e.n === '' ? h('div', { class: 'entry' }, h('span', { class: 'n' }, '·'), h('span', { style: { gridColumn: '2 / 5' } }, e.text)) : h('div', { class: 'entry' }, h('span', { class: 'n' }, e.n), h('span', { class: e.fz ? 'fz' : '' }, e.text), h('span', { class: 'd' }, e.d || ''), h('span', { class: 'a' }, e.a || ''))))),
+            linkLab())),
+        h('div', { class: 'lessons' },
+          h('div', {}, h('b', {}, 'Chess'), 'Nothing is random. Two moves are chosen from the same position, so the second often no longer exists. A fizzled move is information, not bad luck.'),
+          h('div', {}, h('b', {}, 'Modern Art'), 'The bid is a closed fist: you only learn what your rival paid after you paid yours. Coins are public; intent is not.'),
+          h('div', {}, h('b', {}, 'Diplomacy'), 'Both orders are written before either is read, then resolved in a fixed order. The link protocol in this folio is what makes “before” checkable without a referee.'))))
+    }
+    sb.dlg = deskDialog(); root.append(sb.dlg)
+    sb.render()
+    return root
+  }
+  function purse(n, cap) { return h('div', { class: 'stack', 'aria-hidden': 'true' }, Array.from({ length: cap }, (_, i) => h('span', { class: 'duc' + (i < n ? '' : ' ghost') }))) }
+  function auctionView(a) {
+    return h('div', {}, h('div', { class: 'lh' }, h('span', {}, 'Asta · the opening of seals'), h('span', {}, a.tie ? 'tie → coin' : '')),
+      h('div', { class: 'auction' }, h('div', { class: 'who' }, h('div', { class: 'seal broken' }, a.bids[0]), 'you'), h('div', { class: 'vs' }, 'vs'), h('div', { class: 'who' }, h('div', { class: 'seal broken' }, a.bids[1]), SB.bots[sb.bot].name)),
+      h('p', { class: 'verdict' }, a.text))
+  }
+  function sbClick(i, moves) {
+    const st = sb.st; if (st.over || sb.busy) return
+    const pc = st.b[i]
+    if (sb.from != null && moves.some((m) => m.f === sb.from && m.t === i)) { sb.to = i; sb.render(); return }
+    if (pc && pc === pc.toUpperCase()) { sb.from = sb.from === i ? null : i; sb.to = null; sb.render() } else if (sb.from != null) toast('That piece cannot move there.')
+  }
+  const hx = (u8) => HB.hex(u8)
+  async function sbSeal(pass) {
+    const st = sb.st; if (st.over || sb.busy) return; sb.busy = true
+    const mine = pass ? null : { f: sb.from, t: sb.to, bid: Math.min(sb.bid, st.tr[0]) }
+    const rng = HB.mulberry32(sb.seed + st.turn * 977)
+    const theirs = SB.bots[sb.bot].choose(st, 1, rng)
+    if (theirs) theirs.bid = Math.min(theirs.bid, st.tr[1])
+    const order = [mine || { f: -1, t: -1, bid: 0 }, theirs || { f: -1, t: -1, bid: 0 }]
+    // who seals this turn alternates; the opener's order is plain, the sealer's is hashed
+    const turnNo = st.turn, sealer = turnNo % 2, nonce = rnd16()
+    const commit = SB.commitOf(sb.matchId, turnNo, sealer, order[sealer], nonce)
+    const coin = SB.coinOf(commit, order[1 - sealer], nonce)
+    const hist = st.hist.slice()
+    const links = {
+      seal: HB.b64u(SB.encodeLink({ matchId: sb.matchId, mode: st.o.mode, start: st.o.start, cap: st.o.cap, hist, pending: { kind: 'sealed', side: sealer, commit } })),
+      open: HB.b64u(SB.encodeLink({ matchId: sb.matchId, mode: st.o.mode, start: st.o.start, cap: st.o.cap, hist, pending: { kind: 'opened', side: sealer, commit, order: order[1 - sealer] } })),
+    }
+    const preBoard = st.b.slice(), pre = SB.clone(st)
+    sb.auction = null; sb.render(); await sleep(150)
+    const ev = SB.resolve(st, order, coin)
+    links.reveal = HB.b64u(SB.encodeLink({ matchId: sb.matchId, mode: st.o.mode, start: st.o.start, cap: st.o.cap, hist: st.hist.slice(0, -1), pending: { kind: 'reveal', side: sealer, commit, order: order[sealer], nonce } }))
+    sb.lab = { turn: turnNo, sealer, commit, nonce, sealerOrder: order[sealer], opener: order[1 - sealer], links, ok: true, tampered: false, matchId: sb.matchId }
+    const a = ev[0]; const first = a.first
+    const pieces = []
+    const lines = []
+    ev.slice(1).forEach((e) => {
+      const who = e.s === 0 ? 'You' : SB.bots[sb.bot].name
+      if (e.kind === 'move') { lines.push({ n: '', text: `${who}: ${SB.GLYPH[e.piece]} ${sqn(e.m.f)}${e.cap ? '×' : '–'}${sqn(e.m.t)}${e.promo ? '=Q' : ''}` }); pieces.push(e.m.f, e.m.t) }
+      if (e.kind === 'fizzle') lines.push({ n: '', fz: true, text: `${who}: ${sqn(e.m.f)}→${sqn(e.m.t)} fizzled, no longer possible` })
+      if (e.kind === 'pot') lines.push({ n: '', text: `${who} takes the pot, ${e.amt}` })
+    })
+    lines.reverse().forEach((l) => sb.log.push(l)) // the journal is shown newest-first, so push in reverse
+    sb.log.push({ n: turnNo + 1, text: `bids ${a.bids[0]}–${a.bids[1]}${a.tie ? ' (coin)' : ''}`, d: '', a: '' })
+    sb.last = pieces
+    sb.audit = SB.analyseTurn(pre, order, 0) // a 1-ply payoff matrix solved by fictitious play: was the bid a read or a leak?
+    const mover = first === 0 ? 'You' : SB.bots[sb.bot].name
+    const fz = ev.filter((e) => e.kind === 'fizzle')
+    sb.auction = { bids: a.bids, tie: a.tie, text: `${mover} move${first === 0 ? '' : 's'} first${a.pay ? `, paying ${a.pay}${st.o.mode === 'ledger' ? ' to the rival' : ' into the pot'}` : ''}.${fz.length ? ` ${fz[0].s === 0 ? 'Your' : 'Their'} move fizzled: the board had already changed.` : ''}` }
+    sb.from = sb.to = null; sb.bid = 0; sb.busy = false
+    sb.render()
+  }
+  function linkLab() {
+    const L = sb.lab
+    const box = h('div', { class: 'lab' }, h('div', { class: 'lh' }, h('span', {}, 'Link protocol'), h('span', {}, L ? `this turn · ${L.turn + 1}` : '')))
+    if (!L) { box.append(h('p', {}, 'Seal an order and this panel shows the three links that would carry it between two people with no server: ', h('i', {}, 'sealed'), ', ', h('i', {}, 'opened'), ', ', h('i', {}, 'revealed'), '.')); return box }
+    const sName = L.sealer === 0 ? 'you' : SB.bots[sb.bot].name, oName = L.sealer === 0 ? SB.bots[sb.bot].name : 'you'
+    const rev = L.tampered ? { ...L.sealerOrder, bid: (L.sealerOrder.bid + 1) & 15 } : L.sealerOrder
+    const recomputed = SB.commitOf(L.matchId, L.turn, L.sealer, rev, L.nonce)
+    const ok = HB.ctEqual(recomputed, L.commit)
+    const short = (s) => (s.length > 70 ? s.slice(0, 54) + '…' + s.slice(-10) : s)
+    box.append(
+      h('p', {}, h('span', { class: 'k' }, '1 · sealed by ' + sName), ` ${L.links.seal.length} chars. Carries only a hash:`, ' ', h('button', { class: 'tbtn mini', onclick: () => sb.deskOpen(L.links.seal) }, 'read in the desk')), h('code', {}, hx(L.commit)),
+      h('p', {}, h('span', { class: 'k' }, '2 · opened by ' + oName), ` ${L.links.open.length} chars. Their order is plain: ${L.opener.f < 0 ? 'pass' : sqn(L.opener.f) + '→' + sqn(L.opener.t)}, bid ${L.opener.bid}.`, ' ', h('button', { class: 'tbtn mini', onclick: () => sb.deskOpen(L.links.open) }, 'read in the desk')),
+      h('p', {}, h('span', { class: 'k' }, '3 · revealed by ' + sName), ` ${L.links.reveal.length} chars. Adds the nonce:`, ' ', h('button', { class: 'tbtn mini', onclick: () => sb.deskOpen(L.links.reveal) }, 'read in the desk')), h('code', {}, short(hx(L.nonce)) + ' → ' + short(L.links.reveal)),
+      h('p', {}, h('span', { class: 'k' }, 'Check: '), `hash(match, turn, side, order${L.tampered ? ' with bid +1' : ''}, nonce) `, ok ? h('span', { class: 'good' }, '= the sealed hash ✓') : h('span', { class: 'bad' }, '≠ the sealed hash. SEAL BROKEN ✗')),
+      h('div', { class: 'line' }, h('button', { class: 'tbtn', onclick: () => { L.tampered = !L.tampered; sb.render() } }, L.tampered ? 'Restore the bid' : 'Try to change the bid after sealing')))
+    return box
+  }
+
+
+  /* ───────── audit: was the bid a sharp read or a leak? ───────── */
+  function auditView(an, title) {
+    const rows = []
+    an.eq.mix.forEach((p, k) => { if (p >= 0.01) rows.push(h('div', { class: 'mixrow' + (k === an.mine ? ' mine' : '') }, h('span', { class: 'k' }, k), h('span', { class: 'bar' }, h('i', { style: { width: Math.max(2, p * 100) + '%' } })), h('span', { class: 'p' }, Math.round(p * 100) + '%'), k === an.mine ? h('span', { class: 'you' }, '◂ your bid') : null)) })
+    const out = !(an.eq.mix[an.mine] >= 0.01)
+    return h('div', { class: 'audit ' + an.verdict },
+      h('div', { class: 'lh' }, h('span', {}, title || 'Audit · fictitious play'), h('span', {}, an.verdict)),
+      h('p', { class: 'verdict' }, SB.explainTurn(an)),
+      h('div', { class: 'mix', role: 'img', 'aria-label': 'Equilibrium bid mix: ' + an.eq.mix.map((p, k) => k + ' coins ' + Math.round(p * 100) + '%').filter((x, k) => an.eq.mix[k] >= 0.01).join(', ') },
+        h('div', { class: 'mixhead' }, 'equilibrium bid (coins) · share of the time'), rows, out && h('div', { class: 'mixrow mine' }, h('span', { class: 'k' }, an.mine), h('span', { class: 'bar' }), h('span', { class: 'p' }, '0%'), h('span', { class: 'you' }, '◂ your bid, outside the mix'))),
+      h('p', { class: 'fine' }, `Solved on a ${an.size[0]}×${an.size[1]} matrix of every move-and-bid pair, 1,500 rounds of fictitious play (the Sealed Orders technique). One coin is counted as ${an.coinValue} material: an assumption, not a measurement.`))
+  }
+
+  /* ───────── the sealed-link desk: paste a link, do the one thing it is waiting for ───────── */
+  const SECRETS = 'hb-sb1-secrets'
+  const vault = {
+    mem: {},
+    get(k) { try { const o = JSON.parse(localStorage.getItem(SECRETS) || '{}'); if (o[k]) return o[k] } catch (e) { /* storage may be blocked */ } return this.mem[k] },
+    set(k, v) { this.mem[k] = v; try { const o = JSON.parse(localStorage.getItem(SECRETS) || '{}'); o[k] = v; localStorage.setItem(SECRETS, JSON.stringify(o)) } catch (e) { /* kept in memory only */ } },
+  }
+  const dk = { text: '', link: null, role: null, err: '', pick: { from: null, to: null, bid: 0, pass: false }, out: null, done: null, openerText: '', openerOrder: null, body: null }
+  const baseUrl = () => location.href.split('#')[0]
+  const SIDE = ['White', 'Black']
+  const ROLE_TEXT = {
+    seal: 'Seal an order. You write a move and a bid, and send only a hash of them.',
+    respond: 'Answer in plain. The other side has sealed. You write your move and bid openly, and send them back.',
+    reveal: 'Reveal. They have answered. Open your seal by sending the order and the nonce you kept.',
+    verify: 'Verify. They opened their seal. Check the hash, then the turn plays.',
+    over: 'This match is over.',
+  }
+  function dkReset(keepText) { dk.link = null; dk.role = null; dk.err = ''; dk.out = null; dk.done = null; dk.openerText = ''; dk.openerOrder = null; dk.pick = { from: null, to: null, bid: 0, pass: false }; if (!keepText) dk.text = '' }
+  function dkRead(text) {
+    dkReset(true)
+    try { dk.link = SB.parseLink(text); dk.role = SB.deskRole(dk.link) } catch (e) { dk.err = e.message; dk.link = null }
+  }
+  function deskDialog() {
+    const dlg = h('dialog', { class: 'desk', 'aria-labelledby': 'desk-title' })
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close() })
+    dk.body = h('div', { class: 'deskbody' }); dlg.append(dk.body)
+    sb.deskOpen = (text) => {
+      if (text != null) { dk.text = text; dkRead(text) }
+      deskRender()
+      if (!dlg.open) { try { dlg.showModal() } catch (e) { dlg.setAttribute('open', '') } }
+    }
+    sb.deskClose = () => { try { dlg.close() } catch (e) { dlg.removeAttribute('open') } }
+    return dlg
+  }
+  function miniBoard(b, side, pick, onSquare) {
+    const order = [0, 1, 2, 3, 4]; if (side === 1) order.reverse()
+    const targets = pick && pick.from != null ? SB.movesFor(b, side).filter((m) => m.f === pick.from).map((m) => m.t) : []
+    const el = h('div', { class: 'mboard', role: onSquare ? 'grid' : 'img', 'aria-label': 'Board seen from ' + SIDE[side] })
+    for (const r of order) for (const c of order) {
+      const i = r * 5 + c, pc = b[i], cls = ['msq']
+      if ((r + c) % 2) cls.push('dk')
+      if (pick && pick.from === i) cls.push('sel'); if (pick && pick.to === i) cls.push('chosen'); if (targets.includes(i)) cls.push('tgt')
+      el.append(h(onSquare ? 'button' : 'div', { class: cls.join(' '), 'aria-label': sqn(i) + (pc ? ' ' + pc : ''), onclick: onSquare ? () => onSquare(i) : null }, pc && h('span', { class: 'pc ' + (pc === pc.toUpperCase() ? 'w' : 'b') }, SB.GLYPH[pc])))
+    }
+    return el
+  }
+  function orderPicker(st, side) {
+    const pk = dk.pick, max = Math.min(15, st.tr[side]), moves = SB.movesFor(st.b, side)
+    pk.bid = Math.min(pk.bid, max)
+    const click = (i) => {
+      const pc = st.b[i], mine = pc && (pc === pc.toUpperCase()) === (side === 0)
+      if (pk.from != null && moves.some((m) => m.f === pk.from && m.t === i)) { pk.to = i; pk.pass = false } else if (mine) { pk.from = pk.from === i ? null : i; pk.to = null } else toast('Pick one of your pieces, then a square it can reach.')
+      deskRender()
+    }
+    return {
+      ready: pk.pass || pk.to != null,
+      el: h('div', { class: 'picker' },
+        miniBoard(st.b, side, pk.pass ? null : pk, click),
+        h('div', { class: 'pickside' },
+          h('div', { class: 'line' }, 'Move: ', h('b', {}, pk.pass ? 'pass' : pk.from != null && pk.to != null ? `${SB.GLYPH[st.b[pk.from]]} ${sqn(pk.from)} → ${sqn(pk.to)}` : pk.from != null ? `${sqn(pk.from)} → pick a square` : 'pick a piece')),
+          h('div', { class: 'line' }, 'Bid: ', h('span', { class: 'step' }, h('button', { 'aria-label': 'lower bid', disabled: pk.bid <= 0, onclick: () => { pk.bid--; deskRender() } }, '−'), h('output', {}, pk.bid), h('button', { 'aria-label': 'raise bid', disabled: pk.bid >= max, onclick: () => { pk.bid++; deskRender() } }, '+')), h('span', { class: 'sub' }, `purse ${st.tr[side]} · only the first mover pays`)),
+          h('label', { class: 'line passbox' }, h('input', { type: 'checkbox', checked: pk.pass, onchange: (e) => { pk.pass = e.target.checked; deskRender() } }), ' pass instead of moving'))),
+      order: () => (pk.pass ? { f: -1, t: -1, bid: pk.bid } : { f: pk.from, t: pk.to, bid: pk.bid }),
+    }
+  }
+  function linkBox(out) {
+    const inp = h('input', { class: 'linkout', readonly: true, value: out.text, 'aria-label': out.label, onfocus: (e) => e.target.select() })
+    return h('div', { class: 'outbox' }, h('div', { class: 'lh' }, h('span', {}, out.label), h('span', {}, out.text.length + ' chars')), inp,
+      h('div', { class: 'row' }, h('button', { class: 'tbtn', onclick: async () => { try { await navigator.clipboard.writeText(out.text); toast('Copied. Send it to ' + out.to + '.') } catch (e) { inp.focus(); inp.select(); toast('Select and copy the link.') } } }, 'Copy link'),
+        h('span', { class: 'sub' }, out.tip)))
+  }
+  function turnResult(res, side) {
+    const a = res.ev[0], who = (s) => (s === side ? 'You' : SIDE[s])
+    const lines = [h('p', {}, h('b', {}, 'Auction: '), `bids ${a.bids[0]}–${a.bids[1]}${a.tie ? ` (tie, the coin chose ${SIDE[a.first]})` : ''}. ${SIDE[a.first]} moves first${a.pay ? `, paying ${a.pay}` : ''}.`)]
+    res.ev.slice(1).forEach((e) => {
+      if (e.kind === 'move') lines.push(h('p', { class: 'ev' }, `${who(e.s)}: ${SB.GLYPH[e.piece]} ${sqn(e.m.f)}${e.cap ? '×' : '–'}${sqn(e.m.t)}${e.promo ? '=Q' : ''}`))
+      if (e.kind === 'fizzle') lines.push(h('p', { class: 'ev fz' }, `${who(e.s)}: ${sqn(e.m.f)}→${sqn(e.m.t)} fizzled, the board had already changed`))
+      if (e.kind === 'pass') lines.push(h('p', { class: 'ev' }, `${who(e.s)}: passed`))
+      if (e.kind === 'pot') lines.push(h('p', { class: 'ev' }, `${who(e.s)} take${e.s === side ? '' : 's'} the pot, ${e.amt}`))
+    })
+    if (res.st.over) lines.push(h('p', { class: 'ev', style: { color: 'var(--wax)', fontWeight: 700 } }, res.st.over.winner < 0 ? 'Drawn.' : `${SIDE[res.st.over.winner]} takes the match (${res.st.over.reason}).`))
+    return h('div', { class: 'result' }, h('div', { class: 'lh' }, h('span', {}, 'Turn ' + (res.pre.turn + 1) + ' resolved'), h('span', {}, 'purses ' + res.st.tr.join(' · '))),
+      h('div', { class: 'resrow' }, miniBoard(res.st.b, side, null, null), h('div', {}, lines)),
+      auditView(SB.analyseTurn(res.pre, res.orders, side), 'Audit · this turn, for ' + SIDE[side]))
+  }
+  function deskRender() {
+    const body = dk.body; clear(body)
+    const L = dk.link, R = dk.role
+    const ta = h('textarea', { rows: 3, placeholder: 'Paste a link here: the whole address, the part after #sb1/, or just the code', 'aria-label': 'Sealed link', spellcheck: 'false', oninput: (e) => { dk.text = e.target.value } }, dk.text)
+    add(body, [
+      h('div', { class: 'deskhead' }, h('h3', { id: 'desk-title' }, 'Sealed-link desk'), h('button', { class: 'tbtn', 'aria-label': 'Close', onclick: () => sb.deskClose() }, '✕')),
+      h('p', { class: 'sub' }, 'Three links settle a turn, with no server between you: ', h('b', {}, '1 sealed'), ' (a hash of a move and a bid) → ', h('b', {}, '2 answered'), ' (the other side plays in plain) → ', h('b', {}, '3 revealed'), ' (the seal opens, the hash is checked, the turn plays). Paste whichever link you were sent and the desk does the next step.'),
+      ta,
+      h('div', { class: 'row' },
+        h('button', { class: 'wax small', onclick: () => { dkRead(ta.value); dk.text = ta.value; deskRender() } }, 'Inspect link'),
+        h('button', { class: 'tbtn', onclick: () => { dkReset(false); const l = SB.deskBegin(rnd16().slice(0, 4), { mode: sb.mode }); dk.link = l; dk.role = SB.deskRole(l); deskRender() } }, 'Start a new match as White'),
+        h('button', { class: 'tbtn', onclick: () => { dkReset(false); deskRender() } }, 'Clear')),
+      dk.err && h('p', { class: 'deskerr', role: 'alert' }, dk.err),
+    ])
+    if (!L) return
+    const st = R.st, mySide = R.side, p = L.pending
+    const pendingName = !p ? 'none (start of a turn)' : { sealed: 'link 1 · sealed', opened: 'link 2 · answered', reveal: 'link 3 · revealed' }[p.kind]
+    add(body, [
+      h('div', { class: 'facts' },
+        h('div', {}, h('span', {}, 'match'), h('b', {}, HB.hex(L.matchId))), h('div', {}, h('span', {}, 'turn'), h('b', {}, R.kind === 'over' ? 'over' : R.turn + 1)),
+        h('div', {}, h('span', {}, 'bids go to'), h('b', {}, L.mode === 'pot' ? 'centre pot' : 'rival’s purse')),
+        h('div', {}, h('span', {}, 'purses W · B'), h('b', {}, st.tr.join(' · '))),
+        h('div', {}, h('span', {}, 'history'), h('b', {}, L.hist.length + ' turns · chain ✓')),
+        h('div', {}, h('span', {}, 'this link'), h('b', {}, pendingName))),
+    ])
+    if (R.kind === 'over') {
+      add(body, [h('p', { class: 'verdict' }, st.over.winner < 0 ? 'Drawn.' : `${SIDE[st.over.winner]} took the match (${st.over.reason}).`), miniBoard(st.b, 0, null, null)]); return
+    }
+    add(body, [h('div', { class: 'whoami' }, h('b', {}, `You are ${SIDE[mySide]}. `), ROLE_TEXT[R.kind])])
+    const seeBoard = () => h('div', { class: 'resrow' }, miniBoard(st.b, mySide, null, null), h('div', { class: 'hist' }, L.hist.slice(-5).map((x, n) => h('p', {}, `${L.hist.length - Math.min(5, L.hist.length) + n + 1}. ${x.o.map((o) => (o && o.f >= 0 ? sqn(o.f) + '→' + sqn(o.t) : 'pass') + ' (' + ((o && o.bid) | 0) + ')').join(' · ')}`)), !L.hist.length && h('p', {}, 'No turns yet.')))
+    if (dk.done && R.kind === 'seal') add(body, [turnResult(dk.done.res, dk.done.side)])
+    if (R.kind === 'seal' || R.kind === 'respond') {
+      if (dk.out) { add(body, [linkBox(dk.out), h('p', { class: 'sub' }, R.kind === 'seal' ? 'Keep this tab or browser: the nonce that opens your seal is saved here. When they answer, paste link 2 above.' : 'Now wait for link 3 and paste it here.')]); return }
+      const pk = orderPicker(st, mySide)
+      add(body, [pk.el,
+        h('div', { class: 'row' }, h('button', { class: 'wax', disabled: !pk.ready, onclick: () => {
+          try {
+            if (R.kind === 'seal') {
+              const r = SB.deskSeal(L, pk.order(), rnd16()); vault.set('seal:' + HB.hex(r.link.pending.commit), r.secret)
+              dk.out = { text: SB.linkText(r.link, baseUrl()), label: 'Link 1 · sealed', to: SIDE[1 - mySide], tip: 'Carries a hash of your move and bid. It cannot be read, and it cannot be changed later.' }
+            } else {
+              const r = SB.deskRespond(L, pk.order()); vault.set('open:' + HB.hex(L.pending.commit), r.secret)
+              dk.out = { text: SB.linkText(r.link, baseUrl()), label: 'Link 2 · answered', to: SIDE[1 - mySide], tip: 'Your move and bid, in plain. Their reveal will be checked against the hash they sent.' }
+            }
+            dk.err = ''
+          } catch (e) { dk.err = e.message }
+          deskRender() } }, R.kind === 'seal' ? 'Seal it →' : 'Answer in plain →')),
+        seeBoard()])
+      return
+    }
+    if (R.kind === 'reveal') {
+      if (dk.out) { add(body, [linkBox(dk.out), dk.done && turnResult(dk.done.res, mySide), h('p', { class: 'sub' }, 'The turn has played on your side too. Wait for their link 1 of the next turn.')]); return }
+      const sec = vault.get('seal:' + HB.hex(L.pending.commit))
+      add(body, [
+        h('p', { class: 'line' }, sec ? ['Your sealed order, kept in this browser: ', h('b', {}, sec.order.f < 0 ? 'pass' : `${sqn(sec.order.f)} → ${sqn(sec.order.t)}`), `, bid ${sec.order.bid}.`] : h('span', { class: 'deskerr' }, 'This browser does not hold the nonce for that seal. It was made in another browser, or the saved data was cleared. Open this link where you sealed it.')),
+        h('p', { class: 'line' }, `Their answer, in plain: ${L.pending.order.f < 0 ? 'pass' : sqn(L.pending.order.f) + ' → ' + sqn(L.pending.order.t)}, bid ${L.pending.order.bid}.`),
+        h('div', { class: 'row' }, h('button', { class: 'wax', disabled: !sec, onclick: () => {
+          try { const r = SB.deskReveal(L, sec); dk.done = { res: r }; dk.out = { text: SB.linkText(r.link, baseUrl()), label: 'Link 3 · revealed', to: SIDE[1 - mySide], tip: 'Adds your order and nonce. They recompute the hash; if it differs, the seal is broken.' }; dk.err = '' } catch (e) { dk.err = e.message }
+          deskRender() } }, 'Reveal →')),
+        seeBoard()])
+      return
+    }
+    if (R.kind === 'verify') {
+      const saved = vault.get('open:' + HB.hex(L.pending.commit)), openerOrder = (saved && saved.order) || dk.openerOrder
+      const re = HB.hex(SB.commitOf(L.matchId, R.turn, L.pending.side, L.pending.order, L.pending.nonce)), sealed = HB.hex(L.pending.commit)
+      const good = re === sealed
+      add(body, [
+        h('p', { class: 'line' }, `They reveal: ${L.pending.order.f < 0 ? 'pass' : sqn(L.pending.order.f) + ' → ' + sqn(L.pending.order.t)}, bid ${L.pending.order.bid}.`),
+        h('div', { class: 'hashes' }, h('div', {}, h('span', {}, 'sealed hash they sent first'), h('code', {}, sealed)), h('div', {}, h('span', {}, 'hash recomputed from what they revealed'), h('code', {}, re)),
+          h('p', { class: good ? 'good' : 'bad' }, good ? 'The hashes match. The order is the one they sealed.' : 'SEAL BROKEN. The order does not match the hash. They changed their move or bid after seeing yours.')),
+        !openerOrder && good && h('div', {}, h('p', { class: 'sub' }, 'This browser does not remember the answer you sent. Paste link 2 (the one you sent) to supply it.'),
+          h('textarea', { rows: 2, 'aria-label': 'Link 2', placeholder: 'Paste link 2 here', oninput: (e) => { dk.openerText = e.target.value } }, dk.openerText),
+          h('div', { class: 'row' }, h('button', { class: 'tbtn', onclick: () => { try { const o = SB.openerOrderFrom(SB.parseLink(dk.openerText), L.pending.commit); if (!o) throw new Error('that link does not match this seal'); dk.openerOrder = o; dk.err = '' } catch (e) { dk.err = e.message } deskRender() } }, 'Use link 2'))),
+        h('div', { class: 'row' }, h('button', { class: 'wax', disabled: !good || !openerOrder, onclick: () => {
+          const d = SB.deskVerify(L, openerOrder)
+          if (!d.ok) dk.err = d.why
+          else { dk.done = { res: d, side: mySide }; dk.link = d.next; dk.role = SB.deskRole(d.next); dk.out = null; dk.pick = { from: null, to: null, bid: 0, pass: false }; dk.err = ''; dk.text = SB.linkText(d.next, baseUrl()) }
+          deskRender() } }, 'Verify and play the turn →')),
+        seeBoard()])
+      return
+    }
+  }
+
+  /* ═══════════════════════ 3. LEXICON QUARANTINE ═══════════════════════ */
+  const lq = { st: null, role: 'poet', path: [], acts: [], mode: 'stone', log: [], busy: false, showAir: true, hover: -1, fresh: new Set(), seed: 'zine-1', hints: [] }
+  function lqNew(seed) {
+    lq.seed = seed || 'zine-' + ((Math.random() * 9999) | 0); lq.st = LQ.newGame(lq.seed); lq.path = []; lq.acts = []; lq.log = []; lq.fresh = new Set(); lq.hints = []; lq.busy = false; lq.mode = 'stone'
+    lq.log.push({ t: `Seed ${lq.seed}. The Poet needs ${lq.st.o.target} points inside ${lq.st.o.rounds} rounds, or a poem that crosses the page.` })
+    if (lq.role === 'censor') lqBotPoet()
+  }
+  function lqBotPoet() {
+    const st = lq.st; const w = LQ.bots.poetSafe.move(st)
+    if (!w) { st.over = { winner: 'censor', reason: 'silenced' }; return }
+    LQ.commitPoet(st, w); lq.fresh = new Set(w.path); lq.log.push({ t: `Poet types ${w.word.toUpperCase()} (+${w.gain}).`, r: false })
+  }
+  async function lqBotCensor() {
+    lq.busy = true; const st = lq.st; lq.render()
+    await sleep(500)
+    const acts = LQ.bots.censorDenier.actions(st, HB.mulberry32(st.round * 13 + 5))
+    for (const a of acts) { lqAct(a); lq.render(); await sleep(520) }
+    lqRoundEnd(); lq.busy = false; lq.render()
+  }
+  function lqAct(a) {
+    const st = lq.st, before = st.stats.captured, shBefore = st.stats.sheared
+    LQ.censorApply(st, a)
+    lq.fresh = new Set([a.cell])
+    if (a.k === 'rot') { const c = a.cell; lq.fresh = new Set([c, c + 1, c + 7, c + 8]) }
+    lq.log.push({ t: a.k === 'rot' ? `Censor rotates the block at ${'abcdefg'[a.cell % 7]}${(a.cell / 7 | 0) + 1}.` : `Censor strikes ${'abcdefg'[a.cell % 7]}${(a.cell / 7 | 0) + 1}.`, r: false })
+    if (st.stats.sheared > shBefore) lq.log.push({ t: `SHEARED: ${st.stats.sheared - shBefore} cell(s) of ink were cut from the poem’s body by the turn and die.`, r: true })
+    if (st.stats.captured > before) lq.log.push({ t: `QUARANTINE: ${st.stats.captured - before} cell(s) of ink lose their air and die.`, r: true })
+  }
+  function lqRoundEnd() {
+    const st = lq.st; LQ.endRound(st)
+    if (st.over) return
+    if (lq.role === 'censor') { lqBotPoet() ; if (st.over) return }
+    if (lq.role === 'poet' && LQ.silenced(st)) st.over = { winner: 'censor', reason: 'silenced' }
+  }
+  function lqKey(i) { return 'abcdefg'[i % 7] + ((i / 7 | 0) + 1) }
+  views.lexicon = () => {
+    if (!lq.st) lqNew(lq.seed)
+    const root = h('div', { class: 'table t-zine' }); const sheet = h('div', { class: 'sheet' }); root.append(h('div', { class: 'wrap' }, sheet))
+    lq.render = () => {
+      clear(sheet); const st = lq.st, N = 7
+      const groups = LQ.groups(st, 1); const air = new Map()
+      for (const g of groups) { const first = Math.min(...g.cells); air.set(first, g.libs) }
+      const myTurnPoet = lq.role === 'poet' && !st.over && !lq.busy
+      const myTurnCen = lq.role === 'censor' && !st.over && !lq.busy
+      const path = lq.path, ev = path.length ? LQ.evalPath(st, path) : null
+      const pv = new Set(), tear = new Set(); let prev = null
+      if (myTurnCen && lq.mode === 'rot' && lq.hover >= 0) { const r = (lq.hover / 7) | 0, c = lq.hover % 7, tl = Math.min(r, 5) * 7 + Math.min(c, 5); [tl, tl + 1, tl + 7, tl + 8].forEach((x) => pv.add(x)); prev = LQ.previewRot(st, tl); prev.tornFrom.forEach((x) => tear.add(x)) }
+      const body = st.o.shear ? LQ.mainBody(st) : null // ink outside it can be cut off by a turn
+      const cells = []
+      for (let i = 0; i < 49; i++) {
+        const o = st.own[i], cls = ['z', 'o' + o]; if (path.includes(i)) cls.push('path'); if (pv.has(i)) cls.push('rotpv'); if (tear.has(i)) cls.push('tear'); if (body && o === 1 && !body.has(i)) cls.push('loose'); if (lq.fresh.has(i) && o === 2) cls.push('newbar'); if (lq.fresh.has(i) && lq.mode === 'rot') cls.push('flip')
+        if ((myTurnPoet && o < 2) || (myTurnCen && (lq.mode === 'rot' || o === 0))) cls.push('tgt')
+        const kids = [st.ch[i]]
+        if (o === 1) kids.push(h('small', {}, LQ.value(st.ch[i])))
+        if (path.includes(i)) kids.push(h('span', { class: 'ord' }, path.indexOf(i) + 1))
+        if (lq.showAir && air.has(i)) { const libs = air.get(i); kids.push(h('span', { class: 'breath' + (libs <= st.o.libFloor + 1 ? ' low' : ''), title: `This ink has ${libs} breath${libs === 1 ? '' : 's'} left` }, libs)) }
+        cells.push(h('button', { class: cls.join(' '), 'aria-label': `${lqKey(i)} ${o === 2 ? 'blacked out' : o === 3 ? 'dead' : st.ch[i]}${o === 1 ? ' inked' : ''}`, onmouseenter: () => { if (lq.mode === 'rot') { lq.hover = i; lq.render() } }, onclick: () => lqClick(i) }, kids))
+      }
+      const poetDone = st.over && st.over.winner === 'poet'
+      lq.prev = prev
+      add(sheet, [
+        h('h2', {}, 'Lexicon ', h('s', {}, 'Quarantine')), h('p', { class: 'sub' }, 'A zine for two readers. One of you ', h('em', {}, 'writes'), ', one of you ', h('em', {}, 'redacts'), '. Ink needs air to live; stones need none; a block of letters can be turned a quarter-turn while nobody is looking.'),
+        st.over && h('div', { class: 'verdict' }, poetDone ? (st.over.reason === 'crossing' ? 'The page is crossed' : 'Published') : st.over.reason === 'silenced' ? 'Silenced' : 'Suppressed'),
+        h('div', { class: 'layout' },
+          h('div', {}, h('div', { class: 'board', role: 'grid', 'aria-label': 'Seven by seven letters', onmouseleave: () => { if (lq.hover >= 0) { lq.hover = -1; lq.render() } } }, cells),
+            h('div', { class: 'row' }, h('span', { style: { fontSize: '13px' } }, 'You play:'), h('div', { class: 'sw' }, ['poet', 'censor'].map((r) => h('button', { 'aria-pressed': String(lq.role === r), onclick: () => { lq.role = r; lqNew(lq.seed); lq.render() } }, r))),
+              h('button', { class: 'bt', onclick: () => { lqNew(); lq.render() } }, 'New page'), h('button', { class: 'bt' + (lq.showAir ? ' on' : ''), 'aria-pressed': String(lq.showAir), onclick: () => { lq.showAir = !lq.showAir; lq.render() } }, 'Show air'))),
+          h('div', { class: 'col' },
+            h('section', { class: 'card' }, h('h3', {}, 'Progress'), h('div', { class: 'meter', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': st.o.target, 'aria-valuenow': Math.max(0, st.score) }, h('i', { style: { width: Math.min(100, Math.max(0, st.score) / st.o.target * 100) + '%' } })),
+              h('div', { class: 'nums' }, h('span', {}, `${st.score} pts`), h('span', {}, `target ${st.o.target} · or cross the page`)),
+              h('div', { class: 'rounds', 'aria-label': 'rounds' }, Array.from({ length: st.o.rounds }, (_, i) => h('span', { class: i < st.round ? 'done' : i === st.round && !st.over ? 'now' : '' }, i + 1))),
+              h('div', { class: 'nums' }, h('span', {}, lq.role === 'censor' ? (LQ.canRotate(st) ? 'rotation ready' : 'rotation jammed one more round') : ''), body && h('span', { class: 'legend' }, h('i', { class: 'loose-key' }), ' dashed = not joined to the main body')),
+              prev && h('div', { class: 'why' + (prev.torn.length ? ' bad' : '') }, prev.torn.length ? `Turning here would cut ${prev.torn.length} cell${prev.torn.length === 1 ? '' : 's'} off the body: they die, −${prev.lost} points.` : 'Turning here would cut nothing.')),
+            lq.role === 'poet' ? poetCard(st, ev, myTurnPoet) : censorCard(st, myTurnCen),
+            h('section', { class: 'card' }, h('h3', {}, 'Minutes'), h('div', { class: 'log', role: 'log' }, lq.log.slice(-30).reverse().map((l) => h('div', { class: l.r ? 'r' : '' }, l.t)))))),
+        h('div', { class: 'lessons' },
+          h('div', {}, h('b', {}, 'Boggle'), 'Words run through touching cells, diagonals included, no cell twice in a word. Later words must pass through your own ink: a poem grows from itself.'),
+          h('div', {}, h('b', {}, 'Go'), 'Ink groups connect only orthogonally. The number in red is a group’s air. At one, it is quarantined: the Censor does not need to surround, only to threaten.'),
+          h('div', {}, h('b', {}, 'Rotation'), 'A 2×2 block turns a quarter-turn for one of your two actions, then jams for a round. Ink that the turn cuts away from the poem’s main body dies. Keep your ink joined, or keep it out of the Censor’s 2×2s.'))
+      ])
+    }
+    lq.render()
+    return root
+  }
+  function poetCard(st, ev, mine) {
+    const word = lq.path.map((x) => st.ch[x]).join('')
+    return h('section', { class: 'card' }, h('h3', {}, 'Your line'),
+      h('div', { class: 'typed' + (ev && ev.ok ? ' ok' : '') }, word || '…'),
+      h('div', { class: 'why' + (ev && !ev.ok ? ' bad' : '') }, !mine ? (st.over ? '' : 'The Censor is working…') : !lq.path.length ? 'Tap letters that touch, in order. Tap the last one again to undo.' : ev.ok ? `Valid: +${ev.mv.gain} points.` : ev.why + '.'),
+      h('div', { class: 'row' }, h('button', { class: 'bt red', disabled: !mine || !ev || !ev.ok, onclick: lqType }, 'Type it'), h('button', { class: 'bt', disabled: !mine || !lq.path.length, onclick: () => { lq.path = []; lq.render() } }, 'Clear'),
+        h('button', { class: 'bt', disabled: !mine, onclick: () => { const ws = LQ.legalPoet(st).sort((a, b) => b.gain - a.gain).slice(0, 4); lq.hints = ws; lq.log.push({ t: 'Hint: ' + ws.map((w) => w.word.toUpperCase() + ' +' + w.gain).join(', ') + '.' }); lq.render() } }, 'Hint')))
+  }
+  function censorCard(st, mine) {
+    const left = st.o.censorActions - lq.acts.length
+    return h('section', { class: 'card' }, h('h3', {}, 'Your bars'),
+      h('div', { class: 'why' }, !mine ? (st.over ? '' : 'The Poet is typing…') : `${left} action${left === 1 ? '' : 's'} left. Black out a letter, or turn a 2×2 block (one action; it cuts ink loose from the main body). Watch the red numbers: strike the last breaths of a group.`),
+      h('div', { class: 'row' }, h('button', { class: 'bt' + (lq.mode === 'stone' ? ' on' : ''), disabled: !mine, onclick: () => { lq.mode = 'stone'; lq.render() } }, '█ Bar'),
+        h('button', { class: 'bt' + (lq.mode === 'rot' ? ' on' : ''), disabled: !mine || !LQ.canRotate(st) || lq.acts.some((a) => a.k === 'rot'), onclick: () => { lq.mode = 'rot'; lq.render() } }, '↻ Turn block'),
+        h('button', { class: 'bt', disabled: !mine || !lq.acts.length, onclick: lqEndCensor }, 'End turn')))
+  }
+  function lqClick(i) {
+    const st = lq.st; if (st.over || lq.busy) return
+    if (lq.role === 'poet') {
+      const p = lq.path
+      if (p[p.length - 1] === i) { p.pop(); return lq.render() }
+      if (st.own[i] > 1) return toast('That cell is blacked out or dead.')
+      if (p.includes(i)) return toast('A word cannot use a cell twice.')
+      if (p.length && !LQ.N8[p[p.length - 1]].includes(i)) return toast('Cells in a word must touch, diagonals included.')
+      p.push(i); lq.render()
+    } else {
+      if (lq.acts.length >= st.o.censorActions) return
+      if (lq.mode === 'rot') {
+        const r = Math.min((i / 7) | 0, 5), c = Math.min(i % 7, 5), tl = r * 7 + c
+        if (!LQ.canRotate(st)) return toast('Rotation is jammed this round.')
+        const a = { k: 'rot', cell: tl }; lqAct(a); lq.acts.push(a); lq.mode = 'stone'
+      } else {
+        if (st.own[i] !== 0) return toast('Only an empty, un-inked letter can be barred.')
+        const a = { k: 'stone', cell: i }; lqAct(a); lq.acts.push(a)
+      }
+      if (lq.acts.length >= st.o.censorActions) return lqEndCensor()
+      lq.render()
+    }
+  }
+  function lqType() {
+    const st = lq.st, ev = LQ.evalPath(st, lq.path); if (!ev.ok) return
+    const before = st.stats.lifted
+    LQ.commitPoet(st, ev.mv); lq.fresh = new Set(ev.mv.path)
+    lq.log.push({ t: `You type ${ev.mv.word.toUpperCase()} (+${ev.mv.gain}).` })
+    if (st.stats.lifted > before) lq.log.push({ t: 'Bars are lifted: you surrounded them.', r: true })
+    lq.path = []; lq.hints = []
+    if (st.over) return lq.render()
+    lqBotCensor()
+  }
+  function lqEndCensor() {
+    const st = lq.st; lq.acts = []; lq.busy = true
+    lqRoundEnd(); lq.busy = false; lq.render()
+  }
+
+  /* ───────── boot ───────── */
+  const start = location.hash.slice(1)
+  if (start.startsWith(SB.LINK_TAG)) { go('shadow'); route() } else go(views[ALIAS[start] || start] ? ALIAS[start] || start : 'overview')
+})()
+
+</script>
+</body>
+</html>

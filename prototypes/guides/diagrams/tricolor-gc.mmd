@@ -1,0 +1,8 @@
+stateDiagram-v2
+  [*] --> White : block allocated, not yet visited
+  White --> Grey : reachable, queued for scanning
+  Grey --> Black : scanned, all children shaded grey
+  White --> Swept : still white at the end, so garbage
+  Black --> Kept : survives the sweep
+  Swept --> [*]
+  Kept --> White : next collection cycle begins

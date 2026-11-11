@@ -1,0 +1,6 @@
+flowchart LR
+  T0[Tick 0 all carts idle] -->|each takes its first section| T1[Tick 1 chains forming]
+  T1 -->|window still open: a hold works| T2[Tick 2 last chance]
+  T2 -->|every cart reaches for its neighbour| T5[Tick 5 cycle closed]
+  T5 -->|nothing can move| X[Reset is the only move]
+  T1 -->|hold a cart at the entry| W[Next cart takes two sections and unwinds the ring]
