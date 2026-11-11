@@ -74,6 +74,16 @@ describe('production build', () => {
     expect(existsSync(join(plain.dir, 'assets', photo[1].split('/').pop()))).toBe(true);
   });
 
+  test('the landing page starts the game, finds its photo and has no FAQ', () => {
+    const page = plain.read('index.html');
+    expect(page.match(/href="(?:\.\/)?play\.html"/g).length).toBeGreaterThanOrEqual(3);   // hero, phone hero, closing
+    expect(page).toMatch(/<h1>Nightboard<\/h1>/);
+    expect(page).not.toMatch(/<details|id="faq"/);
+    const photo = page.match(/url\((?:"|')?\.?\/?([\w./-]*er-floor-[\w-]+\.webp)/);
+    expect(photo, 'the hero photo is bundled').not.toBeNull();
+    expect(existsSync(join(plain.dir, photo[1].replace(/^\.\//, '')))).toBe(true);
+  });
+
   test('the handbook page carries every section', () => {
     const page = plain.read('handbook.html');
     for (const id of ['start', 'controls', 'cases', 'lens']) expect(page).toContain(`<section id="${id}">`);

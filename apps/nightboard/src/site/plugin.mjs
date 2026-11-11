@@ -3,7 +3,7 @@
  *   virtual:handbook        the compiled handbook, imported by src/ui/handbook.js and tutorial.js
  *   <!--site:head-->        each page's <head> tags, from PAGES in meta.mjs
  *   <!--site:jsonld-->      structured data (landing page)
- *   <!--site:mark-->        the logo, inlined from public/favicon.svg (landing page)
+ *   <!--site:mark-->        the logo, inlined from public/favicon.svg (404 page)
  *   <!--site:handbook-nav--> and <!--site:handbook-main-->   the manual as a static page
  *   robots.txt, sitemap.xml, site.webmanifest, llms.txt, llms-full.txt   emitted with the build
  *   404.html                its links rooted at /, since it is served at any missing path
