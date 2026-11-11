@@ -1,0 +1,13 @@
+// Cloudflare Workers, static assets only: no server code runs.
+// Build: SITE_URL=https://<your domain> node build.mjs   Deploy: npx wrangler deploy
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "night-shift",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // /play serves play.html, /handbook serves handbook.html
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
