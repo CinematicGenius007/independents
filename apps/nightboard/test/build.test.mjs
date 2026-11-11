@@ -66,22 +66,26 @@ describe('production build', () => {
   });
 
   test('the game page loads its script and styles, and the styles find the photo', () => {
-    const play = plain.read('play.html');
-    expect(play).toMatch(/<script type="module"[^>]*src="\.\/assets\/play-[\w-]+\.js"/);
+    const play = plain.read('index.html');
+    expect(play).toMatch(/<script type="module"[^>]*src="\.\/assets\/index-[\w-]+\.js"/);
     const css = readdirSync(join(plain.dir, 'assets')).filter((f) => f.endsWith('.css')).map((f) => plain.read(`assets/${f}`)).join('\n');
     const photo = css.match(/url\((?:"|')?\.?\/?([\w./-]*er-floor-[\w-]+\.webp)/);
     expect(photo, 'er-floor.webp is referenced from the game css').not.toBeNull();
     expect(existsSync(join(plain.dir, 'assets', photo[1].split('/').pop()))).toBe(true);
   });
 
-  test('the landing page starts the game, finds its photo and has no FAQ', () => {
+  test('the front page is the game, with the start menu and a no-script description', () => {
     const page = plain.read('index.html');
-    expect(page.match(/href="(?:\.\/)?play\.html"/g).length).toBeGreaterThanOrEqual(3);   // hero, phone hero, closing
-    expect(page).toMatch(/<h1>Nightboard<\/h1>/);
-    expect(page).not.toMatch(/<details|id="faq"/);
-    const photo = page.match(/url\((?:"|')?\.?\/?([\w./-]*er-floor-[\w-]+\.webp)/);
-    expect(photo, 'the hero photo is bundled').not.toBeNull();
-    expect(existsSync(join(plain.dir, photo[1].replace(/^\.\//, '')))).toBe(true);
+    expect(page).toContain('<div id="intro">');
+    expect(page).toContain('<noscript>');
+    expect(page).toContain('application/ld+json');
+    expect(page).not.toContain('http-equiv="refresh"');
+  });
+
+  test('the old /play address forwards to the front page and is never indexed', () => {
+    const page = plain.read('play.html');
+    expect(page).toContain('url=./');
+    expect(page).toContain('noindex');
   });
 
   test('the handbook page carries every section', () => {
@@ -91,7 +95,7 @@ describe('production build', () => {
 
   test('SITE_URL turns on absolute canonical and social image URLs', () => {
     expect(hosted.read('index.html')).toContain('<link rel="canonical" href="https://example.org/">');
-    expect(hosted.read('play.html')).toContain('content="https://example.org/og.jpg"');
+    expect(hosted.read('index.html')).toContain('content="https://example.org/og.jpg"');
     expect(plain.read('index.html')).not.toContain('canonical');
   });
 });

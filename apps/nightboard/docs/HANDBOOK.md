@@ -350,7 +350,7 @@ A step needs someone at home. Nothing will happen until they arrive.
 
 # The Engineer Lens {#lens}
 
-Nightboard began as a way to teach concurrency, which is how computers share things between competing tasks. A hospital turns out to have exactly the same problems, with higher stakes.
+Flatline began as a way to teach concurrency, which is how computers share things between competing tasks. A hospital turns out to have exactly the same problems, with higher stakes.
 
 Turn on **Engineer Lens** to see the computing word on each alert. It changes nothing in the hospital.
 

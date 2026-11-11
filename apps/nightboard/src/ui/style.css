@@ -136,16 +136,6 @@ h3.sec { margin: 4px 0; font-size: 13px; color: var(--blue); }
 .tile { background: #000; color: #fff; border: 2px solid #222; border-radius: 4px; padding: 6px 8px; font-family: 'SF Mono', Menlo, Consolas, monospace; cursor: pointer; } .tile.hi { border-color: #ff3b4e; animation: blink 1s infinite; } .tile.med { border-color: #e8a200; }
 .tile header { display: flex; justify-content: space-between; font-size: 11px; color: #c9d2de; font-family: Tahoma, sans-serif; } .tile canvas { width: 100%; height: 40px; display: block; } .tile .nums { display: flex; justify-content: space-between; font-size: 17px; font-weight: 700; }
 
-#intro { position: fixed; inset: 0; background: linear-gradient(rgba(8, 12, 18, .46), rgba(8, 12, 18, .8)); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; overflow: auto; }
-#intro .card { width: min(620px, 100%); max-height: 100%; overflow: auto; background: #fff; border-radius: 6px; padding: 24px 26px; font-size: 14px; line-height: 1.5; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); margin: auto; }
-#intro .eyebrow { font-size: 11px; letter-spacing: .14em; color: var(--blue); font-weight: 700; }
-#intro h1 { margin: 2px 0 8px; font-size: 25px; line-height: 1.2; }
-#intro .aims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
-#intro .aims div { background: var(--tab); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; font-size: 13px; } #intro .aims b { display: block; }
-#intro .choice { display: flex; flex-direction: column; gap: 8px; }
-#intro .choice .btn { padding: 11px 14px; font-size: 14px; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 46px; }
-#intro .choice .btn { white-space: normal; } #intro .choice .btn small { font-size: 12px; opacity: .78; font-weight: 400; text-align: right; }
-#intro .choice .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue-d); font-weight: 700; }
 .review .big { font-size: 26px; font-weight: 700; } .review table td { padding: 5px 8px; border-bottom: 1px solid #edf0f4; vertical-align: top; }
 
 /* ---------- phone chrome, only present when the phone layout is on ---------- */
@@ -168,6 +158,38 @@ h3.sec { margin: 4px 0; font-size: 13px; color: var(--blue); }
 }
 
 /* small laptops: a thin bezel, the room just visible */
+/* The start menu is a layer over the live desk: the real board shows, dimmed, on the right. */
+#intro { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; padding: 16px clamp(20px, 5vw, 72px); overflow: auto; background: linear-gradient(90deg, rgba(3, 6, 10, .94) 0%, rgba(3, 6, 10, .84) 42%, rgba(3, 6, 10, .5) 100%); font-family: 'Bricolage Grotesque', Tahoma, sans-serif; color: #d5dce6; }
+#intro .card { width: min(520px, 100%); margin: auto 0; display: flex; flex-direction: column; gap: 22px; }
+#intro .eyebrow { font: 500 12px/1.4 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: .16em; color: #9fb3cc; }
+#intro h1 { margin: -6px 0 -2px; font-size: clamp(64px, 9vw, 96px); line-height: .96; font-weight: 800; letter-spacing: -.045em; color: #fff; }
+#intro .premise { margin: 0; font-size: 19px; line-height: 1.48; color: #d5dce6; }
+#intro .aims { margin: 0; padding: 20px 0 0; border-top: 1px solid #33415c; list-style: none; counter-reset: aim; display: flex; flex-direction: column; gap: 12px; font-size: 16px; line-height: 1.4; color: #9aa7b8; }
+#intro .aims li { counter-increment: aim; display: flex; gap: 16px; }
+#intro .aims li::before { content: '0' counter(aim); flex: none; width: 28px; font: 400 13px/1.7 'Geist Mono', ui-monospace, Menlo, monospace; color: #8db4f0; }
+#intro .aims b { color: #fff; margin-right: 6px; }
+#intro .choice { display: flex; flex-direction: column; gap: 10px; }
+#intro .choice .btn { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 52px; padding: 12px 22px; text-align: left; white-space: normal; background: rgba(255, 255, 255, .04); border: 1px solid #3a4a68; border-radius: 10px; color: #fff; font: inherit; cursor: pointer; }
+#intro .choice .btn:hover { background: rgba(255, 255, 255, .09); border-color: #5b8fd6; }
+#intro .choice .btn:focus-visible { outline: 2px solid #8db4f0; outline-offset: 2px; }
+#intro .choice .btn span { display: flex; flex-direction: column; gap: 2px; }
+#intro .choice .btn b { font-size: 17px; font-weight: 600; line-height: 1.3; }
+#intro .choice .btn small { font-size: 14px; line-height: 1.35; color: #9aa7b8; font-weight: 400; }
+#intro .choice .btn kbd { flex: none; font: 400 11px/1 'Geist Mono', ui-monospace, Menlo, monospace; letter-spacing: .14em; color: #9aa7b8; }
+#intro .choice .btn.primary { background: var(--blue); border-color: #5b8fd6; }
+#intro .choice .btn.primary:hover { background: #2a5fa6; }
+#intro .choice .btn.primary b { font-size: 20px; font-weight: 700; }
+#intro .choice .btn.primary small { color: #cfe0f7; }
+/* Motion: the board powers up behind the fade, the card rises in line by line, and the layer
+ * dissolves when you start. All of it is switched off for people who ask for less motion. */
+@keyframes fl-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fl-power { 0% { opacity: 0; filter: brightness(.25); } 35% { opacity: 1; } 100% { opacity: 1; filter: none; } }
+#screen { animation: fl-power 1s ease-out backwards; }
+#intro { transition: opacity .38s ease; }
+#intro.leaving { opacity: 0; pointer-events: none; }
+#intro .card > * { animation: fl-rise .65s cubic-bezier(.2, .7, .2, 1) backwards; }
+#intro .card > :nth-child(2) { animation-delay: .08s; } #intro .card > :nth-child(3) { animation-delay: .16s; }
+#intro .card > :nth-child(4) { animation-delay: .26s; } #intro .card > :nth-child(5) { animation-delay: .36s; }
 @media (max-width: 1199px) {
   #monitor { width: calc(100% - 28px); padding: 7px 7px 16px; border-radius: 10px; }
   #desk { gap: 10px; padding: 0 14px; } #radio { width: 210px; } #timer { width: 228px; } #phone { width: 170px; }
@@ -247,8 +269,7 @@ h3.sec { margin: 4px 0; font-size: 13px; color: var(--blue); }
   .ph-only { display: block; }
   #phonemenu { left: 8px; right: 8px; bottom: calc(var(--desk-h) + 6px); width: auto; } #phonemenu .row .btn { min-height: 42px; }
   .toast { left: 8px; right: 8px; bottom: 8px; transform: none; text-align: center; }
-  #intro .choice .btn { flex-direction: column; align-items: flex-start; gap: 2px; } #intro .choice .btn small { text-align: left; }
-  #intro .aims { grid-template-columns: 1fr; } #intro { padding: 10px; } #intro .card { padding: 18px; } #intro h1 { font-size: 22px; }
+  #intro { padding: 14px 18px; background: rgba(3, 6, 10, .9); } #intro h1 { font-size: 56px; } #intro .premise { font-size: 17px; }
 }
 @keyframes rowcode-b { 50% { background: #fde8ea; } }
 /* phone on its side: everything on one short bar */
@@ -315,4 +336,6 @@ body.guide #desk [data-g] { outline-color: rgba(255, 255, 255, .28); }
 @media (prefers-reduced-motion: reduce) {
   .banner.crit, .bell.hot, .led.on, .tile.hi, .board tr.code td, .board tr.code, .mon .alarm.hi, #vignette.code { animation: none !important; }
   #tut-hole { transition: none; }
+  #screen, #intro .card > * { animation: none !important; }
+  #intro { transition: none; }
 }

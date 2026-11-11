@@ -2,253 +2,34 @@
 <html lang="en">
 <head>
 <!--site:head-->
+<!--site:jsonld-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Geist+Mono:wght@400..700&display=swap">
-<style>
-/* Flatline: one green heartbeat runs through the page, from the wordmark to the last button.
- * The hero is drawn on a 1440-wide frame and scaled with container units (cqw), so the trace,
- * the wordmark and the button stay lined up at any width. */
-:root {
-  --bg: #05080a; --bg-2: #070b0d; --green: #39ff88; --ink: #e8f0ec; --soft: #b7c6be; --mute: #9fb3a9; --red: #ff4d4d;
-  --display: 'Bricolage Grotesque', 'Arial Narrow', system-ui, sans-serif;
-  --mono: 'Geist Mono', ui-monospace, Menlo, Consolas, monospace;
-  --glow: drop-shadow(0 0 10px rgba(57, 255, 136, .6));
-}
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 20px/1.45 var(--display); overflow-x: hidden; }
-a { color: inherit; }
-img, svg { display: block; max-width: 100%; }
-:focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
-.wrap { width: min(1248px, 100% - 32px); margin: 0 auto; }
-.mono { font-family: var(--mono); letter-spacing: .14em; text-transform: uppercase; }
-.label { text-transform: uppercase; font: 700 14px/1 var(--mono); letter-spacing: .18em; color: var(--green); margin: 0 0 20px; }
-h1, h2 { font-family: var(--display); font-weight: 800; font-variation-settings: 'wdth' 75, 'opsz' 96; letter-spacing: -.03em; margin: 0; }
-h2 { font-size: clamp(56px, 8vw, 96px); line-height: .96; }
-.trace path { fill: none; stroke: var(--green); stroke-linecap: round; stroke-linejoin: round; }
-.trace { filter: var(--glow); overflow: visible; }
-
-/* the start button: a black pill the trace runs into */
-.start { display: inline-flex; align-items: center; gap: 16px; padding: 20px 34px 20px 38px; background: var(--bg); border: 9px solid var(--green); border-radius: 999px; box-shadow: 0 0 22px rgba(57, 255, 136, .5); color: var(--green); text-decoration: none; font: 800 34px/36px var(--display); font-variation-settings: 'wdth' 80; letter-spacing: -.01em; white-space: nowrap; transition: box-shadow .2s, background-color .2s; }
-.start svg { width: 30px; height: 30px; flex: none; }
-.start:hover { background: #0b1a12; box-shadow: 0 0 40px rgba(57, 255, 136, .8); }
-
-/* ---- hero ---- */
-.hero { position: relative; isolation: isolate; overflow: hidden; min-height: 100svh; display: flex; flex-direction: column; justify-content: space-between; padding: 64px 0 56px; }
-.hero::before { content: ''; position: absolute; inset: -60px; z-index: -2; background: url('./src/assets/er-floor.webp') center / cover; filter: blur(18px) saturate(.6); opacity: .55; }
-.hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse 120% 90% at 50% 45%, rgba(5, 8, 10, .45), rgba(5, 8, 10, .92) 75%); }
-.bar { text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; gap: 16px; font: 500 15px/18px var(--mono); letter-spacing: .16em; color: var(--mute); }
-.clock { display: flex; align-items: center; gap: 12px; font: 700 22px/28px var(--mono); letter-spacing: .04em; color: var(--ink); }
-.clock i { width: 12px; height: 12px; border-radius: 50%; background: var(--red); box-shadow: 0 0 12px var(--red); }
-.stage { container-type: inline-size; width: 100%; }
-.frame { position: relative; aspect-ratio: 1440 / 590; }
-.frame h1 { position: absolute; left: 5.556cqw; top: 1.25cqw; font-size: 24.306cqw; line-height: 20.833cqw; letter-spacing: -.05em; text-transform: uppercase; }
-.frame .trace { position: absolute; inset: 0; width: 100%; height: 100%; }
-.frame .trace path { stroke-width: 9; }
-.frame .start { position: absolute; left: 69.722cqw; top: 30.556cqw; gap: 1.111cqw; padding: 1.389cqw 2.361cqw 1.389cqw 2.639cqw; border-width: .625cqw; font-size: 2.361cqw; line-height: 2.5cqw; }
-.frame .start svg { width: 2.083cqw; height: 2.083cqw; }
-.tail { display: none; }
-.foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
-.foot p { margin: 0; font-size: 30px; line-height: 38px; letter-spacing: -.01em; }
-.foot b { font-weight: 800; }
-.foot .mono { font-weight: 500; font-size: 15px; color: var(--mute); }
-.foot .mono a { color: var(--ink); text-underline-offset: 4px; }
-.start.below { display: none; }
-
-/* ---- 01 the board ---- */
-section { padding: 140px 0; }
-.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px 64px; flex-wrap: wrap; margin-bottom: 56px; }
-.head > p { width: 400px; max-width: 100%; margin: 0; font-size: 22px; line-height: 32px; color: var(--soft); }
-.monitor { padding: 18px; background: #0e1418; border: 3px solid rgba(57, 255, 136, .35); border-radius: 36px; box-shadow: 0 0 60px rgba(57, 255, 136, .18), 0 40px 80px rgba(0, 0, 0, .6); }
-.monitor img { width: 100%; height: auto; aspect-ratio: 1440 / 900; border-radius: 22px; }
-.notes { display: flex; gap: 40px; margin-top: 56px; }
-.notes div { flex: 1; border-top: 3px solid var(--green); padding-top: 18px; }
-.notes b { display: block; font: 700 15px/1.4 var(--mono); letter-spacing: .12em; color: var(--green); margin-bottom: 8px; }
-.notes p { margin: 0; font-size: 20px; line-height: 28px; }
-
-/* ---- 02 two rules ---- */
-.rules h2 { margin-bottom: 72px; }
-.rule + .rule { margin-top: 72px; }
-.rule .trace { width: 100%; height: auto; margin-bottom: 28px; }
-.rule .trace path { stroke-width: 5; }
-.rule > div { display: flex; gap: 64px; align-items: flex-start; }
-.rule.two > div { padding-left: 340px; }
-.rule .n { flex: none; width: 140px; font: 800 160px/130px var(--display); font-variation-settings: 'wdth' 75; color: var(--green); }
-.rule h3 { margin: 0 0 18px; max-width: 820px; font-size: 48px; line-height: 54px; letter-spacing: -.02em; font-weight: 700; }
-.rule p { margin: 0; max-width: 700px; font-size: 22px; line-height: 32px; color: var(--soft); }
-
-/* ---- 03 tonight ---- */
-.night { background: var(--bg-2); border-top: 1px solid rgba(57, 255, 136, .15); }
-.night .head { margin-bottom: 64px; }
-.strip { position: relative; aspect-ratio: 1248 / 520; }
-.strip .trace { position: absolute; left: 0; top: 23.077%; width: 100%; height: 38.462%; }
-.strip .trace path { stroke-width: 5; }
-.hours { position: absolute; left: 0; right: 0; top: 67.3%; display: flex; justify-content: space-between; font: 14px/1 var(--mono); letter-spacing: .12em; color: var(--mute); }
-.events { list-style: none; margin: 0; padding: 0; }
-.events li { position: absolute; width: 24%; display: flex; flex-direction: column; gap: 6px; border-left: 2px solid var(--green); padding-left: 16px; font-size: 20px; line-height: 28px; }
-.events time { font: 700 15px/1.4 var(--mono); letter-spacing: .12em; color: var(--green); }
-.events .up { top: 0; height: 34.6%; }
-.events .down { top: 48%; height: 52%; justify-content: flex-end; }
-.events .e1 { left: 1.923%; }
-.events .e2 { left: 8.093%; width: 25.6%; }
-.events .e3 { left: 64.9%; border-color: var(--red); } .events .e3 time { color: var(--red); }
-.events .e4 { right: 0; top: 74%; height: 26%; align-items: flex-end; text-align: right; border-left: 0; border-right: 2px solid var(--green); padding: 0 16px 0 0; }
-
-/* ---- closing ---- */
-.end { position: relative; overflow: hidden; text-align: center; padding: 106px 0 120px; }
-.end h2 { font-size: clamp(72px, 14vw, 200px); line-height: .9; }
-.end .line { position: relative; display: flex; justify-content: center; margin: 56px 0; }
-.end .line .trace { position: absolute; left: 0; top: 50%; width: 100%; height: 200px; transform: translateY(-50%); }
-.end .line .trace path { stroke-width: 7; }
-.end .line .start { position: relative; padding: 28px 72px; font-size: 40px; line-height: 44px; }
-.end .mono { margin: 0; font-size: 14px; letter-spacing: .18em; color: var(--mute); }
-
-footer { border-top: 1px solid rgba(57, 255, 136, .15); }
-footer .wrap { display: flex; justify-content: space-between; align-items: center; gap: 16px 36px; flex-wrap: wrap; padding: 40px 0 48px; }
-footer .brand { font: 800 28px/1 var(--display); font-variation-settings: 'wdth' 75; letter-spacing: -.02em; text-decoration: none; }
-footer nav { display: flex; gap: 36px; }
-footer nav a { font: 14px/1 var(--mono); letter-spacing: .14em; color: var(--soft); text-decoration: none; }
-footer nav a:hover { color: var(--green); }
-footer small { font: 13px/1.4 var(--mono); letter-spacing: .08em; color: var(--mute); }
-
-/* the hero trace draws itself once */
-@media (prefers-reduced-motion: no-preference) {
-  .frame .trace path:first-child { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.6s cubic-bezier(.6, 0, .3, 1) .2s forwards; }
-  .frame .start { animation: on .4s ease-out 1.5s backwards; }
-  .clock i { animation: blink 2s steps(1) infinite; }
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-  @keyframes on { from { opacity: 0; box-shadow: none; } }
-  @keyframes blink { 50% { opacity: .25; } }
-}
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-
-@media (max-width: 1100px) {
-  .rule.two > div { padding-left: 0; }
-}
-/* below this the button is too small to sit on the scaled trace, so it moves under it */
-@media (max-width: 900px) {
-  .frame .start { display: none; }
-  .tail { display: inline; }
-  .start.below { display: inline-flex; align-self: flex-start; margin: 8px 16px 0; font-size: 26px; line-height: 30px; padding: 16px 28px; border-width: 7px; }
-  .notes { flex-direction: column; gap: 28px; }
-  section { padding: 96px 0; }
-  .rule > div { flex-direction: column; gap: 8px; }
-  .rule .n { font-size: 112px; line-height: 100px; }
-  .rule h3 { font-size: 34px; line-height: 40px; }
-  .rule p { font-size: 19px; line-height: 28px; }
-  /* the night becomes a list under the trace */
-  .strip { aspect-ratio: auto; }
-  .strip .trace { position: static; height: auto; }
-  .hours { position: static; margin: 16px 0 40px; }
-  .events li[class] { position: static; width: auto; height: auto; text-align: left; align-items: flex-start; border-right: 0; border-left: 2px solid var(--green); padding: 0 0 0 16px; }
-  .events li.e3 { border-color: var(--red); }
-  .events li + li { margin-top: 28px; }
-}
-@media (max-width: 600px) {
-  body { font-size: 18px; }
-  .hero { padding: 28px 0 32px; }
-  .bar { font-size: 12px; letter-spacing: .12em; }
-  .clock { font-size: 18px; }
-  .foot p { font-size: 22px; line-height: 30px; }
-  .head > p { font-size: 19px; line-height: 28px; }
-  .monitor { padding: 8px; border-radius: 18px; }
-  .monitor img { border-radius: 12px; }
-  .end .line .start { padding: 20px 40px; font-size: 30px; line-height: 34px; border-width: 7px; }
-}
-</style>
-<!--site:jsonld-->
 </head>
 <body>
-<main>
-<header class="hero">
-  <div class="wrap bar">
-    <span>Harbourside General · Emergency</span>
-    <span class="clock"><i aria-hidden="true"></i>19:00</span>
+<!-- the room behind the screen: drawn by src/ui/backdrop.js, decoration only -->
+<!-- for search engines and visitors without scripts; the game draws over it -->
+<noscript><main style="position:fixed;inset:0;z-index:99;background:#03060a;color:#d5dce6;font:18px/1.5 system-ui,sans-serif;padding:48px 24px"><h1>Flatline</h1><p>A browser game where you run an emergency department at night as the charge nurse. 19:00 to 07:00: give out beds, call in teams and keep the hospital from jamming. It needs JavaScript to play.</p><p><a style="color:#8db4f0" href="handbook.html">Read the handbook</a></p></main></noscript>
+<div id="world" aria-hidden="true">
+  <div id="scene">
+    <div class="photo back"></div>
+    <div class="photo front"></div>
+    <canvas id="mid"></canvas>
   </div>
-  <div class="stage">
-    <div class="frame">
-      <h1>Nightboard</h1>
-      <svg class="trace" viewBox="0 110 1440 590" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 590 H150 Q170 590 178 572 Q186 590 200 590 H228 L248 614 L284 196 L320 676 L342 590 H376 Q408 548 440 590 H560 Q580 590 588 572 Q596 590 610 590 H638 L658 614 L694 196 L730 676 L752 590 H786 Q818 548 850 590 H1010"/><path class="tail" d="M1010 590 H1440"/></svg>
-      <a class="start" href="play.html">Start the shift<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M6 15h16M15 7l8 8-8 8" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-    </div>
-  </div>
-  <a class="start below" href="play.html">Start the shift<svg viewBox="0 0 30 30" aria-hidden="true"><path d="M6 15h16M15 7l8 8-8 8" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-  <div class="wrap foot">
-    <p>Twelve hours. Twenty-one beds.<br><b>Keep the line going.</b></p>
-    <span class="mono">Free · No sign-up · <a href="handbook.html">How to play</a></span>
-  </div>
-</header>
-
-<section>
-  <div class="wrap">
-    <div class="head">
-      <div><p class="label">01 · The board</p><h2>This is your board.</h2></div>
-      <p>Every patient in the building, on one screen. You never treat anyone. You decide who gets which bed, who goes first, and who gets called in from home.</p>
-    </div>
-    <div class="monitor"><img src="./src/assets/board.webp" width="1440" height="900" loading="lazy" alt="The track board: every patient with their bed, complaint, warning score and what each one is waiting for."></div>
-    <div class="notes">
-      <div><b>RED NUMBERS</b><p>Someone is getting worse. Look at them first.</p></div>
-      <div><b>BOARDING</b><p>Done here, stuck waiting for a bed upstairs.</p></div>
-      <div><b>GUIDE MODE</b><p>Point at anything and it tells you what it means.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="rules">
-  <div class="wrap">
-    <p class="label">02 · Two rules</p>
-    <h2>Why a hospital jams.</h2>
-    <div class="rule">
-      <svg class="trace" viewBox="0 0 1248 120" aria-hidden="true"><path d="M0 70 H420 L440 70 L452 54 L464 70 L480 70 L494 8 L510 112 L524 70 L560 70 L576 58 L594 70 H1248"/></svg>
-      <div><span class="n" aria-hidden="true">1</span><div>
-        <h3>A care step starts only when everything it needs is free at the same moment.</h3>
-        <p>A scan needs the scanner, a nurse to go with them and a bed to come back to. Two out of three is still waiting.</p>
-      </div></div>
-    </div>
-    <div class="rule two">
-      <svg class="trace" viewBox="0 0 1248 120" aria-hidden="true"><path d="M0 70 H760 L780 70 L792 54 L804 70 L820 70 L834 8 L850 112 L864 70 L900 70 L916 58 L934 70 H1248"/></svg>
-      <div><span class="n" aria-hidden="true">2</span><div>
-        <h3>A patient keeps the place they are in until the next place is theirs.</h3>
-        <p>Nobody waits in a corridor. So one full ward upstairs quietly fills your beds downstairs.</p>
-      </div></div>
-    </div>
-  </div>
-</section>
-
-<section class="night">
-  <div class="wrap">
-    <div class="head">
-      <div><p class="label">03 · Tonight</p><h2>19:00 → 07:00</h2></div>
-      <p>Twelve hours on the clock. Speed it up, slow it down, pause any time. The patients keep coming either way.</p>
-    </div>
-    <div class="strip">
-      <svg class="trace" viewBox="0 0 1248 200" aria-hidden="true"><path d="M0 100 H18 L24 70 L30 128 L36 100 H95 L101 66 L107 132 L113 100 H300 L306 84 L312 112 L318 100 H520 L526 86 L532 110 L538 100 H780 L792 40 L800 170 L810 20 L820 180 L830 30 L840 160 L850 50 L860 140 L872 70 L884 120 L896 100 H1060 L1066 86 L1072 110 L1078 100 H1248"/></svg>
-      <div class="hours" aria-hidden="true"><span>19:00</span><span>23:00</span><span>03:00</span><span>07:00</span></div>
-      <ol class="events">
-        <li class="up e1"><time>19:14</time>Ambulance, chest pain. Call the cath team from home before they land.</li>
-        <li class="down e2"><time>19:58</time>A stroke stuck behind a kidney stone in the queue for the scanner.</li>
-        <li class="up e3"><time>03:00</time>A bus has crashed. Everyone comes to you.</li>
-        <li class="down e4"><time>07:00</time>Handover. See who you kept moving.</li>
-      </ol>
-    </div>
-  </div>
-</section>
-
-<section class="end">
-  <h2>Keep the<br>line going.</h2>
-  <div class="line">
-    <svg class="trace" viewBox="0 0 1440 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M0 100 H260 L274 70 L288 130 L300 100 H1440"/></svg>
-    <a class="start" href="play.html">Start the shift</a>
-  </div>
-  <p class="mono">Free · In your browser · No sign-up</p>
-</section>
-</main>
-
-<footer><div class="wrap">
-  <a class="brand" href="./">NIGHTBOARD</a>
-  <nav aria-label="Footer"><a href="play.html">PLAY</a><a href="handbook.html">HANDBOOK</a></nav>
-  <small>A made-up hospital. Not medical advice.</small>
-</div></footer>
+  <canvas id="near"></canvas>
+  <div id="grade"></div>
+  <div id="grain"></div>
+</div>
+<div id="vignette"></div>
+<div id="stand"></div>
+<!-- the game: src/ui/app.js renders PULSE ED into #screen and the desk around it -->
+<div id="monitor"><div id="screen"></div></div>
+<div id="desk"></div>
+<div id="intro"></div>
+<div id="guide-layer"></div>
+<div id="tut-layer"></div>
+<div id="handbook" role="dialog" aria-label="Handbook"></div>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "redirects": [{ "source": "/play", "destination": "/", "permanent": false }],
   "headers": [
     {
       "source": "/assets/(.*)",

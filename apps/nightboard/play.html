@@ -2,28 +2,11 @@
 <html lang="en">
 <head>
 <!--site:head-->
+<meta http-equiv="refresh" content="0; url=./">
+<script>location.replace('./' + location.search + location.hash);</script>
+<style>html { background: #03060a; color: #d5dce6; font: 16px system-ui, sans-serif; } body { margin: 0; min-height: 100vh; display: grid; place-items: center; } a { color: #8db4f0; }</style>
 </head>
 <body>
-<!-- the room behind the screen: drawn by src/ui/backdrop.js, decoration only -->
-<div id="world" aria-hidden="true">
-  <div id="scene">
-    <div class="photo back"></div>
-    <div class="photo front"></div>
-    <canvas id="mid"></canvas>
-  </div>
-  <canvas id="near"></canvas>
-  <div id="grade"></div>
-  <div id="grain"></div>
-</div>
-<div id="vignette"></div>
-<div id="stand"></div>
-<!-- the game: src/ui/app.js renders PULSE ED into #screen and the desk around it -->
-<div id="monitor"><div id="screen"></div></div>
-<div id="desk"></div>
-<div id="intro"></div>
-<div id="guide-layer"></div>
-<div id="tut-layer"></div>
-<div id="handbook" role="dialog" aria-label="Handbook"></div>
-<script type="module" src="./src/main.js"></script>
+<p>Opening <a href="./">Flatline</a>…</p>
 </body>
 </html>
