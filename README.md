@@ -17,6 +17,7 @@ service, no game server, no hosted database.
 | [Sudoku Solver](apps/sudoku-solver) | A solver and playable grid |
 | [Ultimate Tic-Tac-Toe](apps/ultimate-ttt) | Tic-tac-toe nested inside tic-tac-toe |
 | [Hushword](apps/hushword) | Wordle, except every link carries its own colour code and its own redacted cells. No server; the whole case travels in the URL. |
+| [Nightboard](apps/nightboard) | Run an emergency department at night as the charge nurse: twelve hours, twenty-one beds, and you decide who gets one |
 
 Design notes for the newer batch are in [docs/CONCEPTS.md](docs/CONCEPTS.md), including
 why each concept was chosen and what its playtests changed.

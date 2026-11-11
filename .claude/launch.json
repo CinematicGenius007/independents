@@ -91,6 +91,19 @@
         "--strictPort"
       ],
       "port": 5186
+    },
+    {
+      "name": "nightboard",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "apps/nightboard",
+        "dev",
+        "--port",
+        "5187",
+        "--strictPort"
+      ],
+      "port": 5187
     }
   ]
 }
