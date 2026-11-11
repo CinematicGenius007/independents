@@ -1,4 +1,4 @@
-# Nightboard
+# Flatline
 
 Twelve hours. Twenty-one beds. You decide who gets one.
 
@@ -18,7 +18,7 @@ How the game works and why is in [DESIGN.md](DESIGN.md). The player's manual is
 
 ```bash
 pnpm install
-pnpm dev           # http://localhost:5173 (landing page); the game is /play.html
+pnpm dev           # http://localhost:5173 (the game, with the start menu on top)
 pnpm test          # engine rules, handbook compiler, site metadata and a full production build
 pnpm playtest      # one headless night with a naive player: pnpm playtest [seed] [--smart] [--log]
 pnpm build         # dist/
@@ -43,7 +43,7 @@ screen. In `pnpm dev` only, `window.App` lets you drive a shift from the browser
 
 ## Deploying
 
-`vercel.json` builds with `pnpm build` and serves `dist/` with clean URLs (`/play`,
+`vercel.json` builds with `pnpm build` and serves `dist/` with clean URLs (`/`,
 `/handbook`), security headers and a year-long cache on hashed assets. Set the project's
 root directory to `apps/nightboard`.
 
@@ -57,6 +57,6 @@ The landing page carries structured data (`WebSite` and `VideoGame`). `llms.txt`
 
 ## Content
 
-Nightboard is fiction. Harbourside General, its staff and its patients are made up. The
+Flatline is fiction. Harbourside General, its staff and its patients are made up. The
 clinical content is written to be plausible and consistent, from general emergency
 medicine knowledge, and has not been reviewed by a clinician. It is not medical advice.

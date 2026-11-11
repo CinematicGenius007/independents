@@ -53,22 +53,22 @@ describe('compileHandbook', () => {
 
 describe('meta', () => {
   test('without a site, nothing that needs an absolute URL is written', () => {
-    const head = headTags(PAGES['play.html']);
+    const head = headTags(PAGES['index.html']);
     expect(head).not.toMatch(/canonical|og:url|og:image/);
     expect(head).toContain('<link rel="manifest" href="site.webmanifest">');
     expect(siteFiles('', '')).not.toHaveProperty('sitemap.xml');
-    expect(siteFiles('', '')['llms.txt']).toContain('](play.html)');
+    expect(siteFiles('', '')['llms.txt']).toContain('](./)');
   });
   test('with a site, canonical, og:image, sitemap and llms.txt use it', () => {
     const site = 'https://example.org';
-    const head = headTags(PAGES['play.html'], site);
-    expect(head).toContain('<link rel="canonical" href="https://example.org/play">');
+    const head = headTags(PAGES['index.html'], site);
+    expect(head).toContain('<link rel="canonical" href="https://example.org/">');
     expect(head).toContain('<meta property="og:image" content="https://example.org/og.jpg">');
     const files = siteFiles(site, '');
     expect(files['sitemap.xml']).toContain('<loc>https://example.org/handbook</loc>');
     expect(files['sitemap.xml']).not.toContain('/404');
     expect(files['robots.txt']).toContain('Sitemap: https://example.org/sitemap.xml');
-    expect(files['llms.txt']).toContain('](https://example.org/play)');
+    expect(files['llms.txt']).toContain('](https://example.org/)');
   });
   test('the 404 page is never indexed or canonical', () => {
     const head = headTags(PAGES['404.html'], 'https://example.org');

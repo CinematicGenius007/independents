@@ -1,4 +1,4 @@
-# Nightboard: design notes
+# Flatline: design notes
 
 You are the charge nurse of Harbourside General's emergency department, 19:00 to 07:00.
 You never treat anyone. You decide who gets which bed, who goes first, what is held

@@ -41,7 +41,7 @@ export const Handbook = (() => {
   return {
     init(api) {
       el = document.getElementById('handbook');
-      el.innerHTML = `<div class="hb-top"><b>Nightboard Handbook</b><input type="search" placeholder="Search the handbook" aria-label="Search the handbook"><button data-ui="hbx:1">Back to the game</button></div><div class="hb-wrap"><nav class="hb-nav" aria-label="Sections"></nav><div class="hb-main"></div></div>`;
+      el.innerHTML = `<div class="hb-top"><b>Flatline Handbook</b><input type="search" placeholder="Search the handbook" aria-label="Search the handbook"><button data-ui="hbx:1">Back to the game</button></div><div class="hb-wrap"><nav class="hb-nav" aria-label="Sections"></nav><div class="hb-main"></div></div>`;
       nav = el.querySelector('.hb-nav'); main = el.querySelector('.hb-main'); input = el.querySelector('input');
       input.addEventListener('input', () => search(input.value));
       api.on('hb', (v) => open(v));

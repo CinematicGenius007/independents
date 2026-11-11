@@ -277,14 +277,15 @@ export const App = (() => {
   }
   function introCard() {
     const t = Tutorial.saved();
-    return `<div class="card"><div class="eyebrow">HARBOURSIDE GENERAL &middot; EMERGENCY DEPARTMENT</div><h1>Nightboard</h1>
-      <div>19:00 to 07:00. You are the charge nurse. You do not treat anyone. You decide who gets which bed, who goes first, and who gets called in from home.</div>
-      <div class="aims"><div><b>Keep them alive</b><span class="m">Deaths count most.</span></div><div><b>Stop delays hurting</b><span class="m">Sick patients get worse while they wait.</span></div><div><b>Hit the targets</b><span class="m">Heart attacks and strokes have deadlines.</span></div></div>
+    const opt = (act, label, note, key) => `<button class="btn ${act[2] || ''}" ${set(act[0], act[1])}><span><b>${label}</b><small>${note}</small></span>${key ? `<kbd>${key}</kbd>` : ''}</button>`;
+    return `<div class="card"><div class="eyebrow">HARBOURSIDE GENERAL &middot; EMERGENCY DEPARTMENT</div><h1>Flatline</h1>
+      <p class="premise">19:00 to 07:00. You are the charge nurse. You treat no one. You decide who gets which bed, who goes first, and who gets called in from home.</p>
+      <ol class="aims"><li><b>Keep them alive.</b> Deaths count most.</li><li><b>Stop delays hurting.</b> Sick patients get worse while they wait.</li><li><b>Hit the targets.</b> Heart attacks and strokes have deadlines.</li></ol>
       <div class="choice">
-        ${ui.started ? `<button class="btn primary" ${set('start', 'resume')}>Back to your shift<small>${E.clock(S.t)}</small></button>` : ''}
-        <button class="btn ${ui.started ? '' : 'primary'}" ${set('start', 'orientation')}>${t ? 'Continue orientation' : 'Start orientation'}<small>Recommended first time. About 8 minutes, on a practice night.</small></button>
-        ${ui.started ? '' : `<button class="btn" ${set('start', 'shift')}>Take handover<small>Start the shift now</small></button>`}
-        <button class="btn" ${set('hb', 'start')}>Read the handbook<small>How to play, every control, every condition</small></button>
+        ${ui.started ? opt(['start', 'resume', 'primary'], 'Back to your shift', `Carry on from ${E.clock(S.t)}.`, 'Esc') : ''}
+        ${opt(['start', 'orientation', ui.started ? '' : 'primary'], t ? 'Continue orientation' : 'Start orientation', 'Best first time. About 8 minutes on a practice night.')}
+        ${ui.started ? '' : opt(['start', 'shift'], 'Take handover', 'Skip the tutorial and start the shift now.')}
+        ${opt(['hb', 'start'], 'Read the handbook', 'How to play, every control, every condition.', 'H')}
       </div></div>`;
   }
 
@@ -313,7 +314,12 @@ export const App = (() => {
     $('desk').innerHTML = desk();
     for (const [id, top, left] of keep) if ($(id)) { $(id).scrollTop = top; $(id).scrollLeft = left; }
     if (focus) { const el = document.querySelector(`[data-${focus[0]}="${CSS.escape(focus[1])}"]`); if (el) el.focus({ preventScroll: true }); }
-    $('intro').style.display = ui.intro ? 'flex' : 'none';
+    const layer = $('intro');
+    if (ui.intro) { clearTimeout(layer.fade); layer.classList.remove('leaving'); layer.style.display = 'flex'; }
+    else if (layer.style.display !== 'none' && !layer.classList.contains('leaving')) {   // dissolve, then get out of the way
+      layer.classList.add('leaving');
+      layer.fade = setTimeout(() => { layer.style.display = 'none'; layer.classList.remove('leaving'); }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 380);
+    }
     $('vignette').className = E.patientsOf(S).some((p) => p.arrest) ? 'code' : '';
     Guide.refresh(); Tutorial.refresh();
   }

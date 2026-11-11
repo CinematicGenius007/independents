@@ -9,15 +9,15 @@
  * works opened from disk. */
 import { esc } from './handbook.mjs';
 
-export const NAME = 'Nightboard';
+export const NAME = 'Flatline';
 export const BLURB = 'A browser game where you run an emergency department at night as the charge nurse. Give out beds, call in teams and keep the hospital from jamming.';
 export const THEME = '#0d1724';
 export const OG_IMAGE = '/og.jpg';   // public/og.jpg, 1200x630
 
 /** Every HTML page the build emits, keyed by file name. `path` is its public URL. */
 export const PAGES = {
-  'index.html': { path: '/', title: `${NAME}: an emergency department game`, description: BLURB, sitemap: '1.0' },
-  'play.html': { path: '/play', title: `Play ${NAME}: run an emergency department tonight`, description: BLURB, sitemap: '0.9' },
+  'index.html': { path: '/', title: `${NAME}: run an emergency department tonight`, description: BLURB, sitemap: '1.0' },   // the game, with the start menu on top
+  'play.html': { path: '/play', title: `${NAME}: run an emergency department tonight`, description: BLURB, noindex: true },   // old address, forwards to /
   'handbook.html': { path: '/handbook', title: `${NAME} Handbook: how to play, every control and condition`, description: `The complete manual for ${NAME}: the rules, the screen, vital signs and NEWS2, every action, every alert, every condition and a glossary.`, sitemap: '0.8' },
   '404.html': { path: '/404', title: `Not found · ${NAME}`, description: BLURB, noindex: true },
 };
@@ -62,7 +62,7 @@ export function jsonLd(site = '') {
       {
         '@type': 'VideoGame', name: NAME, description: BLURB, inLanguage: 'en',
         genre: ['Simulation', 'Strategy', 'Management'], gamePlatform: 'Web browser', applicationCategory: 'Game', operatingSystem: 'Any', playMode: 'SinglePlayer',
-        ...(site && { url: `${site}/play`, image: `${site}${OG_IMAGE}` }),
+        ...(site && { url: `${site}/`, image: `${site}${OG_IMAGE}` }),
       },
     ],
   };
@@ -77,7 +77,7 @@ export function siteFiles(site, handbookMarkdown) {
   const files = {
     'robots.txt': `User-agent: *\nAllow: /\n${site ? `\nSitemap: ${site}/sitemap.xml\n` : ''}`,
     'site.webmanifest': `${JSON.stringify({
-      name: NAME, short_name: NAME, description: BLURB, start_url: 'play.html', scope: './', display: 'standalone', orientation: 'any', background_color: THEME, theme_color: THEME,
+      name: NAME, short_name: NAME, description: BLURB, start_url: './', scope: './', display: 'standalone', orientation: 'any', background_color: THEME, theme_color: THEME,
       icons: [
         { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
         { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -85,7 +85,7 @@ export function siteFiles(site, handbookMarkdown) {
       ],
     }, null, 2)}\n`,
     // llms.txt (llmstxt.org): a plain summary for AI search and assistants, with the whole manual beside it
-    'llms.txt': `# ${NAME}\n\n> ${BLURB}\n\nThe player is the charge nurse of Harbourside General's emergency department (a fictional hospital), from 19:00 to 07:00. They never treat patients. They decide who gets which bed, who goes first, what is held back, who is called in from home, and when two patients swap places. Two rules drive the simulation: a care step starts only when everything it needs is free at the same moment, and a patient keeps the place they are in until the next place is theirs. It runs in any modern browser, on desktop and on phones, with no account. Medical content is plausible game content and has not been reviewed by a clinician.\n\n## Play\n\n- [Play ${NAME}](${link('/play', 'play.html')}): the game. For a different night add ?seed=ANYTHING.\n\n## Docs\n\n- [Handbook](${link('/handbook', 'handbook.html')}): how to play, every control, every condition, glossary.\n- [Full handbook as text](${link('/llms-full.txt', 'llms-full.txt')}): the same manual in Markdown.\n`,
+    'llms.txt': `# ${NAME}\n\n> ${BLURB}\n\nThe player is the charge nurse of Harbourside General's emergency department (a fictional hospital), from 19:00 to 07:00. They never treat patients. They decide who gets which bed, who goes first, what is held back, who is called in from home, and when two patients swap places. Two rules drive the simulation: a care step starts only when everything it needs is free at the same moment, and a patient keeps the place they are in until the next place is theirs. It runs in any modern browser, on desktop and on phones, with no account. Medical content is plausible game content and has not been reviewed by a clinician.\n\n## Play\n\n- [Play ${NAME}](${link('/', './')}): the game. For a different night add ?seed=ANYTHING.\n\n## Docs\n\n- [Handbook](${link('/handbook', 'handbook.html')}): how to play, every control, every condition, glossary.\n- [Full handbook as text](${link('/llms-full.txt', 'llms-full.txt')}): the same manual in Markdown.\n`,
     'llms-full.txt': `# ${NAME} Handbook\n\n> ${BLURB}\n\n${handbookMarkdown}`,
   };
   if (site) {

@@ -15,8 +15,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        index: 'index.html',        // landing page
-        play: 'play.html',          // the game
+        index: 'index.html',        // the game, start menu on top
+        play: 'play.html',          // old address, forwards to /
         handbook: 'handbook.html',  // the manual as a page of its own
         notFound: '404.html',
       },
