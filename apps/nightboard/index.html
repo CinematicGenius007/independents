@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!--site:head-->
+<style>
+:root { --night: #0d1724; --night-2: #121f30; --panel: #16243a; --line: #24354d; --ink: #eef2f7; --mute: #a9b6c7; --amber: #ffb454; --blue: #1f4e8c; --red: #e0465b; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--night); color: var(--ink); font: 17px/1.6 Tahoma, 'Segoe UI', Verdana, system-ui, sans-serif; }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+.wrap { width: min(1120px, 100% - 32px); margin: 0 auto; }
+
+/* top bar */
+.top { position: absolute; inset: 0 0 auto; z-index: 3; }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; letter-spacing: .18em; font-size: 14px; }
+.brand svg { width: 30px; height: 30px; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; color: var(--mute); } .top nav a:hover { color: var(--ink); }
+
+/* hero: the department, out of focus, behind the words */
+.hero { position: relative; overflow: hidden; padding: 150px 0 0; isolation: isolate; }
+.hero::before { content: ''; position: absolute; inset: -40px; z-index: -2; background: url('./src/assets/er-floor.webp') center 30% / cover; filter: blur(8px) saturate(.75) brightness(.5); }
+.hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(13, 23, 36, .35) 0%, rgba(13, 23, 36, .7) 55%, var(--night) 100%), linear-gradient(90deg, rgba(13, 23, 36, .9), rgba(13, 23, 36, .2) 75%); }
+.eyebrow { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--amber); font-weight: 700; margin: 0 0 14px; }
+h1 { font-size: clamp(40px, 7vw, 76px); line-height: 1.04; margin: 0; letter-spacing: -.01em; }
+h1 span { color: var(--amber); }
+.lead { font-size: clamp(18px, 2.1vw, 21px); color: #d4dce7; max-width: 36em; margin: 22px 0 30px; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn { display: inline-flex; align-items: center; gap: 10px; min-height: 50px; padding: 0 24px; border-radius: 6px; font-weight: 700; text-decoration: none; border: 1px solid transparent; }
+.btn.primary { background: var(--amber); color: #1b1306; } .btn.primary:hover { background: #ffc477; }
+.btn.ghost { border-color: rgba(255, 255, 255, .35); color: var(--ink); } .btn.ghost:hover { border-color: #fff; background: rgba(255, 255, 255, .06); }
+.small { font-size: 14px; color: var(--mute); margin: 14px 0 0; }
+.shot { margin: 64px auto 0; width: min(1120px, 100% - 32px); background: #1b2129; padding: 12px 12px 0; border-radius: 12px 12px 0 0; box-shadow: 0 -10px 80px rgba(0, 0, 0, .5); }
+.shot img { border-radius: 4px 4px 0 0; width: 100%; height: auto; aspect-ratio: 1440 / 900; }
+
+section { padding: 88px 0; }
+section + section { border-top: 1px solid var(--line); }
+h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 0 0 14px; }
+.sub { color: var(--mute); max-width: 40em; margin: 0 0 40px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 24px; }
+.card .n { font-size: 13px; color: var(--amber); font-weight: 700; letter-spacing: .12em; }
+.card h3 { margin: 8px 0 8px; font-size: 20px; }
+.card p { margin: 0; color: var(--mute); font-size: 16px; }
+
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 26px; }
+.rule { border: 1px solid var(--line); border-radius: 10px; padding: 26px; background: linear-gradient(180deg, var(--night-2), var(--night)); }
+.rule b { display: block; font-size: 13px; letter-spacing: .14em; color: var(--amber); margin-bottom: 10px; }
+.rule p { margin: 0; font-size: 21px; line-height: 1.4; }
+.note { color: var(--mute); max-width: 44em; }
+
+.split { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; align-items: center; }
+.split.flip { grid-template-columns: 1fr 1.15fr; }
+.split img { border-radius: 8px; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); width: 100%; height: auto; }
+.learn { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+.learn li { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; }
+.learn kbd { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); font: 700 15px Tahoma, sans-serif; color: var(--amber); }
+.learn b { display: block; } .learn span { color: var(--mute); font-size: 16px; }
+.phone { max-width: 300px; margin: 0 auto; }
+.phone img { border-radius: 28px; border: 8px solid #1b2129; aspect-ratio: 390 / 844; }
+
+details { border-bottom: 1px solid var(--line); padding: 18px 0; }
+summary { cursor: pointer; font-weight: 700; font-size: 18px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: '+'; color: var(--amber); font-size: 22px; line-height: 1; }
+details[open] summary::after { content: '\2212'; }
+details p { color: var(--mute); margin: 10px 0 0; max-width: 46em; }
+
+.end { text-align: center; }
+.end .ctas { justify-content: center; }
+footer { border-top: 1px solid var(--line); padding: 34px 0 48px; color: var(--mute); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+footer nav { display: flex; gap: 20px; }
+
+@media (max-width: 860px) {
+  .cards, .rules, .split, .split.flip { grid-template-columns: 1fr; }
+  .split.flip .phone { order: 2; }
+  section { padding: 64px 0; }
+  .hero { padding-top: 110px; }
+  .top nav a.hide-s { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+<!--site:jsonld-->
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="./" aria-label="Nightboard home"><!--site:mark-->NIGHTBOARD</a>
+  <nav aria-label="Main"><a class="hide-s" href="#how">How it plays</a><a class="hide-s" href="#faq">Questions</a><a href="handbook.html">Handbook</a></nav>
+</div></header>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <p class="eyebrow">A browser game about emergency medicine</p>
+    <h1>Twelve hours.<br>Twenty-one beds.<br><span>You decide who gets one.</span></h1>
+    <p class="lead">You are the charge nurse of an emergency department, from 19:00 to 07:00. You never treat anyone. You decide who gets a bed, who goes first, and who gets called in from home.</p>
+    <div class="ctas">
+      <a class="btn primary" href="play.html">Start your shift</a>
+      <a class="btn ghost" href="handbook.html">Read the handbook</a>
+    </div>
+    <p class="small">Plays in your browser on a computer, tablet or phone. No account.</p>
+  </div>
+  <div class="shot"><img src="./src/assets/board.webp" width="1440" height="900" alt="The PULSE ED track board: a list of patients with their bed, acuity, complaint, early warning score and what each one is waiting for." fetchpriority="high"></div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2>Your night</h2>
+    <p class="sub">Patients arrive by ambulance and on foot. Every one of them needs a bed, people and equipment, and there is never enough of any of it.</p>
+    <div class="cards">
+      <div class="card"><div class="n">01</div><h3>Give out beds</h3><p>Resus, acute, fast track or a hallway trolley. The wrong bed costs time. No bed costs more.</p></div>
+      <div class="card"><div class="n">02</div><h3>Call people in</h3><p>At night the heart team is 25 minutes away. Call them when the ambulance radios ahead, not when the patient arrives.</p></div>
+      <div class="card"><div class="n">03</div><h3>Keep things moving</h3><p>ICU is full, so surgery cannot finish, so your bed never empties. Spot the jam and break it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Why hospitals jam</h2>
+    <p class="sub">The game runs on two rules that real departments live by.</p>
+    <div class="rules">
+      <div class="rule"><b>RULE ONE</b><p>A care step starts only when everything it needs is free at the same moment.</p></div>
+      <div class="rule"><b>RULE TWO</b><p>A patient keeps the place they are in until the next place is theirs.</p></div>
+    </div>
+    <p class="note">Put those together and one full ward can stop an emergency department. Your score is how many people you keep alive and unharmed while that happens around you.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <img src="./src/assets/guide-mode.webp" width="1440" height="900" loading="lazy" alt="Guide Mode explaining the early warning score column on the track board.">
+    <div>
+      <h2>No medical background needed</h2>
+      <p class="sub">The screen looks like the real software, because it should. Three things make sure you can read it.</p>
+      <ul class="learn">
+        <li><kbd>1</kbd><div><b>Orientation</b><span>About eight minutes on a practice night. It walks you through every panel and your first patients.</span></div></li>
+        <li><kbd>G</kbd><div><b>Guide Mode</b><span>Stops the clock. Point at anything and it tells you what it is and what to do.</span></div></li>
+        <li><kbd>H</kbd><div><b>Handbook</b><span>Every control, every condition and every term, searchable.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split flip">
+    <div class="phone"><img src="./src/assets/phone.webp" width="390" height="844" loading="lazy" alt="The track board on a phone, with patients shown as cards and navigation along the bottom."></div>
+    <div>
+      <h2>Pause whenever you need to think</h2>
+      <p class="sub">A shift is twelve hours of game time, about twelve minutes at normal speed. Speed it up when it is quiet. Pause when it is not. There is no penalty for stopping the clock.</p>
+      <div class="ctas"><a class="btn primary" href="play.html">Start your shift</a></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <details><summary>Do I need to know medicine?</summary><p>No. Orientation teaches the screen step by step, Guide Mode explains every word on it, and the handbook has a glossary. You make the decisions a charge nurse makes, about beds, people and time, not diagnoses.</p></details>
+    <details><summary>Is the medicine accurate?</summary><p>The conditions, vital signs, early warning scores and time targets are written to be plausible and consistent, from general emergency medicine knowledge. No clinician has reviewed them yet. It is a game, not medical guidance.</p></details>
+    <details><summary>How long does a shift take?</summary><p>Twelve hours of game time. At 1x that is about twelve minutes. 3x and 8x go faster, and you can pause at any time.</p></details>
+    <details><summary>Does it work on a phone?</summary><p>Yes. On a phone the board turns into cards, each patient's report opens full screen, and the views move to a bar along the bottom.</p></details>
+    <details><summary>Does it save my game?</summary><p>Your progress through Orientation is saved. A shift in progress is not saved yet, so a reload starts a new night.</p></details>
+    <details><summary>Is Harbourside General a real hospital?</summary><p>No. The hospital, its staff and its patients are made up.</p></details>
+  </div>
+</section>
+
+<section class="end">
+  <div class="wrap">
+    <h2>The ambulance is nine minutes out.</h2>
+    <p class="sub" style="margin-left:auto;margin-right:auto">Your shift starts when you are ready.</p>
+    <div class="ctas"><a class="btn primary" href="play.html">Start your shift</a><a class="btn ghost" href="handbook.html">Read the handbook</a></div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">
+  <span>Nightboard is fiction. Nothing in it is medical advice.</span>
+  <nav aria-label="Footer"><a href="play.html">Play</a><a href="handbook.html">Handbook</a><a href="llms.txt">llms.txt</a></nav>
+</div></footer>
+</body>
+</html>
