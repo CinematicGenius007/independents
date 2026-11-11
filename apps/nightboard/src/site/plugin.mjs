@@ -6,6 +6,7 @@
  *   <!--site:mark-->        the logo, inlined from public/favicon.svg (landing page)
  *   <!--site:handbook-nav--> and <!--site:handbook-main-->   the manual as a static page
  *   robots.txt, sitemap.xml, site.webmanifest, llms.txt, llms-full.txt   emitted with the build
+ *   404.html                its links rooted at /, since it is served at any missing path
  *
  * In `pnpm dev` the handbook reloads when docs/HANDBOOK.md or a diagram changes. A change to
  * guide-text.js or the case book reaches the handbook after restarting the dev server. */
@@ -32,7 +33,7 @@ export function nightboardSite({ root, site }) {
   const handbook = () => (compiled ??= compileHandbook({ markdown: read('docs/HANDBOOK.md'), guide: GUIDE, cases: CASES, kinds: KINDS, diagram }));
   const mark = () => read('public/favicon.svg').trim().replace(/<title>.*?<\/title>\s*/, '').replace('<svg ', '<svg aria-hidden="true" ');
 
-  return {
+  const main = {
     name: 'nightboard-site',
 
     configResolved(config) {
@@ -74,4 +75,18 @@ export function nightboardSite({ root, site }) {
       for (const [fileName, source] of Object.entries(siteFiles(site, handbook().markdown))) this.emitFile({ type: 'asset', fileName, source });
     },
   };
+
+  // 404.html is served at whatever path was missing (/a/b/c), so relative links on it would
+  // point nowhere. After Vite has resolved its URLs (relative, since base is './'), root them.
+  const rootNotFound = {
+    name: 'nightboard-site:404',
+    transformIndexHtml: {
+      order: 'post',
+      handler: (html, ctx) => (basename(ctx.filename) === '404.html'
+        ? html.replace(/\b(href|src)="(?![a-z][a-z0-9+.-]*:|\/|#)(?:\.\/)?/gi, '$1="/')
+        : html),
+    },
+  };
+
+  return [main, rootNotFound];
 }

@@ -1,7 +1,8 @@
 /* The simulation's rules. pnpm test */
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { newShift, tick, act, autopilot, summary, patientsOf, findGridlocks, blockers, CASES, ON_CALL } from '../src/engine/sim.mjs';
+import { newShift, tick, act, autopilot, summary, patientsOf, findGridlocks, blockers, actionsFor, CASES, ON_CALL } from '../src/engine/sim.mjs';
+import { buildSchedule } from '../src/engine/scenario.mjs';
 import { makePatient } from '../src/engine/patient.mjs';
 import { news2 } from '../src/engine/news2.mjs';
 
@@ -95,4 +96,76 @@ test('a reserved bed waits for its patient', () => {
   const b = makePatient(s, 'trauma', s.t); s.patients[b.id] = b;
   assert.equal(act(s, { type: 'place', pid: b.id, unit: 'R1' }).ok, false);
   assert.equal(act(s, { type: 'place', pid: b.id, unit: 'R2' }).ok, true);
+});
+
+test('releasing a reservation is offered, and frees the unit', () => {
+  const s = quiet();
+  const a = makePatient(s, 'stemi', s.t + 5); a.status = 'expected'; s.patients[a.id] = a;
+  act(s, { type: 'reserve', pid: a.id, unit: 'R1' });
+  const offer = actionsFor(s, a).find((x) => x.key === 'unres:R1');
+  assert.ok(offer, 'a release button for R1');
+  assert.equal(act(s, offer.action).ok, true);
+  assert.equal(s.units.R1.reservedFor, null);
+});
+
+test('placing a patient drops the other beds held for them', () => {
+  const s = quiet();
+  const a = makePatient(s, 'stemi', s.t); a.status = 'expected'; s.patients[a.id] = a;
+  act(s, { type: 'reserve', pid: a.id, unit: 'R1' });
+  act(s, { type: 'reserve', pid: a.id, unit: 'R2' });
+  a.status = 'waiting';
+  assert.equal(act(s, { type: 'place', pid: a.id, unit: 'R2' }).ok, true);
+  assert.equal(s.units.R1.reservedFor, null, 'R1 is free for others again');
+});
+
+/* Doctor md1 is busy with a patient; every other doctor and nurse is out of reach. */
+function codeSetup() {
+  const s = quiet();
+  for (const u of Object.values(s.units)) if ((u.kind === 'md' || u.kind === 'rn') && u.id !== 'md1') u.holder = 'bg';
+  const q = makePatient(s, 'colic', s.t); s.patients[q.id] = q;
+  Object.assign(q, { status: 'active', loc: 'A1', stepIdx: 0, stepState: 'run', stepLeft: 30, using: ['md1'] });
+  s.units.A1.holder = q.id; s.units.md1.holder = q.id;
+  const p = makePatient(s, 'stemi', s.t); s.patients[p.id] = p;
+  Object.assign(p, { status: 'active', loc: 'R1', arrest: { at: s.t, teamAt: null, team: [] }, arrested: true });
+  s.units.R1.holder = p.id;
+  return { s, p, q };
+}
+
+test('a code that cannot get a nurse does not pull a doctor off anyone', () => {
+  const { s, p, q } = codeSetup();
+  for (let i = 0; i < 3; i += 1) tick(s);
+  assert.equal(p.arrest.teamAt, null);
+  assert.deepEqual(q.using, ['md1'], 'the doctor stays with their patient');
+  assert.ok(!q.resume, 'never interrupted');
+});
+
+test('a code that can get a whole team takes it', () => {
+  const { s, p, q } = codeSetup();
+  s.units.rn1.holder = null;
+  tick(s);
+  assert.deepEqual([...p.arrest.team].sort(), ['md1', 'rn1']);
+  assert.equal(q.resume, true, 'the doctor was pulled to the code');
+});
+
+test('an alert fires once per key all night, and the review counts every one', () => {
+  const s = newShift('ALERTS');
+  const keyOf = new Map();
+  while (!s.over) {
+    autopilot(s); tick(s);
+    for (const a of s.alerts) keyOf.set(a.id, a.key);
+  }
+  const keys = [...keyOf.values()];
+  assert.ok(keys.length > 80, `enough alerts to overflow the list (${keys.length})`);
+  assert.equal(new Set(keys).size, keys.length, 'no key fired twice');
+  assert.equal(Object.values(s.alertCounts).reduce((a, n) => a + n, 0), keys.length);
+});
+
+test('the first hour brings only cases that are minor and slow to worsen', () => {
+  for (const seed of ['A', 'B', 'C', 'D', 'E']) {
+    const s = newShift(seed);
+    const scripted = new Set(['14 stemi', '52 colic', '58 stroke']);   // the set pieces of the first hour
+    for (const e of buildSchedule(s).filter((x) => x.at >= 0 && x.at < 60 && !scripted.has(`${x.at} ${x.case}`))) {
+      assert.ok(CASES[e.case].esi >= 3 && CASES[e.case].rate < 0.005, `${seed}: ${e.case} at ${e.at}`);
+    }
+  }
 });

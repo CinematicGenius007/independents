@@ -57,6 +57,14 @@ describe('production build', () => {
     }
   });
 
+  test('the 404 page links to the site root, since it is served at any path', () => {
+    const page = plain.read('404.html');
+    const refs = [...page.matchAll(/\s(?:href|src)="([^"#]+)"/g)].map((m) => m[1]);
+    expect(refs).toContain('/favicon.svg');
+    for (const ref of refs) expect(ref, ref).toMatch(/^(\/|https?:)/);
+    for (const ref of refs.filter((r) => r.startsWith('/') && r.length > 1 && r !== '/play')) expect(existsSync(join(plain.dir, ref)), ref).toBe(true);
+  });
+
   test('the game page loads its script and styles, and the styles find the photo', () => {
     const play = plain.read('play.html');
     expect(play).toMatch(/<script type="module"[^>]*src="\.\/assets\/play-[\w-]+\.js"/);

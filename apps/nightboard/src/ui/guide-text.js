@@ -94,6 +94,7 @@ export const GUIDE = {
   'act.discharge': ['Charge action', 'Phone bed management', 'Sends a ward patient home early. Frees a ward bed in 30 minutes.', 'You have 8 of these a night.', 'moves'],
   'act.blood': ['Charge action', 'Phone blood bank', 'Orders 6 units of red cells. They arrive in 15 minutes.', 'Order before you run out.', 'moves'],
   'act.res': ['Charge action', 'Reserve equipment', 'Keeps a scanner, cath lab or theatre for this patient, now or as soon as it frees up.', 'Use it for the next step of a very sick patient.', 'moves'],
+  'act.unres': ['Charge action', 'Release a reservation', 'Hands back a bed, scanner, cath lab or theatre you reserved for this patient, so anyone can use it.', 'Release it as soon as the plan changes.', 'moves'],
   'act.expedite': ['Charge action', 'Expedite', 'Puts this patient first in every queue. The normal order is first come, first served.', 'Use it sparingly. If everyone is first, nobody is.', 'moves'],
   'act.hold': ['Charge action', 'Hold', 'Stops this patient from claiming their next step until you release them.', 'Use it to leave scarce staff for someone sicker.', 'moves'],
   'act.move': ['Charge action', 'Move', 'Moves the patient to another bed. Not possible during a procedure. Hallway care is 30% slower and deterioration 20% faster.', 'Move stable patients to the hallway to free a monitored bed.', 'moves'],

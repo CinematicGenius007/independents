@@ -4,12 +4,12 @@
  * Keyboard: focus shows the same popover. */
 import { GUIDE } from './guide-text.js';
 import { Handbook } from './handbook.js';
+import { esc } from './html.js';
 
 export const Guide = (() => {
   let api, layer, hl, tip, bar;
   let at = null, shown = '', tap = null, sheet = false;
   const touchOnly = matchMedia('(hover: none)').matches;
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const on = () => api.ui.guide;
 
   function entryHtml(el) {

@@ -25,6 +25,11 @@ const SET_PIECES = [
 const PER_HOUR = [8, 8, 7, 7, 6, 5, 4, 4, 3, 4, 5, 6];
 const WARMUP = ['hip', 'appendicitis', 'chf', 'colic', 'hip', 'laceration', 'dka', 'colic', 'forearm', 'appendicitis', 'ankle', 'laceration', 'colic', 'ankle'];
 
+/* The first hour is for learning the board, so it only brings cases that are low acuity AND
+ * slow to worsen. ESI alone is not enough: an ectopic pregnancy is triaged 3 but can bleed
+ * out within the hour. */
+const isQuiet = (c) => CASES[c].esi >= 3 && CASES[c].rate < 0.005;
+
 function weighted(state, allow) {
   const keys = Object.keys(CASE_WEIGHTS).filter(allow);
   let roll = rnd(state) * keys.reduce((a, k) => a + CASE_WEIGHTS[k], 0);
@@ -39,7 +44,7 @@ export function buildSchedule(state) {
   PER_HOUR.forEach((n, h) => {
     for (let i = 0; i < n; i += 1) {
       // first hour stays gentle: minor cases only, so the opening teaches placing and queues
-      const k = weighted(state, (c) => (h === 0 ? CASES[c].esi >= 3 : true));
+      const k = weighted(state, (c) => (h === 0 ? isQuiet(c) : true));
       out.push({ at: h * 60 + rint(state, 0, 59), case: k });
     }
   });

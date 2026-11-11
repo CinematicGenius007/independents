@@ -12,13 +12,13 @@ import HANDBOOK from 'virtual:handbook';
 import { GUIDE } from './guide-text.js';
 import { Guide } from './guide.js';
 import { Handbook } from './handbook.js';
+import { esc } from './html.js';
 
 export const Tutorial = (() => {
   const CH = ['The job', 'The screen', 'One patient', 'Your first patients', 'The other screens', 'The desk', 'When it jams'];
   const KEY = 'nightboard.orientation';
   const store = { get() { try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } }, set(v) { try { localStorage.setItem(KEY, String(v)); } catch { /* private window */ } } };
   let api, hole, card, on = false, i = 0, setAside = null, menu = false, wasDone = null, lastKey = '';
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const G = (k) => `[data-g="${k}"]`;
 
   /* ---- the practice night's cast ---- */

@@ -6,6 +6,7 @@ import { Waves } from './monitor.js';
 import { Handbook } from './handbook.js';
 import { Guide } from './guide.js';
 import { Tutorial } from './tutorial.js';
+import { esc } from './html.js';
 
 export const App = (() => {
   const seed = new URLSearchParams(location.search).get('seed') || 'HARBOURSIDE';
@@ -15,11 +16,10 @@ export const App = (() => {
   const LENS = { grid: 'deadlock', forgot: 'starvation', news5: 'priority inversion', nobed: 'priority inversion', code: 'preemption', clock: 'deadline', lowblood: 'resource exhaustion' };
 
   const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const act = (o) => `data-act="${esc(JSON.stringify(o))}"`;
   const set = (k, v) => `data-ui="${k}:${v}"`;
   const g = (key, pid, live) => ` data-g="${key}"${pid != null ? ` data-gp="${pid}"` : ''}${live ? ` data-gl="${esc(live)}"` : ''}`;
-  const hm = (m) => `${Math.floor(Math.max(0, m) / 60)}:${String(Math.max(0, m) % 60).padStart(2, '0')}`;
+  const hm = E.hm;
   const last = (name) => name.split(',')[0];
   const low = (label) => label.replace(/^[A-Z][a-z]/, (m) => m.toLowerCase());   // keeps ED, ICU, CT, IM as written
   const P = (id) => S.patients[id];
@@ -223,7 +223,7 @@ export const App = (() => {
   function reviewView() {
     const m = E.summary(S), bad = E.patientsOf(S).filter((p) => p.outcome && p.outcome.grade !== 'good' && p.arriveAt >= 0);
     const grade = m.died === 0 && m.harm <= 2 ? 'A' : m.died <= 1 && m.harm <= 5 ? 'B' : m.died <= 3 ? 'C' : 'D';
-    const jams = {}; for (const a of S.alerts) { const k = a.key.split(':')[0]; if (LENS[k]) jams[k] = (jams[k] || 0) + 1; }
+    const jams = {}; for (const [k, n] of Object.entries(S.alertCounts)) if (LENS[k]) jams[k] = n;   // every alert of the night, not only the ones still listed
     return `<div class="view review" id="viewscroll"><h3 class="sec">Morbidity and mortality review: night of seed ${esc(S.seed)}</h3><div class="big"${g('review.grade')}>Grade ${grade}</div>
       <p>${m.good} patients did well. <span class="r">${m.died} died.</span> <span class="a">${m.harm} were harmed by delay.</span> ${m.lwbs} left without being seen. Time targets met: ${m.clocksMet} of ${m.clocksTotal}. Ambulances diverted: ${m.diverted}.</p>
       <table${g('review.list')}><tr><th style="text-align:left">Arrived</th><th style="text-align:left">Patient</th><th style="text-align:left">Diagnosis</th><th style="text-align:left">What happened</th></tr>${bad.map((p) => `<tr ${set('sel', p.id)} style="cursor:pointer"><td>${E.clock(p.arriveAt)}</td><td><b>${esc(p.name)}</b></td><td>${esc(E.caseOf(p).title)}</td><td class="${p.outcome.grade === 'died' ? 'r' : 'a'}">${esc(p.outcome.text)}</td></tr>`).join('')}</table>
@@ -401,7 +401,8 @@ export const App = (() => {
   let acc = 0, prev = performance.now();
   setInterval(() => {
     const now = performance.now(), speed = ui.intro || ui.guide || Handbook.isOpen() ? 0 : ui.speed;
-    acc += ((now - prev) / 1000) * speed; prev = now;
+    // capped, so a tab left in the background does not race through the minutes it missed
+    acc = Math.min(acc + ((now - prev) / 1000) * speed, 10); prev = now;
     let n = 0; while (acc >= 1 && n < 10) { step(); acc -= 1; n += 1; }
     if (n) render();
   }, 200);

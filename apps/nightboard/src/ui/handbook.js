@@ -2,11 +2,11 @@
  * the virtual module below) from docs/HANDBOOK.md, the case book and the Guide Mode text.
  * This file only draws it: sidebar (chips on a phone), article and search. */
 import HANDBOOK from 'virtual:handbook';
+import { esc } from './html.js';
 
 export const Handbook = (() => {
   let el, nav, main, input, cur = null, opened = false, prevFocus = null;
   const sections = HANDBOOK.sections;
-  const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
   function drawNav() { nav.innerHTML = sections.map((s) => `<button data-ui="hb:${s.id}" class="${s.id === cur ? 'on' : ''}">${esc(s.title)}</button>`).join(''); }
   function show(id) {

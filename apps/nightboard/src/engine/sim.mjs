@@ -6,7 +6,7 @@
  * The charge nurse never treats anyone. They decide who gets which bed, who goes
  * first, what is held back, who is called in, and when to swap. */
 import { seedFrom, rnd } from './rng.mjs';
-import { buildUnits, KINDS, ON_CALL, START_STOCK, SHIFT_MINUTES, clock } from './hospital.mjs';
+import { buildUnits, KINDS, ON_CALL, START_STOCK, SHIFT_MINUTES, clock, hm } from './hospital.mjs';
 import { CASES } from './casebook.mjs';
 import { makePatient, vitalsOf, newsOf, caseOf, stepOf, isBoarding, inDepartment } from './patient.mjs';
 import { buildSchedule, BED_RELEASES } from './scenario.mjs';
@@ -17,13 +17,14 @@ export function newShift(seed = 'HARBOURSIDE') {
   const state = {
     seed, rng: seedFrom(seed), t: -96, nextPid: 1, nextAlert: 1, over: false,
     units: buildUnits(), patients: {}, schedule: [], timers: [], alerts: [], log: [],
+    alertSeen: {}, alertCounts: {},
     stock: { ...START_STOCK }, phone: { stepdown: 7, discharge: 8, blood: false },
     called: {}, divertUntil: -1, divertReadyAt: 0, diverted: 0, gridlocks: [],
   };
   state.schedule = buildSchedule(state);
   for (const [at, kind] of BED_RELEASES) state.timers.push({ at, type: 'bedFree', kind });
   while (state.t < 0) { autopilot(state); tick(state); }   // the day shift hands over a working department
-  state.alerts = [];
+  state.alerts = []; state.alertSeen = {}; state.alertCounts = {};
   return state;
 }
 
@@ -32,8 +33,13 @@ const unitsOfKinds = (state, kinds) => Object.values(state.units).filter((u) => 
 const say = (state, pid, text, type = 'event') => state.log.push({ t: state.t, pid, type, text });
 const note = (state, p, kind, author, text) => p.notes.push({ t: state.t, kind, author, text });
 
+/* Raise an alert once per key. The list shown is capped, so whether a key has fired and how
+ * many of each kind fired (for the end-of-shift review) are kept apart from it. */
 function alert(state, level, key, pid, title, text) {
-  if (state.alerts.some((a) => a.key === key)) return;
+  if (state.alertSeen[key]) return;
+  state.alertSeen[key] = true;
+  const kind = key.split(':')[0];
+  state.alertCounts[kind] = (state.alertCounts[kind] || 0) + 1;
   state.alerts.unshift({ id: state.nextAlert++, t: state.t, level, key, pid, title, text, ack: false });
   if (state.alerts.length > 80) state.alerts.length = 80;
 }
@@ -53,20 +59,28 @@ export function allowedKinds(p) {
   return base;
 }
 
-/** Try to take everything a step needs. Returns the units, or null and takes nothing. */
-function tryAcquire(state, p, step) {
-  if (!p.resume && step.blood && state.stock.prbc < step.blood) return null;
-  const got = [];
+/** Match a step's needs against what is free right now. A unit reserved for this patient is
+ * preferred; one reserved for somebody else is never used. Returns the units it would take
+ * and the needs nothing free can meet. tryAcquire and blockers both use it, so the board
+ * always explains exactly what the engine is waiting for. */
+function matchStep(state, p, step) {
+  const got = [], missing = [];
   let skipPlace = p.preplaced && step.place;
   for (const need of step.needs) {
     const kinds = need.split('|');
     if (skipPlace && kinds.includes(step.place)) { skipPlace = false; continue; }
     const free = unitsOfKinds(state, kinds).filter((u) => !u.holder && !got.includes(u) && (!u.reservedFor || u.reservedFor === p.id));
     const u = free.find((x) => x.reservedFor === p.id) || free[0];
-    if (!u) return null;
-    got.push(u);
+    if (u) got.push(u); else missing.push({ need, kinds });
   }
-  return got;
+  const bloodShort = !p.resume && !!step.blood && state.stock.prbc < step.blood;
+  return { got, missing, bloodShort };
+}
+
+/** Try to take everything a step needs. Returns the units, or null and takes nothing. */
+function tryAcquire(state, p, step) {
+  const m = matchStep(state, p, step);
+  return m.missing.length || m.bloodShort ? null : m.got;
 }
 
 /** Why can this patient not move on? One entry per missing thing, with who holds it. */
@@ -75,20 +89,15 @@ export function blockers(state, p) {
   if (p.status === 'waiting') return [{ need: 'bed', kinds: [], label: `No bed yet. Suitable: ${caseOf(p).bed.map((k) => KINDS[k].label.toLowerCase()).join(' or ')}`, holders: [], absent: false }];
   const step = stepOf(p);
   if (!step || p.stepState !== 'need') return [];
-  const out = [], taken = [];
-  let skipPlace = p.preplaced && step.place;
-  for (const need of step.needs) {
-    const kinds = need.split('|');
-    if (skipPlace && kinds.includes(step.place)) { skipPlace = false; continue; }
+  const { missing, bloodShort } = matchStep(state, p, step), out = [];
+  for (const { need, kinds } of missing) {
     const all = unitsOfKinds(state, kinds);
-    const u = all.find((x) => !x.holder && !taken.includes(x) && (!x.reservedFor || x.reservedFor === p.id));
-    if (u) { taken.push(u); continue; }
     out.push({
       need, kinds, label: kinds.map((k) => KINDS[k].label).join(' or '), absent: all.length === 0,
       holders: all.map((x) => ({ unit: x.id, name: x.name, pid: x.holder === 'bg' ? null : x.holder, bg: x.holder === 'bg', reservedFor: x.holder ? null : x.reservedFor })),
     });
   }
-  if (!p.resume && step.blood && state.stock.prbc < step.blood) out.push({ need: 'blood', kinds: [], label: `Red cells: needs ${step.blood} units, ${state.stock.prbc} in the fridge`, holders: [], absent: true });
+  if (bloodShort) out.push({ need: 'blood', kinds: [], label: `Red cells: needs ${step.blood} units, ${state.stock.prbc} in the fridge`, holders: [], absent: true });
   return out;
 }
 
@@ -185,18 +194,27 @@ function startArrest(state, p) {
   say(state, p.id, 'Cardiac arrest', 'code');
 }
 
+/* A code needs a doctor and a nurse. Each comes from someone free, or else is pulled off the
+ * least urgent patient in a non-procedure step. The whole team is planned first, and nobody
+ * is interrupted unless every member can be found: otherwise the same patient would lose
+ * their doctor every minute for a code that cannot start. */
 function codeTeam(state, p) {
-  const team = [];
+  const team = [], victims = [];
+  const pulled = (q, kind) => q.using.map((id) => state.units[id]).find((u) => u.kind === kind && !team.includes(u));
   for (const kind of ['md', 'rn']) {
-    let u = unitsOfKinds(state, [kind]).find((x) => !x.holder);
-    if (!u) {   // pull a team member off the least urgent patient
-      const victims = patientsOf(state).filter((q) => q.status === 'active' && q.stepState === 'run' && !q.arrest && !stepOf(q).place && q.using.some((id) => state.units[id].kind === kind));
-      victims.sort((a, b) => b.esi - a.esi);
-      if (victims[0]) { interrupt(state, victims[0], `team pulled to the Code Blue for ${p.name}`); u = unitsOfKinds(state, [kind]).find((x) => !x.holder); }
+    let u = unitsOfKinds(state, [kind]).find((x) => !x.holder && !team.includes(x));
+    for (const q of victims) if (!u) u = pulled(q, kind);   // already being interrupted for this code
+    if (!u) {
+      const q = patientsOf(state)
+        .filter((x) => x !== p && x.status === 'active' && x.stepState === 'run' && !x.arrest && !stepOf(x).place && !victims.includes(x) && pulled(x, kind))
+        .sort((a, b) => b.esi - a.esi)[0];
+      if (!q) return null;
+      victims.push(q); u = pulled(q, kind);
     }
-    if (!u) { for (const x of team) x.holder = null; return null; }
-    u.holder = p.id; team.push(u);
+    team.push(u);
   }
+  for (const q of victims) interrupt(state, q, `team pulled to the Code Blue for ${p.name}`);
+  for (const u of team) u.holder = p.id;
   return team.map((u) => u.id);
 }
 
@@ -394,6 +412,8 @@ export function act(state, a) {
         release(state, p.loc, p.id);
       }
       u.holder = p.id; u.reservedFor = null; p.loc = u.id;
+      // any other bed held for this patient is no longer needed
+      for (const x of Object.values(state.units)) if (x.reservedFor === p.id && KINDS[x.kind].ed) x.reservedFor = null;
       note(state, p, 'Charge', 'J. Alvarez RN', `${a.type === 'place' ? 'Roomed in' : 'Moved to'} ${u.name}.`);
       say(state, p.id, `${a.type === 'place' ? 'Placed in' : 'Moved to'} ${u.name}`, 'charge');
       acquirePass(state);
@@ -502,6 +522,8 @@ export function actionsFor(state, p) {
     out.push({ key: 'hold', label: p.hold ? 'Release hold' : 'Hold: do not claim the next step', on: p.hold, action: { type: 'hold', pid: p.id } });
     if (p.loc && KINDS[state.units[p.loc].kind].ed) out.push({ key: 'move', label: isBoarding(p) ? 'Move (board in hallway)' : 'Move to another bed', choices: freeBeds().map((u) => ({ label: u.name, hint: KINDS[u.kind].label, action: { type: 'move', pid: p.id, unit: u.id } })), empty: 'No other suitable bed is free.' });
   }
+  // every reservation held for this patient can be handed back
+  for (const u of Object.values(state.units)) if (u.reservedFor === p.id) out.push({ key: `unres:${u.id}`, label: `Release ${u.name}`, hint: 'reserved for this patient', action: { type: 'unreserve', unit: u.id } });
   return out;
 }
 
@@ -538,4 +560,4 @@ export function summary(state) {
   };
 }
 
-export { vitalsOf, newsOf, caseOf, stepOf, isBoarding, inDepartment, clock, KINDS, ON_CALL, CASES, SHIFT_MINUTES };
+export { vitalsOf, newsOf, caseOf, stepOf, isBoarding, inDepartment, clock, hm, KINDS, ON_CALL, CASES, SHIFT_MINUTES };
