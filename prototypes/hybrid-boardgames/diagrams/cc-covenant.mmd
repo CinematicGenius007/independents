@@ -1,0 +1,11 @@
+flowchart TD
+  P[proposer drafts a mutual treaty] -->|template + counterparty + 1 to 3 turns| Q{both sign?}
+  Q -->|no| X[nothing recorded]
+  Q -->|yes| R[covenants stored in public state]
+  R -->|at the promiser's turn| S[move generator deletes violating moves]
+  S -->|filtered list| T{any legal move left?}
+  T -->|yes| U[player picks from what remains]
+  T -->|no: deadlock| V[force majeure: allow the move, pay damages]
+  U -->|after the move| W[covenant ages one turn]
+  V -->|after the move| W
+  W -->|turns left is zero| Y[expires; an unmet feed pays damages]

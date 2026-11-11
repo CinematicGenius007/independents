@@ -1,0 +1,7 @@
+stateDiagram-v2
+  [*] --> BothHoldOne
+  BothHoldOne --> BothRelease : each finds the other section busy
+  BothRelease --> BothBackOff : each waits the same time
+  BothBackOff --> BothHoldOne : both retry in the same order
+  BothBackOff --> OneGoesAhead : a hold staggers one cart
+  OneGoesAhead --> [*] : first cart finishes, then second

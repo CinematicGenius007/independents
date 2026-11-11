@@ -1,0 +1,7 @@
+sequenceDiagram
+  participant X as Sealer (alternates each turn)
+  participant Y as Opener
+  X->>Y: link 1 sealed: history + SHA-256 commit, no order
+  Y->>X: link 2 opened: history + commit + plain order
+  X->>Y: link 3 revealed: history + order + nonce
+  Note over X,Y: both recompute the commit, resolve the turn, extend the hash chain

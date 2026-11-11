@@ -1,0 +1,13 @@
+flowchart TD
+  A[both orders: move + bid] -->|clamp bid to treasury| B{bids equal?}
+  B -->|no: higher bid| C[higher bidder moves first]
+  B -->|yes| D[coin from nonce + opener order picks first]
+  D -->|winner of coin| C
+  C -->|first mover pays its bid| E[ledger: to rival, or pot]
+  E -->|first move always legal| F[execute first move]
+  F -->|re-validate against new board| G{second move still legal?}
+  G -->|yes| H[execute second move]
+  G -->|no: piece taken or path blocked| I[fizzle, bid already settled]
+  H -->|king captured| J[game ends]
+  H -->|else| K[income +1, vault cap, next turn]
+  I -->|else| K

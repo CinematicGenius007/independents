@@ -1,0 +1,11 @@
+stateDiagram-v2
+  [*] --> Width1 : a tangle appears
+  Width1 --> Width2 : 3 picks unattended
+  Width2 --> Width3 : 3 more picks
+  Width3 --> Width4 : 3 more picks
+  Width4 --> Snap : the shed is closed
+  Width1 --> Cleared : mallet strike
+  Width2 --> Cleared : mallet strike
+  Width3 --> Cleared : mallet strike
+  Snap --> [*] : a tear is woven in
+  Cleared --> [*]

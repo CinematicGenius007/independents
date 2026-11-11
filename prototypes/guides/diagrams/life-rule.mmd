@@ -1,0 +1,9 @@
+flowchart TB
+  cell["look at one cell and its 8 neighbours"] --> alive{"is the cell alive?"}
+  alive -->|"yes"| n1{"how many live neighbours?"}
+  alive -->|"no"| n2{"exactly 3 live neighbours?"}
+  n1 -->|"0 or 1: lonely"| dies["dies"]
+  n1 -->|"2 or 3: comfortable"| lives["survives"]
+  n1 -->|"4 or more: crowded"| dies2["dies"]
+  n2 -->|"yes"| born["a new cell is born"]
+  n2 -->|"no"| empty["stays empty"]

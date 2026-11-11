@@ -1,0 +1,4 @@
+flowchart LR
+  F[Fragmented heap: live, hole, live, hole, live] -->|sweep frees garbage| S[Same shape, bigger holes]
+  S -->|slide live blocks left, rewrite pointers via forwarding table| C[Live blocks packed, one big free run]
+  C -->|next big allocation| A[Allocation fits]

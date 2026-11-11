@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant L as Low cart
+  participant M as Medium cart
+  participant H as High cart
+  L->>L: locks the shared section
+  H->>L: needs that section, so blocks
+  M->>L: runs instead and starves the holder
+  Note over L,H: High is stuck behind Medium
+  H-->>L: lends priority (inheritance)
+  L->>L: now outranks Medium and finishes work
+  L->>H: unlocks the section
+  H->>H: proceeds before its deadline

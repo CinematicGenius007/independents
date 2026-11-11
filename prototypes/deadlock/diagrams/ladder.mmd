@@ -1,0 +1,7 @@
+flowchart TD
+  A[1 ring of 3: 3 pads, 3 carts, 1 chock] -->|add priority and a hog| B[2 VIP wait: 1 ticket]
+  B -->|add polite retry| C[3 polite pair: livelock]
+  C -->|grow ring| D[4 to 5 ring of 4, tails: 4 to 5 carts]
+  D -->|two districts, par 2| E[6 to 10 pairs, twin rings, two VIP waits]
+  E -->|mix deadlock and livelock| F[11 to 13 ring and hallway]
+  F -->|long routes, driveways| G[14 to 15 cap: 10 pads, 6 carts, par 2]

@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant A as Player A
+  participant B as Player B
+  participant Board as Shared plate
+  A->>A: choose up to 3 actions and a secret nonce
+  A->>Board: publish seal = SHA-256 of the actions and nonce
+  B->>B: choose up to 3 actions and a secret nonce
+  B->>Board: publish seal = SHA-256 of the actions and nonce
+  A->>Board: reveal actions and nonce
+  B->>Board: reveal actions and nonce
+  Board->>Board: check both seals, apply both, run 6 ticks

@@ -1,0 +1,4 @@
+flowchart LR
+  app["apps/slug: its own build"] -->|"publishes a small manifest"| ex["Explorer at /"]
+  ex -->|"links out with a URL fragment"| app
+  ex -.->|"never imports code from"| app

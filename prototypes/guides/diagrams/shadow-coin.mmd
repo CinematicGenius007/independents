@@ -1,0 +1,5 @@
+flowchart LR
+  S[Sealer's nonce, secret until reveal] -->|mixed with| H[SHA-256]
+  O[Opener's plain order, unknown to sealer when sealing] -->|mixed with| H
+  K[Sealed fingerprint] -->|mixed with| H
+  H -->|take lowest bit| C[Coin: 0 means White first]

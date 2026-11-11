@@ -1,0 +1,13 @@
+flowchart LR
+  soul["Soul: a strange rule that fits in a link"] -->|"says it in words"| copy["Hero copy: The game is the link."]
+  soul -->|"draws it as one thread"| crest["Crest: the Rising Spiral, ember seed"]
+  crest -->|"cut to three turns for 16px"| fav["favicon.svg"]
+  crest -->|"set beside drawn letters"| lock["logo-lockup.svg"]
+  crest -->|"bleeds off the frame"| poster["brand-poster.svg"]
+  soul -->|"one ember mark per game"| icons["25 monoline icons"]
+  build["brand/build.cjs"] -->|"writes every file"| fav
+  build -->|"writes"| lock
+  build -->|"writes"| poster
+  build -->|"writes the sprite"| icons
+  icons -->|"inline sprite in index.html"| page["landing page, card, index, header"]
+  crest -->|"header mark"| page

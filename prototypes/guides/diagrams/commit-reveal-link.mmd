@@ -1,0 +1,10 @@
+sequenceDiagram
+  participant S as Sealer
+  participant O as Opener
+  S->>S: picks move and bid, adds a random nonce
+  S->>O: Link 1: only the SHA-256 fingerprint
+  O->>O: picks own move and bid in plain
+  O->>S: Link 2: fingerprint plus opener's plain order
+  S->>O: Link 3: reveals order and nonce
+  O->>O: recomputes fingerprint and compares
+  Note over S,O: match means honest, mismatch means broken seal shown on screen

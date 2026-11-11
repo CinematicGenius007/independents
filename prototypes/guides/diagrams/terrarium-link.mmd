@@ -1,0 +1,6 @@
+flowchart TB
+  recipe["genome + seed + age + care log"] -->|"packed into about 40 characters"| link["the link: #t1p.xxxx"]
+  link -->|"opened on any device"| replay["replay every tick from zero"]
+  replay -->|"compare FNV-1a checksum"| check{"same checksum?"}
+  check -->|"yes"| same["the same garden appears"]
+  check -->|"no"| drift["flag it as fossil drift"]

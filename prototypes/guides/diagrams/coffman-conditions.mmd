@@ -1,0 +1,6 @@
+flowchart TD
+  M[1 Mutual exclusion: a section holds one cart] -->|plus| H[2 Hold and wait: keep yours while asking for more]
+  H -->|plus| N[3 No preemption: nobody can force a release]
+  N -->|plus| C[4 Circular wait: the chain loops back]
+  C -->|all four true together| D[Deadlock]
+  C -.->|break any one link| F[Free flow]
